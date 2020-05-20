@@ -1,6 +1,6 @@
 ﻿using Jint.Native;
 
-namespace TSSArt.StateMachine.EcmaScript
+namespace Xtate.EcmaScript
 {
 	internal class EcmaScriptObject : IObject
 	{

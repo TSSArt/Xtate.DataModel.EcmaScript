@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace TSSArt.StateMachine.EcmaScript
+namespace Xtate.EcmaScript
 {
 	internal class EcmaScriptCustomActionEvaluator : DefaultCustomActionEvaluator
 	{

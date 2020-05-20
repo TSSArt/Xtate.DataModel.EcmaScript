@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TSSArt.StateMachine.EcmaScript
+namespace Xtate.EcmaScript
 {
 	public static class EcmaScriptExtensions
 	{

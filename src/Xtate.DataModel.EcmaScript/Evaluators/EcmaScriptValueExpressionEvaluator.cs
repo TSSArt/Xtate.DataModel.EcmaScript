@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Jint.Native.Array;
 using Jint.Parser.Ast;
 
-namespace TSSArt.StateMachine.EcmaScript
+namespace Xtate.EcmaScript
 {
 	internal class EcmaScriptValueExpressionEvaluator : IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider, IDebugEntityId
 	{

@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using TSSArt.StateMachine.Annotations;
+using Xtate.Annotations;
 
-namespace TSSArt.StateMachine.EcmaScript
+namespace Xtate.EcmaScript
 {
 	[PublicAPI]
 	[ExcludeFromCodeCoverage]

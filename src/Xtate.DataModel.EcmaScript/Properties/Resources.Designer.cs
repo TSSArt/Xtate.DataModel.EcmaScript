@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TSSArt.StateMachine.EcmaScript {
+namespace Xtate.EcmaScript {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace TSSArt.StateMachine.EcmaScript {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("TSSArt.StateMachine.EcmaScript.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Xtate.DataModel.EcmaScript.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

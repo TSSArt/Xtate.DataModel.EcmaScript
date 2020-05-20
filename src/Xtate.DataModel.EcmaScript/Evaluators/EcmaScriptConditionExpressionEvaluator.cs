@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Jint.Parser.Ast;
 
-namespace TSSArt.StateMachine.EcmaScript
+namespace Xtate.EcmaScript
 {
 	internal class EcmaScriptConditionExpressionEvaluator : IConditionExpression, IBooleanEvaluator, IAncestorProvider
 	{

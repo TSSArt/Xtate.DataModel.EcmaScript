@@ -6,9 +6,9 @@ using Jint.Native;
 using Jint.Parser.Ast;
 using Jint.Runtime.Environments;
 using Jint.Runtime.Interop;
-using TSSArt.StateMachine.Annotations;
+using Xtate.Annotations;
 
-namespace TSSArt.StateMachine.EcmaScript
+namespace Xtate.EcmaScript
 {
 	[PublicAPI]
 	internal class EcmaScriptEngine

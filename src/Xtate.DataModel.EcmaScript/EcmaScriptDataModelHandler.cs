@@ -3,11 +3,11 @@ using System.Collections.Immutable;
 using Jint.Parser;
 using Jint.Parser.Ast;
 
-namespace TSSArt.StateMachine.EcmaScript
+namespace Xtate.EcmaScript
 {
 	public class EcmaScriptDataModelHandler : DataModelHandlerBase
 	{
-		private const string DataModelType      = "http://tssart.com/scxml/datamodel/#ECMAScript";
+		private const string DataModelType      = "http://xtate.net/scxml/datamodel/#ECMAScript";
 		private const string DataModelTypeAlias = "ecmascript";
 
 		public static readonly  IDataModelHandlerFactory Factory       = new DataModelHandlerFactory();

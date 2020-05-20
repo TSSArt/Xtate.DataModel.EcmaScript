@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Jint.Parser.Ast;
 using JintIdentifier = Jint.Parser.Ast.Identifier;
 
-namespace TSSArt.StateMachine.EcmaScript
+namespace Xtate.EcmaScript
 {
 	internal class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 	{
@@ -55,7 +55,7 @@ namespace TSSArt.StateMachine.EcmaScript
 			return new ValueTask<IObject>(obj);
 		}
 
-		public string GetName(IExecutionContext executionContext) => _name ?? throw new StateMachineExecutionException(Resources.Exception_Name_of_Location_Expression_can_t_be_evaluated);
+		public string GetName(IExecutionContext executionContext) => _name ?? throw new ExecutionException(Resources.Exception_Name_of_Location_Expression_can_t_be_evaluated);
 
 		public ValueTask SetValue(IObject value, IExecutionContext executionContext, CancellationToken token)
 		{
@@ -77,7 +77,7 @@ namespace TSSArt.StateMachine.EcmaScript
 		{
 			if (_declare == null)
 			{
-				throw new StateMachineExecutionException(Resources.Exception_InvalidLocalVariableName);
+				throw new ExecutionException(Resources.Exception_InvalidLocalVariableName);
 			}
 
 			executionContext.Engine().Exec(_declare, startNewScope: false);

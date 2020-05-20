@@ -1,4 +1,4 @@
-﻿namespace TSSArt.StateMachine.EcmaScript
+﻿namespace Xtate.EcmaScript
 {
 	internal static class EcmaScriptEngineExtensions
 	{
