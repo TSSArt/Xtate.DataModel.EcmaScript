@@ -19,7 +19,8 @@ namespace Xtate.EcmaScript
 		public const string JintVersionPropertyName = "JintVersion";
 		public const string InFunctionName          = "In";
 
-		public static readonly string JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
+		public static readonly string[] ParseFormats     = { "o", "u", "s", "r" };
+		public static readonly string   JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
 
 		private static readonly PropertyDescriptor ReadonlyUndefinedPropertyDescriptor = new PropertyDescriptor(JsValue.Undefined, writable: false, enumerable: false, configurable: false);
 
@@ -66,7 +67,7 @@ namespace Xtate.EcmaScript
 					DataModelValueType.Boolean => new JsValue(value.AsBoolean()),
 					DataModelValueType.String => new JsValue(value.AsString()),
 					DataModelValueType.Number => new JsValue(value.AsNumber()),
-					DataModelValueType.DateTime => new JsValue(value.AsDateTimeOffset().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo)),
+					DataModelValueType.DateTime => new JsValue(value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo)),
 					DataModelValueType.Object => new JsValue(new DataModelObjectWrapper(engine, value.AsObject())),
 					DataModelValueType.Array => new JsValue(new DataModelArrayWrapper(engine, value.AsArray())),
 					_ => throw new ArgumentOutOfRangeException(nameof(value), value.Type, Resources.Exception_UnsupportedValueType)
@@ -82,14 +83,15 @@ namespace Xtate.EcmaScript
 					Types.Boolean => new DataModelValue(value.AsBoolean()),
 					Types.String => CreateDateTimeOrStringValue(value.AsString()),
 					Types.Number => new DataModelValue(value.AsNumber()),
+					Types.Object when value.IsDate() => new DataModelValue(value.AsDate().ToDateTime()),
 					Types.Object => CreateDataModelValue(value.AsObject()),
 					_ => throw new ArgumentOutOfRangeException(nameof(value), value.Type, Resources.Exception_UnsupportedValueType)
 			};
 		}
 
 		private static DataModelValue CreateDateTimeOrStringValue(string val) =>
-				DateTimeOffset.TryParseExact(val, format: @"o", DateTimeFormatInfo.InvariantInfo, DateTimeStyles.None, out var dttm)
-						? new DataModelValue(dttm)
+				DataModelDateTime.TryParseExact(val, ParseFormats, provider: null, DateTimeStyles.None, out var dateTime)
+						? new DataModelValue(dateTime)
 						: new DataModelValue(val);
 
 		private static DataModelValue CreateDataModelValue(ObjectInstance objectInstance)
