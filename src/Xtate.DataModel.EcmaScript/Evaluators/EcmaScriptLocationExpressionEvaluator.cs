@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Jint.Parser.Ast;
 using JintIdentifier = Jint.Parser.Ast.Identifier;
 
-namespace Xtate.EcmaScript
+namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 	{

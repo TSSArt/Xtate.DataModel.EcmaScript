@@ -1,4 +1,4 @@
-﻿namespace Xtate.EcmaScript
+﻿namespace Xtate.DataModel.EcmaScript
 {
 	internal static class EcmaScriptEngineExtensions
 	{

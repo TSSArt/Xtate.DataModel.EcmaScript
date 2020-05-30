@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Xtate.EcmaScript
+namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 	{

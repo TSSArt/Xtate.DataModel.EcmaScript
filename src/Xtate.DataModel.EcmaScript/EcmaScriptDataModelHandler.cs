@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 using Jint.Parser;
 using Jint.Parser.Ast;
 
-namespace Xtate.EcmaScript
+namespace Xtate.DataModel.EcmaScript
 {
 	public class EcmaScriptDataModelHandler : DataModelHandlerBase
 	{

@@ -18,8 +18,4 @@
     <ProjectReference Include="..\..\src\Xtate.DataModel.EcmaScript\Xtate.DataModel.EcmaScript.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Legacy\" />
-  </ItemGroup>
-
 </Project>

@@ -5,7 +5,7 @@ using Jint.Native.Object;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 
-namespace Xtate.EcmaScript
+namespace Xtate.DataModel.EcmaScript
 {
 	internal class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 	{

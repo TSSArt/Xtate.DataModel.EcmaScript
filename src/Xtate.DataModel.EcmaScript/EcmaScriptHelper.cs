@@ -11,7 +11,7 @@ using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using Xtate.Annotations;
 
-namespace Xtate.EcmaScript
+namespace Xtate.DataModel.EcmaScript
 {
 	[PublicAPI]
 	internal static class EcmaScriptHelper

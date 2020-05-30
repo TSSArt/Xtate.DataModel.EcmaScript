@@ -8,7 +8,7 @@ using Jint.Runtime.Environments;
 using Jint.Runtime.Interop;
 using Xtate.Annotations;
 
-namespace Xtate.EcmaScript
+namespace Xtate.DataModel.EcmaScript
 {
 	[PublicAPI]
 	internal class EcmaScriptEngine

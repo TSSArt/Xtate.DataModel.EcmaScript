@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Jint.Parser;
 using Jint.Parser.Ast;
 
-namespace Xtate.EcmaScript
+namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptExternalScriptExpressionEvaluator : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
 	{

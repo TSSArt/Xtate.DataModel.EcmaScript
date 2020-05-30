@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Xtate.EcmaScript {
+namespace Xtate.DataModel.EcmaScript {
     using System;
     
     

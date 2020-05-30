@@ -5,7 +5,7 @@ using Jint.Native.Array;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 
-namespace Xtate.EcmaScript
+namespace Xtate.DataModel.EcmaScript
 {
 	internal class DataModelArrayWrapper : ArrayInstance, IObjectWrapper
 	{

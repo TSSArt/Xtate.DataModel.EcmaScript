@@ -1,6 +1,7 @@
 ﻿using System;
+using Xtate.DataModel.EcmaScript;
 
-namespace Xtate.EcmaScript
+namespace Xtate
 {
 	public static class EcmaScriptExtensions
 	{

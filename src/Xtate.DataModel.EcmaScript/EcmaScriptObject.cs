@@ -1,6 +1,6 @@
 ﻿using Jint.Native;
 
-namespace Xtate.EcmaScript
+namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptObject : IObject
 	{
