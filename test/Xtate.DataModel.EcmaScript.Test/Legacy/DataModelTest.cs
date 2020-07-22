@@ -24,7 +24,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			using var textReader = new StringReader(scxml);
 			using var reader = XmlReader.Create(textReader);
-			return new ScxmlDirector(reader, BuilderFactory.Instance, DefaultErrorProcessor.Instance).ConstructStateMachine(StateMachineValidator.Instance);
+			return new ScxmlDirector(reader, BuilderFactory.Instance, DefaultErrorProcessor.Instance, namespaceResolver: null).ConstructStateMachine(StateMachineValidator.Instance);
 		}
 
 		private static IStateMachine NoneDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='none'>" + xml + "</scxml>");

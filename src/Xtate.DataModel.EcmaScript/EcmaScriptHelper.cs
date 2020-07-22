@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using Jint;
@@ -26,7 +25,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public static PropertyDescriptor CreatePropertyAccessor(Engine engine, DataModelObject obj, string property)
 		{
-			if (obj.Access != DataModelAccess.Writable && !obj.Contains(property))
+			if (obj.Access != DataModelAccess.Writable && !obj.ContainsKey(property, caseInsensitive: false))
 			{
 				return ReadonlyUndefinedPropertyDescriptor;
 			}
@@ -36,14 +35,14 @@ namespace Xtate.DataModel.EcmaScript
 
 			return new PropertyDescriptor(jsGet, jsSet, enumerable: true, configurable: false);
 
-			JsValue Getter() => ConvertToJsValue(engine, obj[property]);
+			JsValue Getter() => ConvertToJsValue(engine, obj[property, caseInsensitive: false]);
 
-			void Setter(JsValue value) => obj[property] = ConvertFromJsValue(value);
+			void Setter(JsValue value) => obj[property, caseInsensitive: false] = ConvertFromJsValue(value);
 		}
 
 		public static PropertyDescriptor CreateArrayIndexAccessor(Engine engine, DataModelArray array, int index)
 		{
-			if (array.Access != DataModelAccess.Writable && index >= array.Length)
+			if (array.Access != DataModelAccess.Writable && index >= array.Count)
 			{
 				return ReadonlyUndefinedPropertyDescriptor;
 			}
@@ -99,7 +98,7 @@ namespace Xtate.DataModel.EcmaScript
 			switch (objectInstance)
 			{
 				case ArrayInstance array:
-					var dataModelArray = new DataModelArray((int) array.GetLength());
+					var dataModelArray = new DataModelArray();
 
 					foreach (var pair in array.GetOwnProperties())
 					{
@@ -113,14 +112,11 @@ namespace Xtate.DataModel.EcmaScript
 
 				default:
 				{
-					IEnumerable<KeyValuePair<string, PropertyDescriptor>> ownProperties = objectInstance.GetOwnProperties();
-					var capacity = ownProperties is ICollection<KeyValuePair<string, PropertyDescriptor>> collection ? collection.Count : 0;
+					var dataModelObject = new DataModelObject();
 
-					var dataModelObject = new DataModelObject(capacity);
-
-					foreach (var pair in ownProperties)
+					foreach (var pair in objectInstance.GetOwnProperties())
 					{
-						dataModelObject[pair.Key] = ConvertFromJsValue(objectInstance.Get(pair.Key));
+						dataModelObject.Add(pair.Key, ConvertFromJsValue(objectInstance.Get(pair.Key)));
 					}
 
 					return new DataModelValue(dataModelObject);

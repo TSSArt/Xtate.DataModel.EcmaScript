@@ -48,6 +48,8 @@ namespace Xtate.DataModel.EcmaScript
 
 		protected override void Build(ref IValueExpression valueExpression, ref ValueExpression valueExpressionProperties)
 		{
+			base.Build(ref valueExpression, ref valueExpressionProperties);
+
 			if (valueExpressionProperties.Expression != null)
 			{
 				var program = Parse(valueExpressionProperties.Expression);
@@ -63,12 +65,12 @@ namespace Xtate.DataModel.EcmaScript
 			{
 				AddErrorMessage(valueExpression, Resources.ErrorMessage_Value_Expression_must_be_present);
 			}
-
-			base.Build(ref valueExpression, ref valueExpressionProperties);
 		}
 
 		protected override void Build(ref IConditionExpression conditionExpression, ref ConditionExpression conditionExpressionProperties)
 		{
+			base.Build(ref conditionExpression, ref conditionExpressionProperties);
+
 			if (conditionExpressionProperties.Expression != null)
 			{
 				var program = Parse(conditionExpressionProperties.Expression);
@@ -84,12 +86,12 @@ namespace Xtate.DataModel.EcmaScript
 			{
 				AddErrorMessage(conditionExpression, Resources.ErrorMessage_Condition_Expression_must_be_present);
 			}
-
-			base.Build(ref conditionExpression, ref conditionExpressionProperties);
 		}
 
 		protected override void Build(ref ILocationExpression locationExpression, ref LocationExpression locationExpressionProperties)
 		{
+			base.Build(ref locationExpression, ref locationExpressionProperties);
+
 			if (locationExpressionProperties.Expression != null)
 			{
 				var program = Parse(locationExpressionProperties.Expression);
@@ -114,12 +116,12 @@ namespace Xtate.DataModel.EcmaScript
 			{
 				AddErrorMessage(locationExpression, Resources.ErrorMessage_Location_Expression_must_be_present);
 			}
-
-			base.Build(ref locationExpression, ref locationExpressionProperties);
 		}
 
 		protected override void Build(ref IScriptExpression scriptExpression, ref ScriptExpression scriptExpressionProperties)
 		{
+			base.Build(ref scriptExpression, ref scriptExpressionProperties);
+
 			if (scriptExpressionProperties.Expression != null)
 			{
 				var program = Parse(scriptExpressionProperties.Expression);
@@ -135,26 +137,27 @@ namespace Xtate.DataModel.EcmaScript
 			{
 				AddErrorMessage(scriptExpression, Resources.ErrorMessage_Script_Expression_must_be_present);
 			}
-
-			base.Build(ref scriptExpression, ref scriptExpressionProperties);
 		}
 
 		protected override void Build(ref IExternalScriptExpression externalScriptExpression, ref ExternalScriptExpression externalScriptExpressionProperties)
 		{
-			var _ = externalScriptExpression;
+			base.Build(ref externalScriptExpression, ref externalScriptExpressionProperties);
 
 			externalScriptExpression = new EcmaScriptExternalScriptExpressionEvaluator(externalScriptExpressionProperties);
+		}
 
-			base.Build(ref externalScriptExpression, ref externalScriptExpressionProperties);
+		protected override void Build(ref IInlineContent inlineContent, ref InlineContent inlineContentProperties)
+		{
+			base.Build(ref inlineContent, ref inlineContentProperties);
+
+			inlineContent = new EcmaScriptInlineContentEvaluator(inlineContentProperties);
 		}
 
 		protected override void Build(ref IContentBody contentBody, ref ContentBody contentBodyProperties)
 		{
-			var _ = contentBody;
+			base.Build(ref contentBody, ref contentBodyProperties);
 
 			contentBody = new EcmaScriptContentBodyEvaluator(contentBodyProperties);
-
-			base.Build(ref contentBody, ref contentBodyProperties);
 		}
 
 		private class DataModelHandlerFactory : IDataModelHandlerFactory

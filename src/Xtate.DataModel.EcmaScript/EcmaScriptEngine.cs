@@ -4,6 +4,7 @@ using System.Globalization;
 using Jint;
 using Jint.Native;
 using Jint.Parser.Ast;
+using Jint.Runtime.Descriptors;
 using Jint.Runtime.Environments;
 using Jint.Runtime.Interop;
 using Xtate.Annotations;
@@ -40,29 +41,35 @@ namespace Xtate.DataModel.EcmaScript
 
 		private void SyncRootVariables(DataModelObject dataModel)
 		{
-			if (_variableSet.SetEquals(dataModel.Properties))
-			{
-				return;
-			}
-
 			var global = _jintEngine.Global;
-
-			foreach (var name in dataModel.Properties)
+			List<string>? toRemove = null;
+			foreach (var name in _variableSet)
 			{
-				if (!_variableSet.Remove(name))
+				if (!dataModel.TryGet(name, caseInsensitive: false, out _))
 				{
-					var descriptor = EcmaScriptHelper.CreatePropertyAccessor(_jintEngine, dataModel, name);
-					global.FastSetProperty(name, descriptor);
+					toRemove ??= new List<string>();
+					toRemove.Add(name);
 				}
 			}
 
-			foreach (var name in _variableSet)
+			if (toRemove != null)
 			{
-				global.RemoveOwnProperty(name);
+				foreach (var property in toRemove)
+				{
+					_variableSet.Remove(property);
+					global.RemoveOwnProperty(property);
+				}
 			}
 
-			_variableSet.Clear();
-			_variableSet.UnionWith(dataModel.Properties);
+			foreach (var keyValue in dataModel.KeyValues)
+			{
+				if (!string.IsNullOrEmpty(keyValue.Key) && global.GetOwnProperty(keyValue.Key) == PropertyDescriptor.Undefined)
+				{
+					var descriptor = EcmaScriptHelper.CreatePropertyAccessor(_jintEngine, dataModel, keyValue.Key);
+					global.FastSetProperty(keyValue.Key, descriptor);
+					_variableSet.Add(keyValue.Key);
+				}
+			}
 		}
 
 		public void EnterExecutionContext()

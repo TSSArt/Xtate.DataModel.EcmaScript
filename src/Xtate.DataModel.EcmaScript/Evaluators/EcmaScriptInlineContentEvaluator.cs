@@ -3,9 +3,9 @@ using System.Text.Json;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptContentBodyEvaluator : DefaultContentBodyEvaluator
+	internal class EcmaScriptInlineContentEvaluator : DefaultInlineContentEvaluator
 	{
-		public EcmaScriptContentBodyEvaluator(in ContentBody contentBody) : base(contentBody) { }
+		public EcmaScriptInlineContentEvaluator(in InlineContent inlineContent) : base(inlineContent) { }
 
 		protected override DataModelValue ParseToDataModel(ref Exception? parseException)
 		{

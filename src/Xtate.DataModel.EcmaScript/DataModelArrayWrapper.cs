@@ -19,7 +19,7 @@ namespace Xtate.DataModel.EcmaScript
 
 			Extensible = writable;
 
-			base.SetOwnProperty(propertyName: @"length", new PropertyDescriptor((uint) _array.Length, writable, enumerable: false, configurable: false));
+			base.SetOwnProperty(propertyName: @"length", new PropertyDescriptor((uint) _array.Count, writable, enumerable: false, configurable: false));
 		}
 
 	#region Interface IObjectWrapper
@@ -63,7 +63,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
 		{
-			for (var i = 0; i < _array.Length; i ++)
+			for (var i = 0; i < _array.Count; i ++)
 			{
 				var property = i.ToString(NumberFormatInfo.InvariantInfo);
 
@@ -78,7 +78,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public override bool HasOwnProperty(string property)
 		{
-			if (IsArrayIndex(property, out var index) && index < _array.Length)
+			if (IsArrayIndex(property, out var index) && index < _array.Count)
 			{
 				return true;
 			}

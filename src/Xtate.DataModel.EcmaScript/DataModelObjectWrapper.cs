@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Jint;
 using Jint.Native.Object;
 using Jint.Runtime.Descriptors;
@@ -26,14 +25,17 @@ namespace Xtate.DataModel.EcmaScript
 
 		public override void RemoveOwnProperty(string property)
 		{
-			_obj.Remove(property);
+			_obj.RemoveAll(property, caseInsensitive: false);
 
 			base.RemoveOwnProperty(property);
 		}
 
 		public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
 		{
-			return _obj.Properties.Select(p => new KeyValuePair<string, PropertyDescriptor>(p, GetOwnProperty(p)));
+			foreach (var pair in _obj)
+			{
+				yield return new KeyValuePair<string, PropertyDescriptor>(pair.Key, GetOwnProperty(pair.Key));
+			}
 		}
 
 		public override PropertyDescriptor GetOwnProperty(string property)
@@ -52,6 +54,6 @@ namespace Xtate.DataModel.EcmaScript
 			return descriptor;
 		}
 
-		public override bool HasOwnProperty(string property) => _obj.Contains(property);
+		public override bool HasOwnProperty(string property) => _obj.ContainsKey(property, caseInsensitive: false);
 	}
 }
