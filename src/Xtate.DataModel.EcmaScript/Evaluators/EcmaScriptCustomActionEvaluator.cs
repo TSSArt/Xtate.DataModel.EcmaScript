@@ -5,7 +5,7 @@ namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptCustomActionEvaluator : DefaultCustomActionEvaluator
 	{
-		public EcmaScriptCustomActionEvaluator(in CustomAction customAction) : base(customAction) { }
+		public EcmaScriptCustomActionEvaluator(in CustomActionEntity customAction) : base(customAction) { }
 
 		public override async ValueTask Execute(IExecutionContext executionContext, CancellationToken token)
 		{

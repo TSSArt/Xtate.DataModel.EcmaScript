@@ -39,7 +39,7 @@ namespace Xtate.DataModel.EcmaScript
 			forEach = new EcmaScriptForEachEvaluator(forEachProperties);
 		}
 
-		protected override void Build(ref ICustomAction customAction, ref CustomAction customActionProperties)
+		protected override void Build(ref ICustomAction customAction, ref CustomActionEntity customActionProperties)
 		{
 			base.Build(ref customAction, ref customActionProperties);
 
