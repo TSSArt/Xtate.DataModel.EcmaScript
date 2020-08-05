@@ -81,8 +81,8 @@ namespace Xtate.DataModel.EcmaScript.Test
 								 .Callback((IExecutionContext ctx, CancellationToken tk) => ctx.Log(label: "Custom", arguments: default, tk));
 
 			_customActionProvider = new Mock<ICustomActionFactory>();
-			_customActionProvider.Setup(x => x.CreateExecutor(It.IsAny<ICustomActionContext>())).Returns(_customActionExecutor.Object);
-			_customActionProvider.Setup(x => x.CanHandle(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+			_customActionProvider.Setup(x => x.CreateExecutor(It.IsAny<ICustomActionContext>(), default)).Returns(new ValueTask<ICustomActionExecutor>(_customActionExecutor.Object));
+			_customActionProvider.Setup(x => x.CanHandle(It.IsAny<string>(), It.IsAny<string>(), default)).Returns(new ValueTask<bool>(true));
 
 			_options = new InterpreterOptions
 					   {

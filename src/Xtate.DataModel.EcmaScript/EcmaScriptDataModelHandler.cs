@@ -1,4 +1,5 @@
 ﻿#region Copyright © 2019-2020 Sergii Artemenko
+
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -15,10 +16,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
+
 #endregion
 
 using System;
 using System.Collections.Immutable;
+using System.Threading.Tasks;
 using Jint.Parser;
 using Jint.Parser.Ast;
 
@@ -26,8 +29,7 @@ namespace Xtate.DataModel.EcmaScript
 {
 	public class EcmaScriptDataModelHandler : DataModelHandlerBase
 	{
-		private const string DataModelType      = "http://xtate.net/scxml/datamodel/#ECMAScript";
-		private const string DataModelTypeAlias = "ecmascript";
+		private const string DataModelType = "ecmascript";
 
 		public static readonly  IDataModelHandlerFactory Factory       = new DataModelHandlerFactory();
 		private static readonly ParserOptions            ParserOptions = new ParserOptions { Tolerant = true };
@@ -183,9 +185,8 @@ namespace Xtate.DataModel.EcmaScript
 		{
 		#region Interface IDataModelHandlerFactory
 
-			public bool CanHandle(string dataModelType) => dataModelType == DataModelType || dataModelType == DataModelTypeAlias;
-
-			public IDataModelHandler CreateHandler(IErrorProcessor errorProcessor) => new EcmaScriptDataModelHandler(errorProcessor);
+			public ValueTask<IDataModelHandler?> TryCreateHandler(string dataModelType, IErrorProcessor errorProcessor) =>
+					dataModelType == DataModelType ? new ValueTask<IDataModelHandler?>(new EcmaScriptDataModelHandler(errorProcessor)) : default;
 
 		#endregion
 		}
