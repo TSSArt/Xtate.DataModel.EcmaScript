@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using System.Threading.Tasks;
 using Jint.Parser;
 using Jint.Parser.Ast;
@@ -33,6 +34,8 @@ namespace Xtate.DataModel.EcmaScript
 		private static readonly ParserOptions            ParserOptions = new ParserOptions { Tolerant = true };
 
 		private readonly JavaScriptParser _parser = new JavaScriptParser();
+
+		public EcmaScriptDataModelHandler() : base(DefaultErrorProcessor.Instance) { }
 
 		private EcmaScriptDataModelHandler(IErrorProcessor errorProcessor) : base(errorProcessor) { }
 
@@ -179,12 +182,23 @@ namespace Xtate.DataModel.EcmaScript
 			contentBody = new EcmaScriptContentBodyEvaluator(contentBodyProperties);
 		}
 
-		private class DataModelHandlerFactory : IDataModelHandlerFactory
+		private class DataModelHandlerFactory : IDataModelHandlerFactory, IDataModelHandlerFactoryActivator
 		{
 		#region Interface IDataModelHandlerFactory
 
-			public ValueTask<IDataModelHandler?> TryCreateHandler(string dataModelType, IErrorProcessor errorProcessor) =>
-					dataModelType == DataModelType ? new ValueTask<IDataModelHandler?>(new EcmaScriptDataModelHandler(errorProcessor)) : default;
+			public ValueTask<IDataModelHandlerFactoryActivator?> TryGetActivator(IFactoryContext factoryContext, string dataModelType, CancellationToken token) =>
+					new ValueTask<IDataModelHandlerFactoryActivator?>(dataModelType == DataModelType ? this : null);
+
+		#endregion
+
+		#region Interface IDataModelHandlerFactoryActivator
+
+			public ValueTask<IDataModelHandler> CreateHandler(IFactoryContext factoryContext, string dataModelType, IErrorProcessor errorProcessor, CancellationToken token)
+			{
+				Infrastructure.Assert(dataModelType == DataModelType);
+
+				return new ValueTask<IDataModelHandler>(new EcmaScriptDataModelHandler(errorProcessor));
+			}
 
 		#endregion
 		}

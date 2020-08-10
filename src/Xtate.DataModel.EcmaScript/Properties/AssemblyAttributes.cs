@@ -18,5 +18,8 @@
 #endregion
 
 using System.Resources;
+using Xtate;
+using Xtate.DataModel.EcmaScript;
 
 [assembly: NeutralResourcesLanguage("en-US")]
+[assembly: Factory(typeof(Factory))]
