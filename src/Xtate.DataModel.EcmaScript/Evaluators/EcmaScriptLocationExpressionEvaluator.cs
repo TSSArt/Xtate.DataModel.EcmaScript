@@ -94,7 +94,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public void DeclareLocalVariable(IExecutionContext executionContext)
 		{
-			if (_declare == null)
+			if (_declare is null)
 			{
 				throw new ExecutionException(Resources.Exception_InvalidLocalVariableName);
 			}

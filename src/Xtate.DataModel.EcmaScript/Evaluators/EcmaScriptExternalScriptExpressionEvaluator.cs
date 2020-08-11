@@ -55,7 +55,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public void SetContent(string content)
 		{
-			if (content == null) throw new ArgumentNullException(nameof(content));
+			if (content is null) throw new ArgumentNullException(nameof(content));
 
 			_program = new JavaScriptParser().Parse(content);
 		}

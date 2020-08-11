@@ -41,7 +41,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public override void ExecutionContextCreated(IExecutionContext executionContext, out ImmutableDictionary<string, string> dataModelVars)
 		{
-			if (executionContext == null) throw new ArgumentNullException(nameof(executionContext));
+			if (executionContext is null) throw new ArgumentNullException(nameof(executionContext));
 
 			base.ExecutionContextCreated(executionContext, out dataModelVars);
 
