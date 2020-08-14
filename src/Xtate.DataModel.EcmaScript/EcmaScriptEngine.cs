@@ -51,7 +51,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = (EcmaScriptEngine?) executionContext.RuntimeItems[Key];
 
-			Infrastructure.Assert(engine != null);
+			Infrastructure.NotNull(engine);
 
 			engine.SyncRootVariables(executionContext.DataModel);
 
@@ -71,7 +71,7 @@ namespace Xtate.DataModel.EcmaScript
 				}
 			}
 
-			if (toRemove != null)
+			if (toRemove is { })
 			{
 				foreach (var property in toRemove)
 				{

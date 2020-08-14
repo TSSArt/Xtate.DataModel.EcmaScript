@@ -72,7 +72,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			base.Build(ref valueExpression, ref valueExpressionProperties);
 
-			if (valueExpressionProperties.Expression != null)
+			if (valueExpressionProperties.Expression is { })
 			{
 				var program = Parse(valueExpressionProperties.Expression);
 
@@ -93,7 +93,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			base.Build(ref conditionExpression, ref conditionExpressionProperties);
 
-			if (conditionExpressionProperties.Expression != null)
+			if (conditionExpressionProperties.Expression is { })
 			{
 				var program = Parse(conditionExpressionProperties.Expression);
 
@@ -114,7 +114,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			base.Build(ref locationExpression, ref locationExpressionProperties);
 
-			if (locationExpressionProperties.Expression != null)
+			if (locationExpressionProperties.Expression is { })
 			{
 				var program = Parse(locationExpressionProperties.Expression);
 
@@ -125,7 +125,7 @@ namespace Xtate.DataModel.EcmaScript
 
 				var leftExpression = EcmaScriptLocationExpressionEvaluator.GetLeftExpression(program);
 
-				if (leftExpression != null)
+				if (leftExpression is { })
 				{
 					locationExpression = new EcmaScriptLocationExpressionEvaluator(locationExpressionProperties, program, leftExpression);
 				}
@@ -144,7 +144,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			base.Build(ref scriptExpression, ref scriptExpressionProperties);
 
-			if (scriptExpressionProperties.Expression != null)
+			if (scriptExpressionProperties.Expression is { })
 			{
 				var program = Parse(scriptExpressionProperties.Expression);
 
