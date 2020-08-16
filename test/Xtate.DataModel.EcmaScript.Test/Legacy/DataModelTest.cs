@@ -120,7 +120,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(NoNameOnEntry, innerXml: "<log expr='_sessionid'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, It.Is<DataModelValue>(v => v.AsString() != null), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, It.Is<DataModelValue>(v => v.AsString().Length > 0), default), Times.Once);
 		}
 
 		[TestMethod]

@@ -36,7 +36,7 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IAncestorProvider
 
-		object? IAncestorProvider.Ancestor => _scriptExpression;
+		object IAncestorProvider.Ancestor => _scriptExpression;
 
 	#endregion
 
