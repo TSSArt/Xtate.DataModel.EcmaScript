@@ -39,6 +39,9 @@ namespace Xtate.DataModel.EcmaScript
 
 		private EcmaScriptDataModelHandler(IErrorProcessor errorProcessor) : base(errorProcessor) { }
 
+		public override string ConvertToText(DataModelValue dataModelValue) =>
+				DataModelConverter.ToJson(dataModelValue, DataModelConverterOptions.WriteIndented | DataModelConverterOptions.UndefinedToSkipOrNull);
+
 		public override void ExecutionContextCreated(IExecutionContext executionContext, out ImmutableDictionary<string, string> dataModelVars)
 		{
 			if (executionContext is null) throw new ArgumentNullException(nameof(executionContext));
@@ -180,6 +183,13 @@ namespace Xtate.DataModel.EcmaScript
 			base.Build(ref contentBody, ref contentBodyProperties);
 
 			contentBody = new EcmaScriptContentBodyEvaluator(contentBodyProperties);
+		}
+
+		protected override void Build(ref IExternalDataExpression externalDataExpression, ref ExternalDataExpression externalDataExpressionProperties)
+		{
+			base.Build(ref externalDataExpression, ref externalDataExpressionProperties);
+
+			externalDataExpression = new EcmaScriptExternalDataExpressionEvaluator(externalDataExpressionProperties);
 		}
 
 		private class DataModelHandlerFactory : IDataModelHandlerFactory, IDataModelHandlerFactoryActivator
