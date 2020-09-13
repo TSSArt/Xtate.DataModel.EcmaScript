@@ -50,7 +50,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 			return new ScxmlDirector(reader, BuilderFactory.Instance, DefaultErrorProcessor.Instance, namespaceResolver: null).ConstructStateMachine(StateMachineValidator.Instance);
 		}
 
-		private static IStateMachine NoneDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='none'>" + xml + "</scxml>");
+		private static IStateMachine NoneDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='null'>" + xml + "</scxml>");
 		private static IStateMachine EcmaDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'>" + xml + "</scxml>");
 
 		private async Task RunStateMachine(Func<string, IStateMachine> getter, string innerXml)
