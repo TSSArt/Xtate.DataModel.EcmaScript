@@ -27,31 +27,31 @@ namespace Xtate.DataModel.EcmaScript
 {
 	internal class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 	{
-		private readonly DataModelObject _obj;
+		private readonly DataModelList _list;
 
-		public DataModelObjectWrapper(Engine engine, DataModelObject obj) : base(engine)
+		public DataModelObjectWrapper(Engine engine, DataModelList list) : base(engine)
 		{
-			_obj = obj;
+			_list = list;
 
-			Extensible = obj.Access == DataModelAccess.Writable;
+			Extensible = list.Access == DataModelAccess.Writable;
 		}
 
 	#region Interface IObjectWrapper
 
-		public object Target => _obj;
+		public object Target => _list;
 
 	#endregion
 
 		public override void RemoveOwnProperty(string property)
 		{
-			_obj.RemoveAll(property, caseInsensitive: false);
+			_list.RemoveAll(property, caseInsensitive: false);
 
 			base.RemoveOwnProperty(property);
 		}
 
 		public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
 		{
-			foreach (var pair in _obj)
+			foreach (var pair in _list.KeyValuePairs)
 			{
 				yield return new KeyValuePair<string, PropertyDescriptor>(pair.Key, GetOwnProperty(pair.Key));
 			}
@@ -66,13 +66,13 @@ namespace Xtate.DataModel.EcmaScript
 				return descriptor;
 			}
 
-			descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _obj, property);
+			descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property);
 
 			base.SetOwnProperty(property, descriptor);
 
 			return descriptor;
 		}
 
-		public override bool HasOwnProperty(string property) => _obj.ContainsKey(property, caseInsensitive: false);
+		public override bool HasOwnProperty(string property) => _list.ContainsKey(property, caseInsensitive: false);
 	}
 }

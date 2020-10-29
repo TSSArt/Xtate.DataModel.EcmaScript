@@ -42,9 +42,9 @@ namespace Xtate.DataModel.EcmaScript
 
 		private static readonly PropertyDescriptor ReadonlyUndefinedPropertyDescriptor = new PropertyDescriptor(JsValue.Undefined, writable: false, enumerable: false, configurable: false);
 
-		public static PropertyDescriptor CreatePropertyAccessor(Engine engine, DataModelObject obj, string property)
+		public static PropertyDescriptor CreatePropertyAccessor(Engine engine, DataModelList list, string property)
 		{
-			if (obj.Access != DataModelAccess.Writable && !obj.ContainsKey(property, caseInsensitive: false))
+			if (list.Access != DataModelAccess.Writable && !list.ContainsKey(property, caseInsensitive: false))
 			{
 				return ReadonlyUndefinedPropertyDescriptor;
 			}
@@ -54,14 +54,14 @@ namespace Xtate.DataModel.EcmaScript
 
 			return new PropertyDescriptor(jsGet, jsSet, enumerable: true, configurable: false);
 
-			JsValue Getter() => ConvertToJsValue(engine, obj[property, caseInsensitive: false]);
+			JsValue Getter() => ConvertToJsValue(engine, list[property, caseInsensitive: false]);
 
-			void Setter(JsValue value) => obj[property, caseInsensitive: false] = ConvertFromJsValue(value);
+			void Setter(JsValue value) => list[property, caseInsensitive: false] = ConvertFromJsValue(value);
 		}
 
-		public static PropertyDescriptor CreateArrayIndexAccessor(Engine engine, DataModelArray array, int index)
+		public static PropertyDescriptor CreateArrayIndexAccessor(Engine engine, DataModelList list, int index)
 		{
-			if (array.Access != DataModelAccess.Writable && index >= array.Count)
+			if (list.Access != DataModelAccess.Writable && index >= list.Count)
 			{
 				return ReadonlyUndefinedPropertyDescriptor;
 			}
@@ -71,13 +71,18 @@ namespace Xtate.DataModel.EcmaScript
 
 			return new PropertyDescriptor(jsGet, jsSet, enumerable: true, configurable: false);
 
-			JsValue Getter() => ConvertToJsValue(engine, array[index]);
+			JsValue Getter() => ConvertToJsValue(engine, list[index]);
 
-			void Setter(JsValue value) => array[index] = ConvertFromJsValue(value);
+			void Setter(JsValue value) => list[index] = ConvertFromJsValue(value);
 		}
 
 		public static JsValue ConvertToJsValue(Engine engine, DataModelValue value)
 		{
+			static ObjectInstance GetWrapper(Engine engine, DataModelList list) =>
+					DataModelConverter.IsArray(list)
+							? new DataModelArrayWrapper(engine, list)
+							: new DataModelObjectWrapper(engine, list);
+
 			return value.Type switch
 			{
 					DataModelValueType.Undefined => JsValue.Undefined,
@@ -86,8 +91,7 @@ namespace Xtate.DataModel.EcmaScript
 					DataModelValueType.String => new JsValue(value.AsString()),
 					DataModelValueType.Number => new JsValue(value.AsNumber()),
 					DataModelValueType.DateTime => new JsValue(value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo)),
-					DataModelValueType.Object => new JsValue(new DataModelObjectWrapper(engine, value.AsObject())),
-					DataModelValueType.Array => new JsValue(new DataModelArrayWrapper(engine, value.AsArray())),
+					DataModelValueType.List => new JsValue(GetWrapper(engine, value.AsList())),
 					_ => throw new ArgumentOutOfRangeException(nameof(value), value.Type, Resources.Exception_UnsupportedValueType)
 			};
 		}
@@ -117,28 +121,30 @@ namespace Xtate.DataModel.EcmaScript
 			switch (objectInstance)
 			{
 				case ArrayInstance array:
-					var dataModelArray = new DataModelArray();
+				{
+					var list = DataModelConverter.CreateAsArray();
 
 					foreach (var pair in array.GetOwnProperties())
 					{
 						if (ArrayInstance.IsArrayIndex(pair.Key, out var index))
 						{
-							dataModelArray[(int) index] = ConvertFromJsValue(array.Get(pair.Key));
+							list[(int) index] = ConvertFromJsValue(array.Get(pair.Key));
 						}
 					}
 
-					return new DataModelValue(dataModelArray);
+					return new DataModelValue(list);
+				}
 
 				default:
 				{
-					var dataModelObject = new DataModelObject();
+					var list = DataModelConverter.CreateAsObject();
 
 					foreach (var pair in objectInstance.GetOwnProperties())
 					{
-						dataModelObject.Add(pair.Key, ConvertFromJsValue(objectInstance.Get(pair.Key)));
+						list.Add(pair.Key, ConvertFromJsValue(objectInstance.Get(pair.Key)));
 					}
 
-					return new DataModelValue(dataModelObject);
+					return new DataModelValue(list);
 				}
 			}
 		}

@@ -58,7 +58,7 @@ namespace Xtate.DataModel.EcmaScript
 			return engine;
 		}
 
-		private void SyncRootVariables(DataModelObject dataModel)
+		private void SyncRootVariables(DataModelList dataModel)
 		{
 			var global = _jintEngine.Global;
 			List<string>? toRemove = null;
@@ -71,7 +71,7 @@ namespace Xtate.DataModel.EcmaScript
 				}
 			}
 
-			if (toRemove is { })
+			if (toRemove is not null)
 			{
 				foreach (var property in toRemove)
 				{

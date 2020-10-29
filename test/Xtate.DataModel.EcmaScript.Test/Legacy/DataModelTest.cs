@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -34,7 +33,6 @@ using Xtate.Scxml;
 namespace Xtate.DataModel.EcmaScript.Test
 {
 	[TestClass]
-	[SuppressMessage(category: "ReSharper", checkId: "RedundantCapturedContext")]
 	public class DataModelTest
 	{
 		private ChannelReader<IEvent> _eventChannel = default!;

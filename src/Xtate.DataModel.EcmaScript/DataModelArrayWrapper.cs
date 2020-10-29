@@ -28,22 +28,22 @@ namespace Xtate.DataModel.EcmaScript
 {
 	internal class DataModelArrayWrapper : ArrayInstance, IObjectWrapper
 	{
-		private readonly DataModelArray _array;
+		private readonly DataModelList _list;
 
-		public DataModelArrayWrapper(Engine engine, DataModelArray array) : base(engine)
+		public DataModelArrayWrapper(Engine engine, DataModelList list) : base(engine)
 		{
-			_array = array;
+			_list = list;
 
-			var writable = array.Access == DataModelAccess.Writable;
+			var writable = list.Access == DataModelAccess.Writable;
 
 			Extensible = writable;
 
-			base.SetOwnProperty(propertyName: @"length", new PropertyDescriptor((uint) _array.Count, writable, enumerable: false, configurable: false));
+			base.SetOwnProperty(propertyName: @"length", new PropertyDescriptor((uint) _list.Count, writable, enumerable: false, configurable: false));
 		}
 
 	#region Interface IObjectWrapper
 
-		public object Target => _array;
+		public object Target => _list;
 
 	#endregion
 
@@ -51,7 +51,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			if (IsArrayIndex(property, out var index))
 			{
-				_array[(int) index] = default;
+				_list[(int) index] = default;
 			}
 
 			base.RemoveOwnProperty(property);
@@ -63,7 +63,7 @@ namespace Xtate.DataModel.EcmaScript
 
 			if (descriptor == PropertyDescriptor.Undefined && IsArrayIndex(property, out var index))
 			{
-				descriptor = EcmaScriptHelper.CreateArrayIndexAccessor(Engine, _array, (int) index);
+				descriptor = EcmaScriptHelper.CreateArrayIndexAccessor(Engine, _list, (int) index);
 				base.SetOwnProperty(property, descriptor);
 			}
 
@@ -74,7 +74,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			if (property == @"length" && descriptor.Value.IsNumber())
 			{
-				_array.SetLength((int) descriptor.Value.AsNumber());
+				_list.SetLength((int) descriptor.Value.AsNumber());
 			}
 
 			base.SetOwnProperty(property, descriptor);
@@ -82,13 +82,13 @@ namespace Xtate.DataModel.EcmaScript
 
 		public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
 		{
-			for (var i = 0; i < _array.Count; i ++)
+			for (var i = 0; i < _list.Count; i ++)
 			{
 				var property = i.ToString(NumberFormatInfo.InvariantInfo);
 
 				if (base.GetOwnProperty(property) == PropertyDescriptor.Undefined)
 				{
-					base.SetOwnProperty(property, EcmaScriptHelper.CreateArrayIndexAccessor(Engine, _array, i));
+					base.SetOwnProperty(property, EcmaScriptHelper.CreateArrayIndexAccessor(Engine, _list, i));
 				}
 			}
 
@@ -97,7 +97,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public override bool HasOwnProperty(string property)
 		{
-			if (IsArrayIndex(property, out var index) && index < _array.Count)
+			if (IsArrayIndex(property, out var index) && index < _list.Count)
 			{
 				return true;
 			}

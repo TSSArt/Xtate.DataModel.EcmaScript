@@ -79,7 +79,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 			_customActionExecutor = new Mock<ICustomActionExecutor>();
 
 			_customActionExecutor.Setup(e => e.Execute(It.IsAny<IExecutionContext>(), It.IsAny<CancellationToken>()))
-								 .Callback((IExecutionContext ctx, CancellationToken tk) => ctx.Log(label: "Custom", arguments: default, tk));
+								 .Callback((IExecutionContext ctx, CancellationToken tk) => ctx.Log(label: "Custom", arguments: default, tk).AsTask().Wait(tk));
 
 			_customActionProviderActivator = new Mock<ICustomActionFactoryActivator>();
 			_customActionProviderActivator.Setup(x => x.CreateExecutor(It.IsAny<IFactoryContext>(), It.IsAny<ICustomActionContext>(), default))

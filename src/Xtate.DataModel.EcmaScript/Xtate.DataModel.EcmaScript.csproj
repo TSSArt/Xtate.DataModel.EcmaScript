@@ -3,8 +3,9 @@
   <Import Condition="'$(Version)'==''" Project="..\..\Version.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;netstandard2.0;net461</TargetFrameworks>
+    <TargetFrameworks>net5.0;netstandard2.0;net461</TargetFrameworks>
     <Nullable>enable</Nullable>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <PackageId>Xtate.DataModel.EcmaScript</PackageId>
     <RepositoryUrl>https://github.com/TSSArt/Xtate.DataModel.EcmaScript</RepositoryUrl>
   </PropertyGroup>
@@ -12,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Jint" Version="2.11.58" />
 
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.7.0">
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0-5.final">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.0">

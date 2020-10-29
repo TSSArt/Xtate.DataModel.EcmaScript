@@ -125,7 +125,7 @@ namespace Xtate.DataModel.EcmaScript
 				return null;
 			}
 
-			if (!(program.Body.First() is ExpressionStatement expressionStatement))
+			if (program.Body.First() is not ExpressionStatement expressionStatement)
 			{
 				return null;
 			}
