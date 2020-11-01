@@ -76,7 +76,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public string GetName(IExecutionContext executionContext) => _name ?? throw new ExecutionException(Resources.Exception_Name_of_Location_Expression_can_t_be_evaluated);
 
-		public ValueTask SetValue(IObject value, IExecutionContext executionContext, CancellationToken token)
+		public ValueTask SetValue(IObject value, object? customData, IExecutionContext executionContext, CancellationToken token)
 		{
 			var rightValue = value is EcmaScriptObject ecmaScriptObject ? ecmaScriptObject.JsValue : value.ToObject();
 			var assignmentExpression = new AssignmentExpression
