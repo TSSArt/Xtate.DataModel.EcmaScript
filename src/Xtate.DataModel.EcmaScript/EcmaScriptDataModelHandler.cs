@@ -30,8 +30,9 @@ namespace Xtate.DataModel.EcmaScript
 	{
 		private const string DataModelType = "ecmascript";
 
-		public static readonly  IDataModelHandlerFactory Factory       = new DataModelHandlerFactory();
-		private static readonly ParserOptions            ParserOptions = new ParserOptions { Tolerant = true };
+		public static IDataModelHandlerFactory Factory { get; } = new DataModelHandlerFactory();
+
+		private static readonly ParserOptions ParserOptions = new ParserOptions { Tolerant = true };
 
 		private readonly JavaScriptParser _parser = new JavaScriptParser();
 
