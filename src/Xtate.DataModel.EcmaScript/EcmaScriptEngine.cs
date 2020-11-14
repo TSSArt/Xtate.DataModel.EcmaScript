@@ -33,10 +33,10 @@ namespace Xtate.DataModel.EcmaScript
 	[PublicAPI]
 	internal class EcmaScriptEngine
 	{
-		public static readonly object Key = new object();
+		public static readonly object Key = new();
 
 		private readonly Engine          _jintEngine;
-		private readonly HashSet<string> _variableSet = new HashSet<string>();
+		private readonly HashSet<string> _variableSet = new();
 
 		public EcmaScriptEngine(IExecutionContext executionContext)
 		{

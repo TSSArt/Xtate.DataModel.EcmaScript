@@ -92,7 +92,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 			_options = new InterpreterOptions { DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory) };
 			_logger = new Mock<ILogger>();
 			_logger.Setup(e => e.ExecuteLog(It.IsAny<ILoggerContext>(), "MyName", It.IsAny<DataModelValue>(), It.IsAny<CancellationToken>()))
-				   .Callback((ILoggerContext context, string lbl, object prm, CancellationToken _) => Console.WriteLine(lbl + @":" + prm));
+				   .Callback((ILoggerContext _, string lbl, object prm, CancellationToken _) => Console.WriteLine(lbl + @":" + prm));
 			_logger.SetupGet(e => e.IsTracingEnabled).Returns(false);
 			_options.Logger = _logger.Object;
 		}

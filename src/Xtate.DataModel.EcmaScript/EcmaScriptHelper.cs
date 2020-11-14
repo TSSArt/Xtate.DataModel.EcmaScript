@@ -40,7 +40,7 @@ namespace Xtate.DataModel.EcmaScript
 		public static readonly string[] ParseFormats     = { "o", "u", "s", "r" };
 		public static readonly string   JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
 
-		private static readonly PropertyDescriptor ReadonlyUndefinedPropertyDescriptor = new PropertyDescriptor(JsValue.Undefined, writable: false, enumerable: false, configurable: false);
+		private static readonly PropertyDescriptor ReadonlyUndefinedPropertyDescriptor = new(JsValue.Undefined, writable: false, enumerable: false, configurable: false);
 
 		public static PropertyDescriptor CreatePropertyAccessor(Engine engine, DataModelList list, string property)
 		{

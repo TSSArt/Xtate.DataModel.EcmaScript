@@ -30,15 +30,15 @@ namespace Xtate.DataModel.EcmaScript
 	{
 		private const string DataModelType = "ecmascript";
 
-		public static IDataModelHandlerFactory Factory { get; } = new DataModelHandlerFactory();
+		private static readonly ParserOptions ParserOptions = new() { Tolerant = true };
 
-		private static readonly ParserOptions ParserOptions = new ParserOptions { Tolerant = true };
-
-		private readonly JavaScriptParser _parser = new JavaScriptParser();
+		private readonly JavaScriptParser _parser = new();
 
 		public EcmaScriptDataModelHandler() : base(DefaultErrorProcessor.Instance) { }
 
 		private EcmaScriptDataModelHandler(IErrorProcessor errorProcessor) : base(errorProcessor) { }
+
+		public static IDataModelHandlerFactory Factory { get; } = new DataModelHandlerFactory();
 
 		public override string ConvertToText(DataModelValue dataModelValue) =>
 				DataModelConverter.ToJson(dataModelValue, DataModelConverterOptions.WriteIndented | DataModelConverterOptions.UndefinedToSkipOrNull);
@@ -198,7 +198,7 @@ namespace Xtate.DataModel.EcmaScript
 		#region Interface IDataModelHandlerFactory
 
 			public ValueTask<IDataModelHandlerFactoryActivator?> TryGetActivator(IFactoryContext factoryContext, string dataModelType, CancellationToken token) =>
-					new ValueTask<IDataModelHandlerFactoryActivator?>(dataModelType == DataModelType ? this : null);
+					new(dataModelType == DataModelType ? this : null);
 
 		#endregion
 
