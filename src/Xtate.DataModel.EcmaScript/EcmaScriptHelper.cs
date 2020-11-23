@@ -19,7 +19,6 @@
 
 using System;
 using System.Globalization;
-using System.Reflection;
 using Jint;
 using Jint.Native;
 using Jint.Native.Array;
@@ -38,7 +37,7 @@ namespace Xtate.DataModel.EcmaScript
 		public const string InFunctionName          = "In";
 
 		public static readonly string[] ParseFormats     = { "o", "u", "s", "r" };
-		public static readonly string   JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
+		public static readonly string   JintVersionValue = TypeInfo<Engine>.Instance.AssemblyVersion;
 
 		private static readonly PropertyDescriptor ReadonlyUndefinedPropertyDescriptor = new(JsValue.Undefined, writable: false, enumerable: false, configurable: false);
 

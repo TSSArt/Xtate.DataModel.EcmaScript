@@ -40,6 +40,8 @@ namespace Xtate.DataModel.EcmaScript
 
 		public static IDataModelHandlerFactory Factory { get; } = new DataModelHandlerFactory();
 
+		public override ITypeInfo TypeInfo => TypeInfo<EcmaScriptDataModelHandler>.Instance;
+
 		public override string ConvertToText(DataModelValue dataModelValue) =>
 				DataModelConverter.ToJson(dataModelValue, DataModelConverterOptions.WriteIndented | DataModelConverterOptions.UndefinedToSkipOrNull);
 
@@ -193,20 +195,27 @@ namespace Xtate.DataModel.EcmaScript
 			externalDataExpression = new EcmaScriptExternalDataExpressionEvaluator(externalDataExpressionProperties);
 		}
 
-		private class DataModelHandlerFactory : IDataModelHandlerFactory, IDataModelHandlerFactoryActivator
+		private static bool CanHandle(string dataModelType) => dataModelType == DataModelType;
+
+		private class DataModelHandlerFactory : IDataModelHandlerFactory
 		{
 		#region Interface IDataModelHandlerFactory
 
 			public ValueTask<IDataModelHandlerFactoryActivator?> TryGetActivator(IFactoryContext factoryContext, string dataModelType, CancellationToken token) =>
-					new(dataModelType == DataModelType ? this : null);
+					new(CanHandle(dataModelType) ? DataModelHandlerFactoryActivator.Instance : null);
 
 		#endregion
+		}
+
+		private class DataModelHandlerFactoryActivator : IDataModelHandlerFactoryActivator
+		{
+			public static IDataModelHandlerFactoryActivator Instance { get; } = new DataModelHandlerFactoryActivator();
 
 		#region Interface IDataModelHandlerFactoryActivator
 
 			public ValueTask<IDataModelHandler> CreateHandler(IFactoryContext factoryContext, string dataModelType, IErrorProcessor errorProcessor, CancellationToken token)
 			{
-				Infrastructure.Assert(dataModelType == DataModelType);
+				Infrastructure.Assert(CanHandle(dataModelType));
 
 				return new ValueTask<IDataModelHandler>(new EcmaScriptDataModelHandler(errorProcessor));
 			}
