@@ -17,8 +17,9 @@
 
 #endregion
 
-using System;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Xtate.DataModel.EcmaScript
 {
@@ -26,9 +27,9 @@ namespace Xtate.DataModel.EcmaScript
 	{
 		public EcmaScriptExternalDataExpressionEvaluator(in ExternalDataExpression externalDataExpression) : base(externalDataExpression) { }
 
-		protected override DataModelValue ParseToDataModel(Resource resource, ref Exception? parseException)
+		protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource, CancellationToken token)
 		{
-			var content = resource.Content;
+			var content = await resource.GetContent(token).ConfigureAwait(false);
 
 			if (content is null)
 			{
@@ -41,7 +42,7 @@ namespace Xtate.DataModel.EcmaScript
 			}
 			catch (JsonException ex)
 			{
-				parseException = ex;
+				Infrastructure.IgnoredException(ex);
 
 				return content.NormalizeSpaces();
 			}
