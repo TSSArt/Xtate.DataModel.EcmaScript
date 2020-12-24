@@ -92,8 +92,8 @@ namespace Xtate.DataModel.EcmaScript.Test
 
 			_options = new InterpreterOptions { DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory) };
 			_logger = new Mock<ILogger>();
-			_logger.Setup(e => e.ExecuteLog(It.IsAny<ILoggerContext>(), "MyName", It.IsAny<DataModelValue>(), It.IsAny<CancellationToken>()))
-				   .Callback((ILoggerContext _, string lbl, object prm, CancellationToken _) => Console.WriteLine(lbl + @":" + prm));
+			_logger.Setup(e => e.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "MyName", It.IsAny<DataModelValue>(), default, It.IsAny<CancellationToken>()))
+				   .Callback((ILoggerContext _, LogLevel _, string lbl, object prm, Exception? _, CancellationToken _) => Console.WriteLine(lbl + @":" + prm));
 			_logger.SetupGet(e => e.IsTracingEnabled).Returns(false);
 			_options.Logger = _logger.Object;
 		}
@@ -103,7 +103,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(NoNameOnEntry, innerXml: "<log label='output'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), "output", default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "output", default, default, default), Times.Once);
 		}
 
 		[TestMethod]
@@ -111,7 +111,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(NoNameOnEntry, innerXml: "<log expr=\"'output'\"/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("output"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("output"), default, default), Times.Once);
 		}
 
 		[TestMethod]
@@ -119,7 +119,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(NoNameOnEntry, innerXml: "<log expr='_sessionid'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, It.Is<DataModelValue>(v => v.AsString().Length > 0), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, It.Is<DataModelValue>(v => v.AsString().Length > 0), default, default), Times.Once);
 		}
 
 		[TestMethod]
@@ -127,7 +127,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_name'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("MyName"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("MyName"), default, default), Times.Once);
 		}
 
 		[TestMethod]
@@ -135,7 +135,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(NoNameOnEntry, innerXml: "<log expr='_name'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, DataModelValue.Null, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, DataModelValue.Null, default, default), Times.Once);
 		}
 
 		[TestMethod]
@@ -153,7 +153,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachineWithError(WithNameOnEntry, innerXml: "<log expr='_name'/><log expr='_not_existed'/><log expr='_name'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("MyName"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("MyName"), default, default), Times.Once);
 			_logger.Verify(l => l.LogError(It.IsAny<ILoggerContext>(), ErrorType.Execution, It.IsNotNull<Exception>(), "(#9)", default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
@@ -166,7 +166,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 
 			var version = typeof(StateMachineInterpreter).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue(version), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue(version), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -176,7 +176,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.interpreter.name'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Xtate.StateMachineInterpreter"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Xtate.StateMachineInterpreter"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -186,7 +186,8 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.name'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Xtate.DataModel.EcmaScript.EcmaScriptDataModelHandler"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Xtate.DataModel.EcmaScript.EcmaScriptDataModelHandler"), default, default),
+						   Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -196,7 +197,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.assembly'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Xtate.DataModel.EcmaScript"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Xtate.DataModel.EcmaScript"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -206,7 +207,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.version'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, It.IsAny<DataModelValue>(), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, It.IsAny<DataModelValue>(), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -216,7 +217,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.vars.JintVersion'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("2.11.58"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("2.11.58"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -226,7 +227,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<script>my='1'+'a';</script><log expr='my'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("1a"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("1a"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -236,7 +237,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<assign location='x' expr='\"Hello World\"'/><log expr='x'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Hello World"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -246,7 +247,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<script>my=[]; my[3]={};</script><assign location='my[3].yy' expr=\"'Hello World'\"/><log expr='my[3].yy'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Hello World"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -256,7 +257,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<assign location='_name1' expr=\"'Hello World'\"/><log expr='_name1'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Hello World"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -276,7 +277,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='1==1'><log expr=\"'Hello World'\"/></if>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Hello World"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -296,7 +297,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='true'><log expr=\"'Hello World'\"/><else/><log expr=\"'Bye World'\"/></if>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Hello World"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -306,7 +307,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='false'><log expr=\"'Hello World'\"/><else/><log expr=\"'Bye World'\"/></if>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Bye World"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Bye World"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -316,7 +317,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='false'><log expr=\"'Hello World'\"/><elseif cond='true'/><log expr=\"'Maybe World'\"/><else/><log expr=\"'Bye World'\"/></if>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("Maybe World"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Maybe World"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -327,9 +328,9 @@ namespace Xtate.DataModel.EcmaScript.Test
 			await RunStateMachine(WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm'>"
 												   + "<log expr=\"itm\"/></foreach><log expr='typeof(itm)'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("aaa"), default), Times.Once);
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("bbb"), default), Times.Once);
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("undefined"), default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("aaa"), default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("bbb"), default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("undefined"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -340,9 +341,9 @@ namespace Xtate.DataModel.EcmaScript.Test
 			await RunStateMachine(WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm' index='idx'>"
 												   + "<log expr=\"idx + '-' + itm\"/></foreach><log expr='typeof(itm)'/><log expr='typeof(idx)'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("0-aaa"), default), Times.Once);
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("1-bbb"), default), Times.Once);
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), null, new DataModelValue("undefined"), default), Times.Exactly(2));
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("0-aaa"), default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("1-bbb"), default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("undefined"), default, default), Times.Exactly(2));
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -352,7 +353,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(NoneDataModel, innerXml: "<state id='s1'><transition cond='In(s1)' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), "Hello", default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}
@@ -371,7 +372,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(EcmaScriptDataModel, innerXml: "<state id='s1'><transition cond=\"In('s1')\" target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), "Hello", default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}

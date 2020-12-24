@@ -80,7 +80,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 			_customActionExecutor = new Mock<ICustomActionExecutor>();
 
 			_customActionExecutor.Setup(e => e.Execute(It.IsAny<IExecutionContext>(), It.IsAny<CancellationToken>()))
-								 .Callback((IExecutionContext ctx, CancellationToken tk) => ctx.Log(label: "Custom", arguments: default, tk).AsTask().Wait(tk));
+								 .Callback((IExecutionContext ctx, CancellationToken tk) => ctx.Log(LogLevel.Info, message: "Custom", arguments: default, token: tk).AsTask().Wait(tk));
 
 			_customActionProviderActivator = new Mock<ICustomActionFactoryActivator>();
 			_customActionProviderActivator.Setup(x => x.CreateExecutor(It.IsAny<IFactoryContext>(), It.IsAny<ICustomActionContext>(), default))
@@ -109,7 +109,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 								  innerXml:
 								  "<state id='s1'><onentry><raise event='my'/></onentry><transition event='my' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), "Hello", default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
 		}
 
 		[TestMethod]
@@ -119,7 +119,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 								  innerXml:
 								  "<state id='s1'><onentry><send event='my' target='_internal'/></onentry><transition event='my' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), "Hello", default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
 		}
 
 		[TestMethod]
@@ -129,7 +129,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 								  innerXml:
 								  "<state id='s1'><onentry><raise event='my.suffix'/></onentry><transition event='my' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), "Hello", default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
 		}
 
 		[TestMethod]
@@ -139,7 +139,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 								  innerXml:
 								  "<state id='s1'><onentry><raise event='my.suffix'/></onentry><transition event='my.*' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), "Hello", default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
 		}
 
 		[TestMethod]
@@ -149,7 +149,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 								  innerXml:
 								  "<state id='s1'><onentry><custom my='name'/></onentry></state>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), "Custom", default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Custom", default, default, default), Times.Once);
 		}
 
 		[TestMethod]
