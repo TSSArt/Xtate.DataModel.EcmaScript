@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jint.Parser;
 using Jint.Parser.Ast;
+using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {

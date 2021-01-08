@@ -27,6 +27,7 @@ using System.Xml;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Xtate.Builder;
+using Xtate.Core;
 using Xtate.CustomAction;
 using Xtate.Scxml;
 

@@ -22,6 +22,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jint.Parser.Ast;
+using Xtate.Core;
 using JintIdentifier = Jint.Parser.Ast.Identifier;
 
 namespace Xtate.DataModel.EcmaScript

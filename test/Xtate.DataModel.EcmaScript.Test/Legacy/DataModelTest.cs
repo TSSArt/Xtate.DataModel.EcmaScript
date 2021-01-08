@@ -28,6 +28,7 @@ using System.Xml;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Xtate.Builder;
+using Xtate.Core;
 using Xtate.Scxml;
 
 namespace Xtate.DataModel.EcmaScript.Test
@@ -176,7 +177,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.interpreter.name'/>");
 
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Xtate.StateMachineInterpreter"), default, default), Times.Once);
+			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Xtate.Core.StateMachineInterpreter"), default, default), Times.Once);
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
 		}

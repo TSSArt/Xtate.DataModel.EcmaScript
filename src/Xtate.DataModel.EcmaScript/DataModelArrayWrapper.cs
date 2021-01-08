@@ -23,6 +23,7 @@ using Jint;
 using Jint.Native.Array;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
+using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {

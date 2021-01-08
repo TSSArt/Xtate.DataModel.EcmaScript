@@ -20,6 +20,7 @@
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {

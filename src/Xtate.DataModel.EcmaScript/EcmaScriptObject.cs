@@ -18,6 +18,7 @@
 #endregion
 
 using Jint.Native;
+using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {

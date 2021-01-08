@@ -19,6 +19,7 @@
 
 using System;
 using System.Text.Json;
+using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {

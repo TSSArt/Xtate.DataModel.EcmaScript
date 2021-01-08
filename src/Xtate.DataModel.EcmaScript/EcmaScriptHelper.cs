@@ -27,6 +27,7 @@ using Jint.Runtime;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using Xtate.Annotations;
+using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {
