@@ -91,12 +91,15 @@ namespace Xtate.DataModel.EcmaScript.Test
 			channel.Writer.Complete();
 			_eventChannel = channel.Reader;
 
-			_options = new InterpreterOptions { DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory) };
 			_logger = new Mock<ILogger>();
+			_options = new InterpreterOptions
+					   {
+							   DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory),
+							   Logger = _logger.Object
+					   };
 			_logger.Setup(e => e.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "MyName", It.IsAny<DataModelValue>(), default, It.IsAny<CancellationToken>()))
 				   .Callback((ILoggerContext _, LogLevel _, string lbl, object prm, Exception? _, CancellationToken _) => Console.WriteLine(lbl + @":" + prm));
 			_logger.SetupGet(e => e.IsTracingEnabled).Returns(false);
-			_options.Logger = _logger.Object;
 		}
 
 		[TestMethod]

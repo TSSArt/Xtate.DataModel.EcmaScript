@@ -91,16 +91,15 @@ namespace Xtate.DataModel.EcmaScript.Test
 			_customActionProvider.Setup(x => x.TryGetActivator(It.IsAny<IFactoryContext>(), It.IsAny<string>(), It.IsAny<string>(), default))
 								 .Returns(new ValueTask<ICustomActionFactoryActivator?>(_customActionProviderActivator.Object));
 
+			_logger = new Mock<ILogger>();
+			_externalCommunication = new Mock<IExternalCommunication>();
 			_options = new InterpreterOptions
 					   {
 							   DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory),
-							   CustomActionProviders = ImmutableArray.Create(_customActionProvider.Object)
+							   CustomActionProviders = ImmutableArray.Create(_customActionProvider.Object),
+							   Logger = _logger.Object,
+							   ExternalCommunication = _externalCommunication.Object
 					   };
-			_logger = new Mock<ILogger>();
-
-			_options.Logger = _logger.Object;
-			_externalCommunication = new Mock<IExternalCommunication>();
-			_options.ExternalCommunication = _externalCommunication.Object;
 		}
 
 		[TestMethod]
