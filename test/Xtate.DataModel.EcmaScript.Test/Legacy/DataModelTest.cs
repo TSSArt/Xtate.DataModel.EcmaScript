@@ -37,7 +37,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 	{
 		private ChannelReader<IEvent> _eventChannel = default!;
 		private Mock<ILogger>         _logger       = default!;
-		private InterpreterOptions    _options;
+		private InterpreterOptions    _options      = default!;
 
 		private static IStateMachine GetStateMachine(string scxml)
 		{
