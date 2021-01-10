@@ -92,7 +92,7 @@ namespace Xtate.DataModel.EcmaScript
 			}
 			else
 			{
-				AddErrorMessage(valueExpression, Resources.ErrorMessage_Value_Expression_must_be_present);
+				AddErrorMessage(valueExpression, Resources.ErrorMessage_ValueExpressionMustBePresent);
 			}
 		}
 
@@ -113,7 +113,7 @@ namespace Xtate.DataModel.EcmaScript
 			}
 			else
 			{
-				AddErrorMessage(conditionExpression, Resources.ErrorMessage_Condition_Expression_must_be_present);
+				AddErrorMessage(conditionExpression, Resources.ErrorMessage_ConditionExpressionMustBePresent);
 			}
 		}
 
@@ -143,7 +143,7 @@ namespace Xtate.DataModel.EcmaScript
 			}
 			else
 			{
-				AddErrorMessage(locationExpression, Resources.ErrorMessage_Location_Expression_must_be_present);
+				AddErrorMessage(locationExpression, Resources.ErrorMessage_LocationExpressionMustBePresent);
 			}
 		}
 
@@ -164,7 +164,7 @@ namespace Xtate.DataModel.EcmaScript
 			}
 			else
 			{
-				AddErrorMessage(scriptExpression, Resources.ErrorMessage_Script_Expression_must_be_present);
+				AddErrorMessage(scriptExpression, Resources.ErrorMessage_ScriptExpressionMustBePresent);
 			}
 		}
 

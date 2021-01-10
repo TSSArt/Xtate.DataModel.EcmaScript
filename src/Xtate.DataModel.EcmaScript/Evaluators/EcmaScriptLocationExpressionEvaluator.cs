@@ -75,7 +75,7 @@ namespace Xtate.DataModel.EcmaScript
 			return new ValueTask<IObject>(obj);
 		}
 
-		public string GetName(IExecutionContext executionContext) => _name ?? throw new ExecutionException(Resources.Exception_Name_of_Location_Expression_can_t_be_evaluated);
+		public string GetName(IExecutionContext executionContext) => _name ?? throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated);
 
 		public ValueTask SetValue(IObject value, object? customData, IExecutionContext executionContext, CancellationToken token)
 		{

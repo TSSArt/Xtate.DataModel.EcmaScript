@@ -63,9 +63,9 @@ namespace Xtate.DataModel.EcmaScript {
         /// <summary>
         ///   Looks up a localized string similar to Condition Expression must be present..
         /// </summary>
-        internal static string ErrorMessage_Condition_Expression_must_be_present {
+        internal static string ErrorMessage_ConditionExpressionMustBePresent {
             get {
-                return ResourceManager.GetString("ErrorMessage_Condition_Expression_must_be_present", resourceCulture);
+                return ResourceManager.GetString("ErrorMessage_ConditionExpressionMustBePresent", resourceCulture);
             }
         }
         
@@ -81,27 +81,27 @@ namespace Xtate.DataModel.EcmaScript {
         /// <summary>
         ///   Looks up a localized string similar to Location Expression must be present..
         /// </summary>
-        internal static string ErrorMessage_Location_Expression_must_be_present {
+        internal static string ErrorMessage_LocationExpressionMustBePresent {
             get {
-                return ResourceManager.GetString("ErrorMessage_Location_Expression_must_be_present", resourceCulture);
+                return ResourceManager.GetString("ErrorMessage_LocationExpressionMustBePresent", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Script Expression must be present..
         /// </summary>
-        internal static string ErrorMessage_Script_Expression_must_be_present {
+        internal static string ErrorMessage_ScriptExpressionMustBePresent {
             get {
-                return ResourceManager.GetString("ErrorMessage_Script_Expression_must_be_present", resourceCulture);
+                return ResourceManager.GetString("ErrorMessage_ScriptExpressionMustBePresent", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Value Expression must be present..
         /// </summary>
-        internal static string ErrorMessage_Value_Expression_must_be_present {
+        internal static string ErrorMessage_ValueExpressionMustBePresent {
             get {
-                return ResourceManager.GetString("ErrorMessage_Value_Expression_must_be_present", resourceCulture);
+                return ResourceManager.GetString("ErrorMessage_ValueExpressionMustBePresent", resourceCulture);
             }
         }
         
@@ -126,9 +126,9 @@ namespace Xtate.DataModel.EcmaScript {
         /// <summary>
         ///   Looks up a localized string similar to Name of Location Expression can&apos;t be evaluated..
         /// </summary>
-        internal static string Exception_Name_of_Location_Expression_can_t_be_evaluated {
+        internal static string Exception_NameOfLocationExpressionCantBeEvaluated {
             get {
-                return ResourceManager.GetString("Exception_Name_of_Location_Expression_can_t_be_evaluated", resourceCulture);
+                return ResourceManager.GetString("Exception_NameOfLocationExpressionCantBeEvaluated", resourceCulture);
             }
         }
         
