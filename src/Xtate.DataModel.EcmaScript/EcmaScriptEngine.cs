@@ -26,7 +26,6 @@ using Jint.Parser.Ast;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Environments;
 using Jint.Runtime.Interop;
-using Xtate.Annotations;
 
 namespace Xtate.DataModel.EcmaScript
 {
