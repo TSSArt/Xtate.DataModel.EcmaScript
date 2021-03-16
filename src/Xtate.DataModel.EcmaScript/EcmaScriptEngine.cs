@@ -60,7 +60,7 @@ namespace Xtate.DataModel.EcmaScript
 		private void SyncRootVariables(DataModelList dataModel)
 		{
 			var global = _jintEngine.Global;
-			List<string>? toRemove = null;
+			List<string>? toRemove = default;
 			foreach (var name in _variableSet)
 			{
 				if (!dataModel.TryGet(name, caseInsensitive: false, out _))

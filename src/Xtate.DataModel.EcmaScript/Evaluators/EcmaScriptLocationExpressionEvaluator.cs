@@ -56,7 +56,7 @@ namespace Xtate.DataModel.EcmaScript
 					break;
 
 				default:
-					throw new ArgumentOutOfRangeException(nameof(leftExpression));
+					throw Infrastructure.UnexpectedValue<Exception>(leftExpression);
 			}
 		}
 
