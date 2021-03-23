@@ -43,8 +43,8 @@ namespace Xtate.DataModel.EcmaScript
 
 		public override ITypeInfo TypeInfo => TypeInfo<EcmaScriptDataModelHandler>.Instance;
 
-		public override string ConvertToText(DataModelValue dataModelValue) =>
-				DataModelConverter.ToJson(dataModelValue, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
+		public override string ConvertToText(DataModelValue value) =>
+				DataModelConverter.ToJson(value, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
 
 		public override void ExecutionContextCreated(IExecutionContext executionContext, out ImmutableDictionary<string, string> dataModelVars)
 		{

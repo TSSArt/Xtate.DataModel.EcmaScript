@@ -110,10 +110,10 @@ namespace Xtate.DataModel.EcmaScript
 			};
 		}
 
-		private static DataModelValue CreateDateTimeOrStringValue(string val) =>
-				DataModelDateTime.TryParseExact(val, ParseFormats, provider: null, DateTimeStyles.None, out var dateTime)
+		private static DataModelValue CreateDateTimeOrStringValue(string value) =>
+				DataModelDateTime.TryParseExact(value, ParseFormats, provider: null, DateTimeStyles.None, out var dateTime)
 						? new DataModelValue(dateTime)
-						: new DataModelValue(val);
+						: new DataModelValue(value);
 
 		private static DataModelValue CreateDataModelValue(ObjectInstance objectInstance)
 		{
