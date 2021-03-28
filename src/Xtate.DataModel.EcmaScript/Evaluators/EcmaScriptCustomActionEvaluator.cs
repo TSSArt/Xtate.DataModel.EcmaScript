@@ -19,13 +19,12 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptCustomActionEvaluator : DefaultCustomActionEvaluator
 	{
-		public EcmaScriptCustomActionEvaluator(in CustomActionEntity customAction) : base(customAction) { }
+		public EcmaScriptCustomActionEvaluator(ICustomAction customAction) : base(customAction) { }
 
 		public override async ValueTask Execute(IExecutionContext executionContext, CancellationToken token)
 		{

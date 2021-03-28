@@ -19,13 +19,12 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 	{
-		public EcmaScriptForEachEvaluator(in ForEachEntity forEach) : base(forEach) { }
+		public EcmaScriptForEachEvaluator(IForEach forEach) : base(forEach) { }
 
 		public override async ValueTask Execute(IExecutionContext executionContext, CancellationToken token)
 		{

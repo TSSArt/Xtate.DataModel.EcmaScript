@@ -61,34 +61,34 @@ namespace Xtate.DataModel.EcmaScript
 
 		private static string GetErrorMessage(ParserException ex) => @$"{ex.Message} ({ex.Description}). Ln: {ex.LineNumber}. Col: {ex.Column}.";
 
-		protected override void Build(ref IForEach forEach, ref ForEachEntity forEachProperties)
+		protected override void Visit(ref IForEach forEach)
 		{
-			base.Build(ref forEach, ref forEachProperties);
+			base.Visit(ref forEach);
 
-			forEach = new EcmaScriptForEachEvaluator(forEachProperties);
+			forEach = new EcmaScriptForEachEvaluator(forEach);
 		}
 
-		protected override void Build(ref ICustomAction customAction, ref CustomActionEntity customActionProperties)
+		protected override void Visit(ref ICustomAction customAction)
 		{
-			base.Build(ref customAction, ref customActionProperties);
+			base.Visit(ref customAction);
 
-			customAction = new EcmaScriptCustomActionEvaluator(customActionProperties);
+			customAction = new EcmaScriptCustomActionEvaluator(customAction);
 		}
 
-		protected override void Build(ref IValueExpression valueExpression, ref ValueExpression valueExpressionProperties)
+		protected override void Visit(ref IValueExpression valueExpression)
 		{
-			base.Build(ref valueExpression, ref valueExpressionProperties);
+			base.Visit(ref valueExpression);
 
-			if (valueExpressionProperties.Expression is not null)
+			if (valueExpression.Expression is { } expression)
 			{
-				var program = Parse(valueExpressionProperties.Expression);
+				var program = Parse(expression);
 
 				foreach (var parserException in program.Errors)
 				{
 					AddErrorMessage(valueExpression, GetErrorMessage(parserException));
 				}
 
-				valueExpression = new EcmaScriptValueExpressionEvaluator(valueExpressionProperties, program);
+				valueExpression = new EcmaScriptValueExpressionEvaluator(valueExpression, program);
 			}
 			else
 			{
@@ -96,20 +96,20 @@ namespace Xtate.DataModel.EcmaScript
 			}
 		}
 
-		protected override void Build(ref IConditionExpression conditionExpression, ref ConditionExpression conditionExpressionProperties)
+		protected override void Visit(ref IConditionExpression conditionExpression)
 		{
-			base.Build(ref conditionExpression, ref conditionExpressionProperties);
+			base.Visit(ref conditionExpression);
 
-			if (conditionExpressionProperties.Expression is not null)
+			if (conditionExpression.Expression is { } expression)
 			{
-				var program = Parse(conditionExpressionProperties.Expression);
+				var program = Parse(expression);
 
 				foreach (var parserException in program.Errors)
 				{
 					AddErrorMessage(conditionExpression, GetErrorMessage(parserException));
 				}
 
-				conditionExpression = new EcmaScriptConditionExpressionEvaluator(conditionExpressionProperties, program);
+				conditionExpression = new EcmaScriptConditionExpressionEvaluator(conditionExpression, program);
 			}
 			else
 			{
@@ -117,13 +117,13 @@ namespace Xtate.DataModel.EcmaScript
 			}
 		}
 
-		protected override void Build(ref ILocationExpression locationExpression, ref LocationExpression locationExpressionProperties)
+		protected override void Visit(ref ILocationExpression locationExpression)
 		{
-			base.Build(ref locationExpression, ref locationExpressionProperties);
+			base.Visit(ref locationExpression);
 
-			if (locationExpressionProperties.Expression is not null)
+			if (locationExpression.Expression is { } expression)
 			{
-				var program = Parse(locationExpressionProperties.Expression);
+				var program = Parse(expression);
 
 				foreach (var parserException in program.Errors)
 				{
@@ -134,7 +134,7 @@ namespace Xtate.DataModel.EcmaScript
 
 				if (leftExpression is not null)
 				{
-					locationExpression = new EcmaScriptLocationExpressionEvaluator(locationExpressionProperties, program, leftExpression);
+					locationExpression = new EcmaScriptLocationExpressionEvaluator(locationExpression, program, leftExpression);
 				}
 				else
 				{
@@ -147,20 +147,20 @@ namespace Xtate.DataModel.EcmaScript
 			}
 		}
 
-		protected override void Build(ref IScriptExpression scriptExpression, ref ScriptExpression scriptExpressionProperties)
+		protected override void Visit(ref IScriptExpression scriptExpression)
 		{
-			base.Build(ref scriptExpression, ref scriptExpressionProperties);
+			base.Visit(ref scriptExpression);
 
-			if (scriptExpressionProperties.Expression is not null)
+			if (scriptExpression.Expression is { } expression)
 			{
-				var program = Parse(scriptExpressionProperties.Expression);
+				var program = Parse(expression);
 
 				foreach (var parserException in program.Errors)
 				{
 					AddErrorMessage(scriptExpression, GetErrorMessage(parserException));
 				}
 
-				scriptExpression = new EcmaScriptScriptExpressionEvaluator(scriptExpressionProperties, program);
+				scriptExpression = new EcmaScriptScriptExpressionEvaluator(scriptExpression, program);
 			}
 			else
 			{
@@ -168,32 +168,32 @@ namespace Xtate.DataModel.EcmaScript
 			}
 		}
 
-		protected override void Build(ref IExternalScriptExpression externalScriptExpression, ref ExternalScriptExpression externalScriptExpressionProperties)
+		protected override void Visit(ref IExternalScriptExpression externalScriptExpression)
 		{
-			base.Build(ref externalScriptExpression, ref externalScriptExpressionProperties);
+			base.Visit(ref externalScriptExpression);
 
-			externalScriptExpression = new EcmaScriptExternalScriptExpressionEvaluator(externalScriptExpressionProperties);
+			externalScriptExpression = new EcmaScriptExternalScriptExpressionEvaluator(externalScriptExpression);
 		}
 
-		protected override void Build(ref IInlineContent inlineContent, ref InlineContent inlineContentProperties)
+		protected override void Visit(ref IInlineContent inlineContent)
 		{
-			base.Build(ref inlineContent, ref inlineContentProperties);
+			base.Visit(ref inlineContent);
 
-			inlineContent = new EcmaScriptInlineContentEvaluator(inlineContentProperties);
+			inlineContent = new EcmaScriptInlineContentEvaluator(inlineContent);
 		}
 
-		protected override void Build(ref IContentBody contentBody, ref ContentBody contentBodyProperties)
+		protected override void Visit(ref IContentBody contentBody)
 		{
-			base.Build(ref contentBody, ref contentBodyProperties);
+			base.Visit(ref contentBody);
 
-			contentBody = new EcmaScriptContentBodyEvaluator(contentBodyProperties);
+			contentBody = new EcmaScriptContentBodyEvaluator(contentBody);
 		}
 
-		protected override void Build(ref IExternalDataExpression externalDataExpression, ref ExternalDataExpression externalDataExpressionProperties)
+		protected override void Visit(ref IExternalDataExpression externalDataExpression)
 		{
-			base.Build(ref externalDataExpression, ref externalDataExpressionProperties);
+			base.Visit(ref externalDataExpression);
 
-			externalDataExpression = new EcmaScriptExternalDataExpressionEvaluator(externalDataExpressionProperties);
+			externalDataExpression = new EcmaScriptExternalDataExpressionEvaluator(externalDataExpression);
 		}
 
 		private static bool CanHandle(string dataModelType) => dataModelType == DataModelType;

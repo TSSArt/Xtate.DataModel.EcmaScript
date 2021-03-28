@@ -26,10 +26,10 @@ namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptConditionExpressionEvaluator : IConditionExpression, IBooleanEvaluator, IAncestorProvider
 	{
-		private readonly ConditionExpression _conditionExpression;
-		private readonly Program             _program;
+		private readonly IConditionExpression _conditionExpression;
+		private readonly Program              _program;
 
-		public EcmaScriptConditionExpressionEvaluator(in ConditionExpression conditionExpression, Program program)
+		public EcmaScriptConditionExpressionEvaluator(IConditionExpression conditionExpression, Program program)
 		{
 			_conditionExpression = conditionExpression;
 			_program = program;
@@ -37,7 +37,7 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IAncestorProvider
 
-		object? IAncestorProvider.Ancestor => EcmaScriptHelper.GetAncestor(_conditionExpression);
+		object IAncestorProvider.Ancestor => _conditionExpression;
 
 	#endregion
 

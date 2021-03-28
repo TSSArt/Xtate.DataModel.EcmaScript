@@ -147,7 +147,5 @@ namespace Xtate.DataModel.EcmaScript
 				}
 			}
 		}
-
-		public static object? GetAncestor<T>(in T ancestorProvider) where T : IAncestorProvider => ancestorProvider.Ancestor;
 	}
 }

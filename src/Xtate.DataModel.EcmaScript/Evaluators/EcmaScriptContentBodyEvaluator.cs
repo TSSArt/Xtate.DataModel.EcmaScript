@@ -25,7 +25,7 @@ namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptContentBodyEvaluator : DefaultContentBodyEvaluator
 	{
-		public EcmaScriptContentBodyEvaluator(in ContentBody contentBody) : base(contentBody) { }
+		public EcmaScriptContentBodyEvaluator(IContentBody contentBody) : base(contentBody) { }
 
 		protected override DataModelValue ParseToDataModel(ref Exception? parseException)
 		{

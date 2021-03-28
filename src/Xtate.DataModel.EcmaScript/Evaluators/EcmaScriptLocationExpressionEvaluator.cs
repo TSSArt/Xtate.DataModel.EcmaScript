@@ -29,13 +29,13 @@ namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 	{
-		private readonly Program?           _declare;
-		private readonly Expression?        _leftExpression;
-		private readonly LocationExpression _locationExpression;
-		private readonly string?            _name;
-		private readonly Program            _program;
+		private readonly Program?            _declare;
+		private readonly Expression?         _leftExpression;
+		private readonly ILocationExpression _locationExpression;
+		private readonly string?             _name;
+		private readonly Program             _program;
 
-		public EcmaScriptLocationExpressionEvaluator(in LocationExpression locationExpression, Program program, Expression? leftExpression)
+		public EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, Program program, Expression? leftExpression)
 		{
 			_locationExpression = locationExpression;
 			_program = program;
@@ -62,7 +62,7 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IAncestorProvider
 
-		object? IAncestorProvider.Ancestor => EcmaScriptHelper.GetAncestor(_locationExpression);
+		object IAncestorProvider.Ancestor => _locationExpression;
 
 	#endregion
 

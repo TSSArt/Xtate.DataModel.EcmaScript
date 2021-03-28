@@ -28,10 +28,10 @@ namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptValueExpressionEvaluator : IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider, IDebugEntityId
 	{
-		private readonly Program         _program;
-		private readonly ValueExpression _valueExpression;
+		private readonly Program          _program;
+		private readonly IValueExpression _valueExpression;
 
-		public EcmaScriptValueExpressionEvaluator(in ValueExpression valueExpression, Program program)
+		public EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Program program)
 		{
 			_valueExpression = valueExpression;
 			_program = program;
@@ -39,7 +39,7 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IAncestorProvider
 
-		object? IAncestorProvider.Ancestor => EcmaScriptHelper.GetAncestor(_valueExpression);
+		object IAncestorProvider.Ancestor => _valueExpression;
 
 	#endregion
 

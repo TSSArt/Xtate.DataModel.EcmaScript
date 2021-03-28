@@ -28,14 +28,14 @@ namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptExternalScriptExpressionEvaluator : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
 	{
-		private readonly ExternalScriptExpression _externalScriptExpression;
-		private          Program?                 _program;
+		private readonly IExternalScriptExpression _externalScriptExpression;
+		private          Program?                  _program;
 
-		public EcmaScriptExternalScriptExpressionEvaluator(in ExternalScriptExpression externalScriptExpression) => _externalScriptExpression = externalScriptExpression;
+		public EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression) => _externalScriptExpression = externalScriptExpression;
 
 	#region Interface IAncestorProvider
 
-		object? IAncestorProvider.Ancestor => EcmaScriptHelper.GetAncestor(_externalScriptExpression);
+		object IAncestorProvider.Ancestor => _externalScriptExpression;
 
 	#endregion
 

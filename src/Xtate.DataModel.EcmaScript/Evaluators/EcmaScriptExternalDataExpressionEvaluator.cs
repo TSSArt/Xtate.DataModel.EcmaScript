@@ -26,7 +26,7 @@ namespace Xtate.DataModel.EcmaScript
 {
 	internal class EcmaScriptExternalDataExpressionEvaluator : DefaultExternalDataExpressionEvaluator
 	{
-		public EcmaScriptExternalDataExpressionEvaluator(in ExternalDataExpression externalDataExpression) : base(externalDataExpression) { }
+		public EcmaScriptExternalDataExpressionEvaluator(IExternalDataExpression externalDataExpression) : base(externalDataExpression) { }
 
 		protected override async ValueTask<DataModelValue> ParseToDataModel(IExecutionContext executionContext, Resource resource, CancellationToken token)
 		{
