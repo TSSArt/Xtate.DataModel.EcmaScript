@@ -44,7 +44,7 @@ namespace Xtate.DataModel.EcmaScript
 	#region Interface IBooleanEvaluator
 
 		ValueTask<bool> IBooleanEvaluator.EvaluateBoolean(IExecutionContext executionContext, CancellationToken token) =>
-				new(executionContext.Engine().Eval(_program, startNewScope: true).AsBoolean());
+			new(executionContext.Engine().Eval(_program, startNewScope: true).AsBoolean());
 
 	#endregion
 

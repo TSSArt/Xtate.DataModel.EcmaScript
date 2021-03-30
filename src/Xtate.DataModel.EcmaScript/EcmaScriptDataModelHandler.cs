@@ -44,7 +44,7 @@ namespace Xtate.DataModel.EcmaScript
 		public override ITypeInfo TypeInfo => TypeInfo<EcmaScriptDataModelHandler>.Instance;
 
 		public override string ConvertToText(DataModelValue value) =>
-				DataModelConverter.ToJson(value, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
+			DataModelConverter.ToJson(value, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
 
 		public override void ExecutionContextCreated(IExecutionContext executionContext, out ImmutableDictionary<string, string> dataModelVars)
 		{
@@ -203,7 +203,7 @@ namespace Xtate.DataModel.EcmaScript
 		#region Interface IDataModelHandlerFactory
 
 			public ValueTask<IDataModelHandlerFactoryActivator?> TryGetActivator(IFactoryContext factoryContext, string dataModelType, CancellationToken token) =>
-					new(CanHandle(dataModelType) ? DataModelHandlerFactoryActivator.Instance : null);
+				new(CanHandle(dataModelType) ? DataModelHandlerFactoryActivator.Instance : null);
 
 		#endregion
 		}
@@ -214,7 +214,10 @@ namespace Xtate.DataModel.EcmaScript
 
 		#region Interface IDataModelHandlerFactoryActivator
 
-			public ValueTask<IDataModelHandler> CreateHandler(IFactoryContext factoryContext, string dataModelType, IErrorProcessor errorProcessor, CancellationToken token)
+			public ValueTask<IDataModelHandler> CreateHandler(IFactoryContext factoryContext,
+															  string dataModelType,
+															  IErrorProcessor errorProcessor,
+															  CancellationToken token)
 			{
 				Infrastructure.Assert(CanHandle(dataModelType));
 

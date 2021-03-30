@@ -95,10 +95,10 @@ namespace Xtate.DataModel.EcmaScript.Test
 			_externalCommunication = new Mock<IExternalCommunication>();
 			_options = new InterpreterOptions
 					   {
-							   DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory),
-							   CustomActionProviders = ImmutableArray.Create(_customActionProvider.Object),
-							   Logger = _logger.Object,
-							   ExternalCommunication = _externalCommunication.Object
+						   DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory),
+						   CustomActionProviders = ImmutableArray.Create(_customActionProvider.Object),
+						   Logger = _logger.Object,
+						   ExternalCommunication = _externalCommunication.Object
 					   };
 		}
 

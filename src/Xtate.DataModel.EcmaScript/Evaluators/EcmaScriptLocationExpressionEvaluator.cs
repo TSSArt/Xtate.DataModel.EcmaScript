@@ -82,10 +82,10 @@ namespace Xtate.DataModel.EcmaScript
 			var rightValue = value is EcmaScriptObject ecmaScriptObject ? ecmaScriptObject.JsValue : value.ToObject();
 			var assignmentExpression = new AssignmentExpression
 									   {
-											   Type = SyntaxNodes.AssignmentExpression,
-											   Left = _leftExpression,
-											   Operator = AssignmentOperator.Assign,
-											   Right = new Literal { Type = SyntaxNodes.Literal, Value = rightValue }
+										   Type = SyntaxNodes.AssignmentExpression,
+										   Left = _leftExpression,
+										   Operator = AssignmentOperator.Assign,
+										   Right = new Literal { Type = SyntaxNodes.Literal, Value = rightValue }
 									   };
 
 			executionContext.Engine().Exec(assignmentExpression, startNewScope: false);
@@ -132,11 +132,11 @@ namespace Xtate.DataModel.EcmaScript
 			}
 
 			return expressionStatement.Expression switch
-			{
-					JintIdentifier identifier => identifier,
-					MemberExpression memberExpression => memberExpression,
-					_ => null
-			};
+				   {
+					   JintIdentifier identifier         => identifier,
+					   MemberExpression memberExpression => memberExpression,
+					   _                                 => null
+				   };
 		}
 	}
 }

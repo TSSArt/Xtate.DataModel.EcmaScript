@@ -53,12 +53,12 @@ namespace Xtate.DataModel.EcmaScript.Test
 		private static IStateMachine EcmaScriptDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'>" + xml + "</scxml>");
 
 		private static IStateMachine NoNameOnEntry(string xml) =>
-				GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
-								"</onentry></state></scxml>");
+			GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
+							"</onentry></state></scxml>");
 
 		private static IStateMachine WithNameOnEntry(string xml) =>
-				GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript' name='MyName'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
-								"</onentry></state></scxml>");
+			GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript' name='MyName'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
+							"</onentry></state></scxml>");
 
 		private Task RunStateMachine(Func<string, IStateMachine> getter, string innerXml)
 		{
@@ -94,11 +94,16 @@ namespace Xtate.DataModel.EcmaScript.Test
 			_logger = new Mock<ILogger>();
 			_options = new InterpreterOptions
 					   {
-							   DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory),
-							   Logger = _logger.Object
+						   DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory),
+						   Logger = _logger.Object
 					   };
 			_logger.Setup(e => e.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "MyName", It.IsAny<DataModelValue>(), default, It.IsAny<CancellationToken>()))
-				   .Callback((ILoggerContext _, LogLevel _, string lbl, object prm, Exception? _, CancellationToken _) => Console.WriteLine(lbl + @":" + prm));
+				   .Callback((ILoggerContext _,
+							  LogLevel _,
+							  string lbl,
+							  object prm,
+							  Exception? _,
+							  CancellationToken _) => Console.WriteLine(lbl + @":" + prm));
 			_logger.SetupGet(e => e.IsTracingEnabled).Returns(false);
 		}
 

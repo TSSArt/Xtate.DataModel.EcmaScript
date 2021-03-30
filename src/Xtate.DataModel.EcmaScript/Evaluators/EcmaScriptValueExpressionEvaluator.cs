@@ -73,14 +73,14 @@ namespace Xtate.DataModel.EcmaScript
 	#region Interface IIntegerEvaluator
 
 		ValueTask<int> IIntegerEvaluator.EvaluateInteger(IExecutionContext executionContext, CancellationToken token) =>
-				new((int) executionContext.Engine().Eval(_program, startNewScope: true).AsNumber());
+			new((int) executionContext.Engine().Eval(_program, startNewScope: true).AsNumber());
 
 	#endregion
 
 	#region Interface IObjectEvaluator
 
 		ValueTask<IObject> IObjectEvaluator.EvaluateObject(IExecutionContext executionContext, CancellationToken token) =>
-				new(new EcmaScriptObject(executionContext.Engine().Eval(_program, startNewScope: true)));
+			new(new EcmaScriptObject(executionContext.Engine().Eval(_program, startNewScope: true)));
 
 	#endregion
 

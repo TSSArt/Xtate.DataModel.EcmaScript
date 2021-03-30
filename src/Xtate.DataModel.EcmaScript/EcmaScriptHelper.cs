@@ -78,42 +78,42 @@ namespace Xtate.DataModel.EcmaScript
 		public static JsValue ConvertToJsValue(Engine engine, DataModelValue value)
 		{
 			static ObjectInstance GetWrapper(Engine engine, DataModelList list) =>
-					DataModelConverter.IsArray(list)
-							? new DataModelArrayWrapper(engine, list)
-							: new DataModelObjectWrapper(engine, list);
+				DataModelConverter.IsArray(list)
+					? new DataModelArrayWrapper(engine, list)
+					: new DataModelObjectWrapper(engine, list);
 
 			return value.Type switch
-			{
-					DataModelValueType.Undefined => JsValue.Undefined,
-					DataModelValueType.Null => JsValue.Null,
-					DataModelValueType.Boolean => new JsValue(value.AsBoolean()),
-					DataModelValueType.String => new JsValue(value.AsString()),
-					DataModelValueType.Number => new JsValue(value.AsNumber()),
-					DataModelValueType.DateTime => new JsValue(value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo)),
-					DataModelValueType.List => new JsValue(GetWrapper(engine, value.AsList())),
-					_ => Infrastructure.UnexpectedValue<JsValue>(value.Type, Resources.Exception_UnsupportedValueType)
-			};
+				   {
+					   DataModelValueType.Undefined => JsValue.Undefined,
+					   DataModelValueType.Null      => JsValue.Null,
+					   DataModelValueType.Boolean   => new JsValue(value.AsBoolean()),
+					   DataModelValueType.String    => new JsValue(value.AsString()),
+					   DataModelValueType.Number    => new JsValue(value.AsNumber()),
+					   DataModelValueType.DateTime  => new JsValue(value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo)),
+					   DataModelValueType.List      => new JsValue(GetWrapper(engine, value.AsList())),
+					   _                            => Infrastructure.UnexpectedValue<JsValue>(value.Type, Resources.Exception_UnsupportedValueType)
+				   };
 		}
 
 		public static DataModelValue ConvertFromJsValue(JsValue value)
 		{
 			return value.Type switch
-			{
-					Types.Undefined => default,
-					Types.Null => DataModelValue.Null,
-					Types.Boolean => new DataModelValue(value.AsBoolean()),
-					Types.String => CreateDateTimeOrStringValue(value.AsString()),
-					Types.Number => new DataModelValue(value.AsNumber()),
-					Types.Object when value.IsDate() => new DataModelValue(value.AsDate().ToDateTime()),
-					Types.Object => CreateDataModelValue(value.AsObject()),
-					_ => Infrastructure.UnexpectedValue<DataModelValue>(value.Type, Resources.Exception_UnsupportedValueType)
-			};
+				   {
+					   Types.Undefined                  => default,
+					   Types.Null                       => DataModelValue.Null,
+					   Types.Boolean                    => new DataModelValue(value.AsBoolean()),
+					   Types.String                     => CreateDateTimeOrStringValue(value.AsString()),
+					   Types.Number                     => new DataModelValue(value.AsNumber()),
+					   Types.Object when value.IsDate() => new DataModelValue(value.AsDate().ToDateTime()),
+					   Types.Object                     => CreateDataModelValue(value.AsObject()),
+					   _                                => Infrastructure.UnexpectedValue<DataModelValue>(value.Type, Resources.Exception_UnsupportedValueType)
+				   };
 		}
 
 		private static DataModelValue CreateDateTimeOrStringValue(string value) =>
-				DataModelDateTime.TryParseExact(value, ParseFormats, provider: null, DateTimeStyles.None, out var dateTime)
-						? new DataModelValue(dateTime)
-						: new DataModelValue(value);
+			DataModelDateTime.TryParseExact(value, ParseFormats, provider: null, DateTimeStyles.None, out var dateTime)
+				? new DataModelValue(dateTime)
+				: new DataModelValue(value);
 
 		private static DataModelValue CreateDataModelValue(ObjectInstance objectInstance)
 		{
