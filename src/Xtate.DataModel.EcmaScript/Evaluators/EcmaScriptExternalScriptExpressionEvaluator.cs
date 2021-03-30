@@ -43,7 +43,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public ValueTask Execute(IExecutionContext executionContext, CancellationToken token)
 		{
-			Infrastructure.NotNull(_program, Resources.Exception_ExternalScriptMissed);
+			Infra.NotNull(_program, Resources.Exception_ExternalScriptMissed);
 
 			executionContext.Engine().Exec(_program, startNewScope: true);
 

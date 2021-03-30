@@ -219,7 +219,7 @@ namespace Xtate.DataModel.EcmaScript
 															  IErrorProcessor errorProcessor,
 															  CancellationToken token)
 			{
-				Infrastructure.Assert(CanHandle(dataModelType));
+				Infra.Assert(CanHandle(dataModelType));
 
 				return new ValueTask<IDataModelHandler>(new EcmaScriptDataModelHandler(errorProcessor));
 			}

@@ -91,7 +91,7 @@ namespace Xtate.DataModel.EcmaScript
 					   DataModelValueType.Number    => new JsValue(value.AsNumber()),
 					   DataModelValueType.DateTime  => new JsValue(value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo)),
 					   DataModelValueType.List      => new JsValue(GetWrapper(engine, value.AsList())),
-					   _                            => Infrastructure.UnexpectedValue<JsValue>(value.Type, Resources.Exception_UnsupportedValueType)
+					   _                            => Infra.Unexpected<JsValue>(value.Type, Resources.Exception_UnsupportedValueType)
 				   };
 		}
 
@@ -106,7 +106,7 @@ namespace Xtate.DataModel.EcmaScript
 					   Types.Number                     => new DataModelValue(value.AsNumber()),
 					   Types.Object when value.IsDate() => new DataModelValue(value.AsDate().ToDateTime()),
 					   Types.Object                     => CreateDataModelValue(value.AsObject()),
-					   _                                => Infrastructure.UnexpectedValue<DataModelValue>(value.Type, Resources.Exception_UnsupportedValueType)
+					   _                                => Infra.Unexpected<DataModelValue>(value.Type, Resources.Exception_UnsupportedValueType)
 				   };
 		}
 

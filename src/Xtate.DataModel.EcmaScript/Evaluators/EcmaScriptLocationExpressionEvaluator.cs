@@ -56,7 +56,7 @@ namespace Xtate.DataModel.EcmaScript
 					break;
 
 				default:
-					throw Infrastructure.UnexpectedValue<Exception>(leftExpression);
+					throw Infra.Unexpected<Exception>(leftExpression);
 			}
 		}
 

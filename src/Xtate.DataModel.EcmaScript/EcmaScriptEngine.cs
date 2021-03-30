@@ -50,7 +50,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = (EcmaScriptEngine?) executionContext.RuntimeItems[Key];
 
-			Infrastructure.NotNull(engine);
+			Infra.NotNull(engine);
 
 			engine.SyncRootVariables(executionContext.DataModel);
 
