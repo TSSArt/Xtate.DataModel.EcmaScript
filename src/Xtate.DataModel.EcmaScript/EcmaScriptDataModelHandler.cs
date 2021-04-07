@@ -37,7 +37,7 @@ namespace Xtate.DataModel.EcmaScript
 
 		public EcmaScriptDataModelHandler() : base(DefaultErrorProcessor.Instance) { }
 
-		private EcmaScriptDataModelHandler(IErrorProcessor errorProcessor) : base(errorProcessor) { }
+		private EcmaScriptDataModelHandler(IErrorProcessor? errorProcessor) : base(errorProcessor) { }
 
 		public static IDataModelHandlerFactory Factory { get; } = new DataModelHandlerFactory();
 
@@ -216,7 +216,7 @@ namespace Xtate.DataModel.EcmaScript
 
 			public ValueTask<IDataModelHandler> CreateHandler(IFactoryContext factoryContext,
 															  string dataModelType,
-															  IErrorProcessor errorProcessor,
+															  IErrorProcessor? errorProcessor,
 															  CancellationToken token)
 			{
 				Infra.Assert(CanHandle(dataModelType));
