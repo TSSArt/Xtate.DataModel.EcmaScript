@@ -17,36 +17,29 @@
 
 #endregion
 
-using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptExternalDataExpressionEvaluator : DefaultExternalDataExpressionEvaluator
+	public class EcmaScriptExternalDataExpressionEvaluator : DefaultExternalDataExpressionEvaluator
 	{
+		private const string MediaTypeApplicationJson = @"application/json";
+
 		public EcmaScriptExternalDataExpressionEvaluator(IExternalDataExpression externalDataExpression) : base(externalDataExpression) { }
 
-		protected override async ValueTask<DataModelValue> ParseToDataModel(IExecutionContext executionContext, Resource resource, CancellationToken token)
+		protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource)
 		{
-			var content = await resource.GetContent(token).ConfigureAwait(false);
+			Infra.Requires(resource);
 
-			if (content is null)
+			var mediaType = resource.ContentType?.MediaType;
+
+			if (mediaType == MediaTypeApplicationJson)
 			{
-				return DataModelValue.Null;
+				return await DataModelConverter.FromJsonContentAsync(resource).ConfigureAwait(false);
 			}
 
-			try
-			{
-				return DataModelConverter.FromJson(content);
-			}
-			catch (JsonException ex)
-			{
-				await executionContext.Log(LogLevel.Warning, exception: ex, token: token).ConfigureAwait(false);
-
-				return content.NormalizeSpaces();
-			}
+			throw new EcmaScriptDataModelException(string.Format(Resources.Exception_Unrecognized_MediaType, mediaType));
 		}
 	}
 }

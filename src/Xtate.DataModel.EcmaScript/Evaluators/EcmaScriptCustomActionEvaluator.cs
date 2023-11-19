@@ -17,24 +17,27 @@
 
 #endregion
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptCustomActionEvaluator : DefaultCustomActionEvaluator
+	public class EcmaScriptCustomActionEvaluator : DefaultCustomActionEvaluator
 	{
 		public EcmaScriptCustomActionEvaluator(ICustomAction customAction) : base(customAction) { }
 
-		public override async ValueTask Execute(IExecutionContext executionContext, CancellationToken token)
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
+
+		public override async ValueTask Execute()
 		{
-			var engine = executionContext.Engine();
+			var engine = await EngineFactory().ConfigureAwait(false);
 
 			engine.EnterExecutionContext();
 
 			try
 			{
-				await base.Execute(executionContext, token).ConfigureAwait(false);
+				await base.Execute().ConfigureAwait(false);
 			}
 			finally
 			{

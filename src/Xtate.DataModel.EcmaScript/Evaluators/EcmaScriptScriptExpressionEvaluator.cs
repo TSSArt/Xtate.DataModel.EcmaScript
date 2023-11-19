@@ -17,6 +17,7 @@
 
 #endregion
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Jint.Parser.Ast;
@@ -24,10 +25,12 @@ using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptScriptExpressionEvaluator : IScriptExpression, IExecEvaluator, IAncestorProvider
+	public class EcmaScriptScriptExpressionEvaluator : IScriptExpression, IExecEvaluator, IAncestorProvider
 	{
 		private readonly Program           _program;
 		private readonly IScriptExpression _scriptExpression;
+
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
 
 		public EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Program program)
 		{
@@ -43,11 +46,11 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IExecEvaluator
 
-		public ValueTask Execute(IExecutionContext executionContext, CancellationToken token)
+		public async ValueTask Execute()
 		{
-			executionContext.Engine().Exec(_program, startNewScope: true);
+			var engine = await EngineFactory().ConfigureAwait(false);
 
-			return default;
+			engine.Exec(_program, startNewScope: true);
 		}
 
 	#endregion

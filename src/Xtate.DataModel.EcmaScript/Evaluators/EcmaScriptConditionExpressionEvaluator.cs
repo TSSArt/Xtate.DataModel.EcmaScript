@@ -17,6 +17,7 @@
 
 #endregion
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Jint.Parser.Ast;
@@ -24,10 +25,12 @@ using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptConditionExpressionEvaluator : IConditionExpression, IBooleanEvaluator, IAncestorProvider
+	public class EcmaScriptConditionExpressionEvaluator : IConditionExpression, IBooleanEvaluator, IAncestorProvider
 	{
 		private readonly IConditionExpression _conditionExpression;
 		private readonly Program              _program;
+
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
 
 		public EcmaScriptConditionExpressionEvaluator(IConditionExpression conditionExpression, Program program)
 		{
@@ -43,8 +46,12 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IBooleanEvaluator
 
-		ValueTask<bool> IBooleanEvaluator.EvaluateBoolean(IExecutionContext executionContext, CancellationToken token) =>
-			new(executionContext.Engine().Eval(_program, startNewScope: true).AsBoolean());
+		async ValueTask<bool> IBooleanEvaluator.EvaluateBoolean()
+		{
+			var engine = await EngineFactory().ConfigureAwait(false);
+
+			return engine.Eval(_program, startNewScope: true).AsBoolean();
+		}
 
 	#endregion
 

@@ -23,13 +23,16 @@ using System.Threading.Tasks;
 using Jint.Native.Array;
 using Jint.Parser.Ast;
 using Xtate.Core;
+using IServiceProvider = Xtate.IoC.IServiceProvider;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptValueExpressionEvaluator : IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider, IDebugEntityId
+	public class EcmaScriptValueExpressionEvaluator : IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider, IDebugEntityId
 	{
 		private readonly Program          _program;
 		private readonly IValueExpression _valueExpression;
+
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
 
 		public EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Program program)
 		{
@@ -45,9 +48,11 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IArrayEvaluator
 
-		public ValueTask<IObject[]> EvaluateArray(IExecutionContext executionContext, CancellationToken token)
+		public async ValueTask<IObject[]> EvaluateArray()
 		{
-			var array = executionContext.Engine().Eval(_program, startNewScope: true).AsArray();
+			var engine = await EngineFactory().ConfigureAwait(false);
+
+			var array = engine.Eval(_program, startNewScope: true).AsArray();
 
 			var result = new IObject[array.GetLength()];
 
@@ -59,7 +64,7 @@ namespace Xtate.DataModel.EcmaScript
 				}
 			}
 
-			return new ValueTask<IObject[]>(result);
+			return result;
 		}
 
 	#endregion
@@ -72,21 +77,34 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IIntegerEvaluator
 
-		ValueTask<int> IIntegerEvaluator.EvaluateInteger(IExecutionContext executionContext, CancellationToken token) =>
-			new((int) executionContext.Engine().Eval(_program, startNewScope: true).AsNumber());
+		async ValueTask<int> IIntegerEvaluator.EvaluateInteger()
+		{
+			var engine = await EngineFactory().ConfigureAwait(false);
+
+			return (int) engine.Eval(_program, startNewScope: true).AsNumber();
+		}
 
 	#endregion
 
 	#region Interface IObjectEvaluator
 
-		ValueTask<IObject> IObjectEvaluator.EvaluateObject(IExecutionContext executionContext, CancellationToken token) =>
-			new(new EcmaScriptObject(executionContext.Engine().Eval(_program, startNewScope: true)));
+		async ValueTask<IObject> IObjectEvaluator.EvaluateObject()
+		{
+			var engine = await EngineFactory().ConfigureAwait(false);
+
+			return new EcmaScriptObject(engine.Eval(_program, startNewScope: true));
+		}
 
 	#endregion
 
 	#region Interface IStringEvaluator
 
-		ValueTask<string> IStringEvaluator.EvaluateString(IExecutionContext executionContext, CancellationToken token) => new(executionContext.Engine().Eval(_program, startNewScope: true).ToString());
+		async ValueTask<string> IStringEvaluator.EvaluateString()
+		{
+			var engine = await EngineFactory().ConfigureAwait(false);
+
+			return engine.Eval(_program, startNewScope: true).ToString() ?? string.Empty;
+		}
 
 	#endregion
 

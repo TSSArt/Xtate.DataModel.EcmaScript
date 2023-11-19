@@ -17,14 +17,15 @@
 
 #endregion
 
-namespace Xtate.DataModel.EcmaScript
+#if NET461 || NETSTANDARD2_0
+using System.ComponentModel;
+using Xtate;
+
+namespace System.Runtime.CompilerServices
 {
+	[EditorBrowsable(EditorBrowsableState.Never)]
 	[UsedImplicitly]
-	public class Factory : FactoryBase
-	{
-		public Factory()
-		{
-			Add(EcmaScriptDataModelHandler.Factory);
-		}
-	}
+	internal static class IsExternalInit { }
 }
+
+#endif

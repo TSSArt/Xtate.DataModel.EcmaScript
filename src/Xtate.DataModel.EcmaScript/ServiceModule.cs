@@ -17,12 +17,14 @@
 
 #endregion
 
+using Xtate.Core;
+using Xtate.IoC;
+
 namespace Xtate.DataModel.EcmaScript
 {
-	public class EcmaScriptInlineContentEvaluator : DefaultInlineContentEvaluator
+	[UsedImplicitly]
+	public class ServiceModule : IServiceModule
 	{
-		public EcmaScriptInlineContentEvaluator(IInlineContent inlineContent) : base(inlineContent) { }
-
-		protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;
+		public void Register(IServiceCollection servicesCollection) => servicesCollection.AddEcmaScript();
 	}
 }

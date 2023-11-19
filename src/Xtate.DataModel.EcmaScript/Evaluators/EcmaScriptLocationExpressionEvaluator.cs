@@ -27,13 +27,15 @@ using JintIdentifier = Jint.Parser.Ast.Identifier;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
+	public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 	{
 		private readonly Program?            _declare;
 		private readonly Expression?         _leftExpression;
 		private readonly ILocationExpression _locationExpression;
 		private readonly string?             _name;
 		private readonly Program             _program;
+
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
 
 		public EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, Program program, Expression? leftExpression)
 		{
@@ -68,16 +70,16 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface ILocationEvaluator
 
-		public ValueTask<IObject> GetValue(IExecutionContext executionContext, CancellationToken token)
+		public async ValueTask<IObject> GetValue()
 		{
-			var obj = new EcmaScriptObject(executionContext.Engine().Eval(_program, startNewScope: true));
+			var engine = await EngineFactory().ConfigureAwait(false);
 
-			return new ValueTask<IObject>(obj);
+			return new EcmaScriptObject(engine.Eval(_program, startNewScope: true));
 		}
 
-		public string GetName(IExecutionContext executionContext) => _name ?? throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated);
+		public ValueTask<string> GetName() => _name is not null ? new(_name) : throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated);
 
-		public ValueTask SetValue(IObject value, IExecutionContext executionContext, CancellationToken token)
+		public async ValueTask SetValue(IObject value)
 		{
 			var rightValue = value is EcmaScriptObject ecmaScriptObject ? ecmaScriptObject.JsValue : value.ToObject();
 			var assignmentExpression = new AssignmentExpression
@@ -88,19 +90,21 @@ namespace Xtate.DataModel.EcmaScript
 										   Right = new Literal { Type = SyntaxNodes.Literal, Value = rightValue }
 									   };
 
-			executionContext.Engine().Exec(assignmentExpression, startNewScope: false);
+			var engine = await EngineFactory().ConfigureAwait(false);
 
-			return default;
+			engine.Exec(assignmentExpression, startNewScope: false);
 		}
 
-		public void DeclareLocalVariable(IExecutionContext executionContext)
+		public async ValueTask DeclareLocalVariable()
 		{
 			if (_declare is null)
 			{
 				throw new ExecutionException(Resources.Exception_InvalidLocalVariableName);
 			}
 
-			executionContext.Engine().Exec(_declare, startNewScope: false);
+			var engine = await EngineFactory().ConfigureAwait(false);
+
+			engine.Exec(_declare, startNewScope: false);
 		}
 
 	#endregion

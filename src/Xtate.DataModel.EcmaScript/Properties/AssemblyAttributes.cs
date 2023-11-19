@@ -22,4 +22,4 @@ using Xtate;
 using Xtate.DataModel.EcmaScript;
 
 [assembly: NeutralResourcesLanguage("en-US")]
-[assembly: Factory(typeof(Factory))]
+[assembly: ServiceModule(typeof(ServiceModule))]

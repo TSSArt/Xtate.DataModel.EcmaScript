@@ -17,27 +17,33 @@
 
 #endregion
 
-using System.Threading;
+using System;
 using System.Threading.Tasks;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
+	public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 	{
 		public EcmaScriptForEachEvaluator(IForEach forEach) : base(forEach) { }
 
-		public override async ValueTask Execute(IExecutionContext executionContext, CancellationToken token)
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
+
+		public override async ValueTask Execute()
 		{
-			var engine = executionContext.Engine();
+			var engine = await EngineFactory().ConfigureAwait(false);
 
 			engine.EnterExecutionContext();
 
 			try
 			{
-				ItemEvaluator.DeclareLocalVariable(executionContext);
-				IndexEvaluator?.DeclareLocalVariable(executionContext);
+				await ItemEvaluator.DeclareLocalVariable().ConfigureAwait(false);
+				
+				if (IndexEvaluator is not null)
+				{
+					await IndexEvaluator.DeclareLocalVariable().ConfigureAwait(false);
+				}
 
-				await base.Execute(executionContext, token).ConfigureAwait(false);
+				await base.Execute().ConfigureAwait(false);
 			}
 			finally
 			{

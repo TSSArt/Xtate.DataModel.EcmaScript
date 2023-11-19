@@ -1,4 +1,4 @@
-﻿#region Copyright © 2019-2021 Sergii Artemenko
+﻿#region Copyright © 2019-2023 Sergii Artemenko
 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -17,12 +17,18 @@
 
 #endregion
 
-namespace Xtate.DataModel.EcmaScript
-{
-	public class EcmaScriptInlineContentEvaluator : DefaultInlineContentEvaluator
-	{
-		public EcmaScriptInlineContentEvaluator(IInlineContent inlineContent) : base(inlineContent) { }
+using System;
+using System.Runtime.Serialization;
 
-		protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;
-	}
+namespace Xtate.DataModel.EcmaScript;
+
+public class EcmaScriptDataModelException : XtateException
+{
+	public EcmaScriptDataModelException() { }
+		
+	public EcmaScriptDataModelException(string? message) : base(message) { }
+		
+	public EcmaScriptDataModelException(string? message, Exception? innerException) : base(message, innerException) { }
+		
+	protected EcmaScriptDataModelException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 }

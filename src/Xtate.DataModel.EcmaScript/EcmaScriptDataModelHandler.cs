@@ -19,61 +19,63 @@
 
 using System;
 using System.Collections.Immutable;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 using Jint.Parser;
 using Jint.Parser.Ast;
 using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {
+
 	public class EcmaScriptDataModelHandler : DataModelHandlerBase
 	{
-		private const string DataModelType = "ecmascript";
+		public required Func<IForEach, EcmaScriptForEachEvaluator>                                               ForEachEvaluatorFactory                  { private get; init; }
+		public required Func<ICustomAction, EcmaScriptCustomActionEvaluator>                                     CustomActionEvaluatorFactory             { private get; init; }
+		public required Func<IInlineContent, EcmaScriptInlineContentEvaluator>                                   InlineContentEvaluatorFactory            { private get; init; }
+		public required Func<IContentBody, EcmaScriptContentBodyEvaluator>                                       ContentBodyEvaluatorFactory              { private get; init; }
+		public required Func<IExternalDataExpression, EcmaScriptExternalDataExpressionEvaluator>                 ExternalDataExpressionEvaluatorFactory   { private get; init; }
+
+		public required Func<IValueExpression, Program, EcmaScriptValueExpressionEvaluator> ValueExpressionEvaluatorFactory
+		{
+			 get => _valueExpressionEvaluatorFactory;
+			init => _valueExpressionEvaluatorFactory = value;
+		}
+
+		public required Func<IConditionExpression, Program, EcmaScriptConditionExpressionEvaluator>              ConditionExpressionEvaluatorFactory      { private get; init; }
+		public required Func<ILocationExpression, (Program, Expression?), EcmaScriptLocationExpressionEvaluator> LocationExpressionEvaluatorFactory       { private get; init; }
+		public required Func<IScriptExpression, Program, EcmaScriptScriptExpressionEvaluator>                    ScriptExpressionEvaluatorFactory         { private get; init; }
+		public required Func<IExternalScriptExpression, EcmaScriptExternalScriptExpressionEvaluator>             ExternalScriptExpressionEvaluatorFactory { private get; init; }
+		public required IErrorProcessorService<EcmaScriptDataModelHandler>                                       _errorProcessorService                   { private get; init; }
 
 		private static readonly ParserOptions ParserOptions = new() { Tolerant = true };
 
-		private readonly JavaScriptParser _parser = new();
+		private readonly JavaScriptParser                                                    _parser = new();
+		private readonly Func<IValueExpression, Program, EcmaScriptValueExpressionEvaluator> _valueExpressionEvaluatorFactory;
 
-		public EcmaScriptDataModelHandler() : base(DefaultErrorProcessor.Instance) { }
+		protected override IExternalDataExpression GetEvaluator(IExternalDataExpression externalDataExpression) => ExternalDataExpressionEvaluatorFactory(externalDataExpression);
 
-		private EcmaScriptDataModelHandler(IErrorProcessor? errorProcessor) : base(errorProcessor) { }
+		protected override IForEach GetEvaluator(IForEach forEach) => ForEachEvaluatorFactory(forEach);
 
-		public static IDataModelHandlerFactory Factory { get; } = new DataModelHandlerFactory();
+		protected override IInlineContent GetEvaluator(IInlineContent inlineContent) => InlineContentEvaluatorFactory(inlineContent);
 
-		public override ITypeInfo TypeInfo => TypeInfo<EcmaScriptDataModelHandler>.Instance;
+		
+
+		protected override ICustomAction GetEvaluator(ICustomAction customAction) => CustomActionEvaluatorFactory(customAction);
+
+		protected override IContentBody GetEvaluator(IContentBody contentBody) => ContentBodyEvaluatorFactory(contentBody);
+
+
 
 		public override string ConvertToText(DataModelValue value) =>
 			DataModelConverter.ToJson(value, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
 
-		public override void ExecutionContextCreated(IExecutionContext executionContext, out ImmutableDictionary<string, string> dataModelVars)
-		{
-			if (executionContext is null) throw new ArgumentNullException(nameof(executionContext));
-
-			base.ExecutionContextCreated(executionContext, out dataModelVars);
-
-			executionContext.RuntimeItems[EcmaScriptEngine.Key] = new EcmaScriptEngine(executionContext);
-
-			dataModelVars = dataModelVars.SetItem(EcmaScriptHelper.JintVersionPropertyName, EcmaScriptHelper.JintVersionValue);
-		}
+		public override ImmutableDictionary<string, string> DataModelVars => base.DataModelVars.SetItem(EcmaScriptHelper.JintVersionPropertyName, EcmaScriptHelper.JintVersionValue);
 
 		private Program Parse(string source) => _parser.Parse(source, ParserOptions);
 
 		private static string GetErrorMessage(ParserException ex) => @$"{ex.Message} ({ex.Description}). Ln: {ex.LineNumber}. Col: {ex.Column}.";
-
-		protected override void Visit(ref IForEach forEach)
-		{
-			base.Visit(ref forEach);
-
-			forEach = new EcmaScriptForEachEvaluator(forEach);
-		}
-
-		protected override void Visit(ref ICustomAction customAction)
-		{
-			base.Visit(ref customAction);
-
-			customAction = new EcmaScriptCustomActionEvaluator(customAction);
-		}
+		
+	
 
 		protected override void Visit(ref IValueExpression valueExpression)
 		{
@@ -85,14 +87,14 @@ namespace Xtate.DataModel.EcmaScript
 
 				foreach (var parserException in program.Errors)
 				{
-					AddErrorMessage(valueExpression, GetErrorMessage(parserException));
+					_errorProcessorService.AddError(valueExpression, GetErrorMessage(parserException));
 				}
 
-				valueExpression = new EcmaScriptValueExpressionEvaluator(valueExpression, program);
+				valueExpression = ValueExpressionEvaluatorFactory(valueExpression, program);
 			}
 			else
 			{
-				AddErrorMessage(valueExpression, Resources.ErrorMessage_ValueExpressionMustBePresent);
+				_errorProcessorService.AddError(valueExpression, Resources.ErrorMessage_ValueExpressionMustBePresent);
 			}
 		}
 
@@ -106,14 +108,14 @@ namespace Xtate.DataModel.EcmaScript
 
 				foreach (var parserException in program.Errors)
 				{
-					AddErrorMessage(conditionExpression, GetErrorMessage(parserException));
+					_errorProcessorService.AddError(conditionExpression, GetErrorMessage(parserException));
 				}
 
-				conditionExpression = new EcmaScriptConditionExpressionEvaluator(conditionExpression, program);
+				conditionExpression = ConditionExpressionEvaluatorFactory(conditionExpression, program);
 			}
 			else
 			{
-				AddErrorMessage(conditionExpression, Resources.ErrorMessage_ConditionExpressionMustBePresent);
+				_errorProcessorService.AddError(conditionExpression, Resources.ErrorMessage_ConditionExpressionMustBePresent);
 			}
 		}
 
@@ -127,23 +129,23 @@ namespace Xtate.DataModel.EcmaScript
 
 				foreach (var parserException in program.Errors)
 				{
-					AddErrorMessage(locationExpression, GetErrorMessage(parserException));
+					_errorProcessorService.AddError(locationExpression, GetErrorMessage(parserException));
 				}
 
 				var leftExpression = EcmaScriptLocationExpressionEvaluator.GetLeftExpression(program);
 
 				if (leftExpression is not null)
 				{
-					locationExpression = new EcmaScriptLocationExpressionEvaluator(locationExpression, program, leftExpression);
+					locationExpression = LocationExpressionEvaluatorFactory(locationExpression, (program, leftExpression));
 				}
 				else
 				{
-					AddErrorMessage(locationExpression, Resources.ErrorMessage_InvalidLocationExpression);
+					_errorProcessorService.AddError(locationExpression, Resources.ErrorMessage_InvalidLocationExpression);
 				}
 			}
 			else
 			{
-				AddErrorMessage(locationExpression, Resources.ErrorMessage_LocationExpressionMustBePresent);
+				_errorProcessorService.AddError(locationExpression, Resources.ErrorMessage_LocationExpressionMustBePresent);
 			}
 		}
 
@@ -157,14 +159,14 @@ namespace Xtate.DataModel.EcmaScript
 
 				foreach (var parserException in program.Errors)
 				{
-					AddErrorMessage(scriptExpression, GetErrorMessage(parserException));
+					_errorProcessorService.AddError(scriptExpression, GetErrorMessage(parserException));
 				}
 
-				scriptExpression = new EcmaScriptScriptExpressionEvaluator(scriptExpression, program);
+				scriptExpression = ScriptExpressionEvaluatorFactory(scriptExpression, program);
 			}
 			else
 			{
-				AddErrorMessage(scriptExpression, Resources.ErrorMessage_ScriptExpressionMustBePresent);
+				_errorProcessorService.AddError(scriptExpression, Resources.ErrorMessage_ScriptExpressionMustBePresent);
 			}
 		}
 
@@ -172,59 +174,8 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			base.Visit(ref externalScriptExpression);
 
-			externalScriptExpression = new EcmaScriptExternalScriptExpressionEvaluator(externalScriptExpression);
+			externalScriptExpression = ExternalScriptExpressionEvaluatorFactory(externalScriptExpression);
 		}
-
-		protected override void Visit(ref IInlineContent inlineContent)
-		{
-			base.Visit(ref inlineContent);
-
-			inlineContent = new EcmaScriptInlineContentEvaluator(inlineContent);
-		}
-
-		protected override void Visit(ref IContentBody contentBody)
-		{
-			base.Visit(ref contentBody);
-
-			contentBody = new EcmaScriptContentBodyEvaluator(contentBody);
-		}
-
-		protected override void Visit(ref IExternalDataExpression externalDataExpression)
-		{
-			base.Visit(ref externalDataExpression);
-
-			externalDataExpression = new EcmaScriptExternalDataExpressionEvaluator(externalDataExpression);
-		}
-
-		private static bool CanHandle(string dataModelType) => dataModelType == DataModelType;
-
-		private class DataModelHandlerFactory : IDataModelHandlerFactory
-		{
-		#region Interface IDataModelHandlerFactory
-
-			public ValueTask<IDataModelHandlerFactoryActivator?> TryGetActivator(IFactoryContext factoryContext, string dataModelType, CancellationToken token) =>
-				new(CanHandle(dataModelType) ? DataModelHandlerFactoryActivator.Instance : null);
-
-		#endregion
-		}
-
-		private class DataModelHandlerFactoryActivator : IDataModelHandlerFactoryActivator
-		{
-			public static IDataModelHandlerFactoryActivator Instance { get; } = new DataModelHandlerFactoryActivator();
-
-		#region Interface IDataModelHandlerFactoryActivator
-
-			public ValueTask<IDataModelHandler> CreateHandler(IFactoryContext factoryContext,
-															  string dataModelType,
-															  IErrorProcessor? errorProcessor,
-															  CancellationToken token)
-			{
-				Infra.Assert(CanHandle(dataModelType));
-
-				return new ValueTask<IDataModelHandler>(new EcmaScriptDataModelHandler(errorProcessor));
-			}
-
-		#endregion
-		}
+		
 	}
 }

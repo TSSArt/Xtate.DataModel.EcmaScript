@@ -26,10 +26,12 @@ using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptExternalScriptExpressionEvaluator : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
+	public class EcmaScriptExternalScriptExpressionEvaluator : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
 	{
 		private readonly IExternalScriptExpression _externalScriptExpression;
 		private          Program?                  _program;
+
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
 
 		public EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression) => _externalScriptExpression = externalScriptExpression;
 
@@ -41,13 +43,13 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IExecEvaluator
 
-		public ValueTask Execute(IExecutionContext executionContext, CancellationToken token)
+		public async ValueTask Execute()
 		{
 			Infra.NotNull(_program, Resources.Exception_ExternalScriptMissed);
 
-			executionContext.Engine().Exec(_program, startNewScope: true);
+			var engine = await EngineFactory().ConfigureAwait(false);
 
-			return default;
+			engine.Exec(_program, startNewScope: true);
 		}
 
 	#endregion

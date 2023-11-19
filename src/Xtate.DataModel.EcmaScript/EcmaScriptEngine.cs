@@ -29,36 +29,25 @@ using Jint.Runtime.Interop;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	[PublicAPI]
-	internal class EcmaScriptEngine
+	public class EcmaScriptEngine
 	{
-		public static readonly object Key = new();
-
 		private readonly Engine          _jintEngine;
 		private readonly HashSet<string> _variableSet = new();
 
-		public EcmaScriptEngine(IExecutionContext executionContext)
+		public required IDataModelController DataModelController { private get; init; }
+
+		public EcmaScriptEngine(IInStateController InStateController)
 		{
 			_jintEngine = new Engine(options => options.Culture(CultureInfo.InvariantCulture).LimitRecursion(1024).Strict());
 
 			var global = _jintEngine.Global;
-			var inFunction = new DelegateWrapper(_jintEngine, new Func<string, bool>(state => executionContext.InState((Identifier) state)));
+			var inFunction = new DelegateWrapper(_jintEngine, new Func<string, bool>(state => InStateController.InState((Identifier) state)));
 			global.FastAddProperty(EcmaScriptHelper.InFunctionName, inFunction, writable: false, enumerable: false, configurable: false);
 		}
 
-		public static EcmaScriptEngine GetEngine(IExecutionContext executionContext)
+		private void SyncRootVariables()
 		{
-			var engine = (EcmaScriptEngine?) executionContext.RuntimeItems[Key];
-
-			Infra.NotNull(engine);
-
-			engine.SyncRootVariables(executionContext.DataModel);
-
-			return engine;
-		}
-
-		private void SyncRootVariables(DataModelList dataModel)
-		{
+			var dataModel = DataModelController.DataModel;
 			var global = _jintEngine.Global;
 			List<string>? toRemove = default;
 			foreach (var name in _variableSet)
@@ -103,6 +92,8 @@ namespace Xtate.DataModel.EcmaScript
 
 		public JsValue Eval(Program program, bool startNewScope)
 		{
+			SyncRootVariables();
+
 			if (!startNewScope)
 			{
 				return _jintEngine.Execute(program).GetCompletionValue();
@@ -121,6 +112,8 @@ namespace Xtate.DataModel.EcmaScript
 
 		public JsValue Eval(Expression expression, bool startNewScope)
 		{
+			SyncRootVariables();
+
 			if (!startNewScope)
 			{
 				return JsValue.FromObject(_jintEngine, _jintEngine.EvaluateExpression(expression));
@@ -139,6 +132,8 @@ namespace Xtate.DataModel.EcmaScript
 
 		public void Exec(Program program, bool startNewScope)
 		{
+			SyncRootVariables();
+
 			if (!startNewScope)
 			{
 				_jintEngine.Execute(program);
@@ -159,6 +154,8 @@ namespace Xtate.DataModel.EcmaScript
 
 		public void Exec(Expression expression, bool startNewScope)
 		{
+			SyncRootVariables();
+
 			if (!startNewScope)
 			{
 				_jintEngine.EvaluateExpression(expression);

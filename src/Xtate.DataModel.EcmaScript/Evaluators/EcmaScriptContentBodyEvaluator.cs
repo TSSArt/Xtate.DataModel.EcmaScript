@@ -17,28 +17,12 @@
 
 #endregion
 
-using System;
-using System.Text.Json;
-using Xtate.Core;
-
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptContentBodyEvaluator : DefaultContentBodyEvaluator
+	public class EcmaScriptContentBodyEvaluator : DefaultContentBodyEvaluator
 	{
 		public EcmaScriptContentBodyEvaluator(IContentBody contentBody) : base(contentBody) { }
 
-		protected override DataModelValue ParseToDataModel(ref Exception? parseException)
-		{
-			try
-			{
-				return DataModelConverter.FromJson(Value);
-			}
-			catch (JsonException ex)
-			{
-				parseException = ex;
-
-				return Value.NormalizeSpaces();
-			}
-		}
+		protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;
 	}
 }

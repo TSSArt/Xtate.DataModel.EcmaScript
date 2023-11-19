@@ -144,4 +144,7 @@
   <data name="ErrorMessage_ScriptExpressionMustBePresent" xml:space="preserve">
     <value>Script Expression must be present.</value>
   </data>
+  <data name="Exception_Unrecognized_MediaType" xml:space="preserve">
+	  <value>Unrecognized MediaType: {0}.</value>
+  </data>
 </root>

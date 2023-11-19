@@ -16,13 +16,26 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #endregion
-
-namespace Xtate.DataModel.EcmaScript
+#if NET461 || NETSTANDARD2_0 || NET6_0
+namespace System.Runtime.CompilerServices
 {
-	public class EcmaScriptInlineContentEvaluator : DefaultInlineContentEvaluator
-	{
-		public EcmaScriptInlineContentEvaluator(IInlineContent inlineContent) : base(inlineContent) { }
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property)]
+	internal sealed class RequiredMemberAttribute : Attribute { }
 
-		protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;
+	[AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = false)]
+	internal sealed class CompilerFeatureRequiredAttribute : Attribute
+	{
+		public CompilerFeatureRequiredAttribute(string featureName) => FeatureName = featureName;
+
+		public string FeatureName { get; }
+
+		public string? Language { get; init; }
 	}
 }
+
+namespace System.Diagnostics.CodeAnalysis
+{
+	[AttributeUsage(AttributeTargets.Constructor, AllowMultiple = false, Inherited = false)]
+	internal sealed class SetsRequiredMembersAttribute : Attribute { }
+}
+#endif
