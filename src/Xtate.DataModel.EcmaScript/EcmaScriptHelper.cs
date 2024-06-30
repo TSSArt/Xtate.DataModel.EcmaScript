@@ -36,8 +36,7 @@ namespace Xtate.DataModel.EcmaScript
 		public const string JintVersionPropertyName = "JintVersion";
 		public const string InFunctionName          = "In";
 
-		public static readonly string[] ParseFormats     = { @"o", @"u", @"s", @"r" };
-		public static readonly string   JintVersionValue = TypeInfo<Engine>.Instance.AssemblyVersion;
+		public static readonly string[] ParseFormats = [@"o", @"u", @"s", @"r"];
 
 		private static readonly PropertyDescriptor ReadonlyUndefinedPropertyDescriptor = new(JsValue.Undefined, writable: false, enumerable: false, configurable: false);
 

@@ -18,19 +18,69 @@
 #endregion
 
 using System;
+using Jint.Parser.Ast;
+using Xtate.Core;
+using Xtate.DataModel;
 using Xtate.DataModel.EcmaScript;
+using Xtate.DataModel.XPath;
+using Xtate.IoC;
+using Xtate.Scxml;
 
 namespace Xtate
 {
 	public static class EcmaScriptExtensions
 	{
-		public static StateMachineHostBuilder AddEcmaScript(this StateMachineHostBuilder builder)
+		public static void RegisterEcmaScriptDataModelHandler(this IServiceCollection services)
 		{
-			if (builder is null) throw new ArgumentNullException(nameof(builder));
+			if (services.IsRegistered<EcmaScriptDataModelHandler>())
+			{
+				return;
+			}
 
-			builder.AddDataModelHandlerFactory(EcmaScriptDataModelHandler.Factory);
+			services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
+			services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
+			services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
+			services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
+			services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Program>();
+			services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
+			services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
+			services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
 
-			return builder;
+			/*
+			 
+			 
+			   public required Func<, , > EcmaScriptValueExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+			   public required Func<, Program, > EcmaScriptConditionExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+			   public required Func<, Program, > EcmaScriptScriptExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+			   public required Func<, Program, >  { private get; [UsedImplicitly] init; }
+*/
+			/*
+			services.RegisterDataModelHandlerBase();
+			services.RegisterErrorProcessor();
+			services.RegisterNameTable();
+
+			services.AddTypeSync<XPathValueExpressionEvaluator, IValueExpression, XPathCompiledExpression>();
+			services.AddTypeSync<XPathConditionExpressionEvaluator, IConditionExpression, XPathCompiledExpression>();
+			services.AddTypeSync<XPathLocationExpressionEvaluator, ILocationExpression, XPathCompiledExpression>();
+			services.AddTypeSync<XPathLocationExpression, ILocationExpression, (XPathAssignType, string?)>();
+			services.AddTypeSync<XPathContentBodyEvaluator, IContentBody>();
+			services.AddTypeSync<XPathExternalDataExpressionEvaluator, IExternalDataExpression>();
+			services.AddTypeSync<XPathInlineContentEvaluator, IInlineContent>();
+
+			//services.AddType<XPathExpressionContextOld, IXmlNamespacesInfo?>();  //TODO:
+			//services.AddType<XPathVarDescriptorOld, string>();
+
+			services.AddTypeSync<XPathExpressionContext, IXmlNamespacesInfo?>();
+			services.AddTypeSync<XPathVarDescriptor, string>();
+			services.AddTypeSync<XPathCompiledExpression, string, IXmlNamespacesInfo?>();
+			services.AddTypeSync<XPathXmlParserContextFactory>();
+			services.AddSharedType<XPathEngine>(SharedWithin.Scope);
+
+			services.AddImplementationSync<InFunctionProvider>().For<IXPathFunctionProvider>();
+			services.AddTypeSync<InFunction>();*/
+
+			services.AddImplementation<EcmaScriptDataModelHandler>().For<IDataModelHandler>();
+			services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
 		}
 	}
 }

@@ -29,32 +29,27 @@ using Jint.Runtime.Interop;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	[PublicAPI]
-	internal class EcmaScriptEngine
+	public class EcmaScriptEngine
 	{
+		public required IInStateController? InStateController { private get; [UsedImplicitly] init; }
+
 		public static readonly object Key = new();
 
 		private readonly Engine          _jintEngine;
-		private readonly HashSet<string> _variableSet = new();
+		private readonly HashSet<string> _variableSet = [];
 
-		public EcmaScriptEngine(IExecutionContext executionContext)
+		public EcmaScriptEngine(IDataModelController? dataModelController)
 		{
 			_jintEngine = new Engine(options => options.Culture(CultureInfo.InvariantCulture).LimitRecursion(1024).Strict());
 
 			var global = _jintEngine.Global;
-			var inFunction = new DelegateWrapper(_jintEngine, new Func<string, bool>(state => executionContext.InState((Identifier) state)));
+			var inFunction = new DelegateWrapper(_jintEngine, new Func<string, bool>(state => InStateController?.InState((Identifier) state) ?? false));
 			global.FastAddProperty(EcmaScriptHelper.InFunctionName, inFunction, writable: false, enumerable: false, configurable: false);
-		}
 
-		public static EcmaScriptEngine GetEngine(IExecutionContext executionContext)
-		{
-			var engine = (EcmaScriptEngine?) executionContext.RuntimeItems[Key];
-
-			Infra.NotNull(engine);
-
-			engine.SyncRootVariables(executionContext.DataModel);
-
-			return engine;
+			if (dataModelController is not null)
+			{
+				SyncRootVariables(dataModelController.DataModel);
+			}
 		}
 
 		private void SyncRootVariables(DataModelList dataModel)

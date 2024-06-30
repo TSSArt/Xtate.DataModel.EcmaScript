@@ -1,230 +1,210 @@
 ﻿#region Copyright © 2019-2021 Sergii Artemenko
 
-// This file is part of the Xtate project. <https://xtate.net/>
-// 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-// 
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+	// This file is part of the Xtate project. <https://xtate.net/>
+	// 
+	// This program is free software: you can redistribute it and/or modify
+	// it under the terms of the GNU Affero General Public License as published
+	// by the Free Software Foundation, either version 3 of the License, or
+	// (at your option) any later version.
+	// 
+	// This program is distributed in the hope that it will be useful,
+	// but WITHOUT ANY WARRANTY; without even the implied warranty of
+	// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	// GNU Affero General Public License for more details.
+	// 
+	// You should have received a copy of the GNU Affero General Public License
+	// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #endregion
 
-using System;
-using System.Collections.Immutable;
-using System.Threading;
-using System.Threading.Tasks;
-using Jint.Parser;
-using Jint.Parser.Ast;
-using Xtate.Core;
+	using System;
+	using System.Collections.Immutable;
+	using System.Threading;
+	using System.Threading.Tasks;
+	using Jint.Parser;
+	using Jint.Parser.Ast;
+	using Xtate.Core;
+	using Xtate.DataModel.XPath;
+	using Xtate.Scxml;
 
-namespace Xtate.DataModel.EcmaScript
-{
-	public class EcmaScriptDataModelHandler : DataModelHandlerBase
+	namespace Xtate.DataModel.EcmaScript
 	{
-		private const string DataModelType = "ecmascript";
-
-		private static readonly ParserOptions ParserOptions = new() { Tolerant = true };
-
-		private readonly JavaScriptParser _parser = new();
-
-		public EcmaScriptDataModelHandler() : base(DefaultErrorProcessor.Instance) { }
-
-		private EcmaScriptDataModelHandler(IErrorProcessor? errorProcessor) : base(errorProcessor) { }
-
-		public static IDataModelHandlerFactory Factory { get; } = new DataModelHandlerFactory();
-
-		public override ITypeInfo TypeInfo => TypeInfo<EcmaScriptDataModelHandler>.Instance;
-
-		public override string ConvertToText(DataModelValue value) =>
-			DataModelConverter.ToJson(value, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
-
-		public override void ExecutionContextCreated(IExecutionContext executionContext, out ImmutableDictionary<string, string> dataModelVars)
+		public class EcmaScriptDataModelHandlerProvider : DataModelHandlerProviderBase<EcmaScriptDataModelHandler>
 		{
-			if (executionContext is null) throw new ArgumentNullException(nameof(executionContext));
-
-			base.ExecutionContextCreated(executionContext, out dataModelVars);
-
-			executionContext.RuntimeItems[EcmaScriptEngine.Key] = new EcmaScriptEngine(executionContext);
-
-			dataModelVars = dataModelVars.SetItem(EcmaScriptHelper.JintVersionPropertyName, EcmaScriptHelper.JintVersionValue);
+			protected override bool CanHandle(string? dataModelType) => dataModelType == @"ecmascript";
 		}
 
-		private Program Parse(string source) => _parser.Parse(source, ParserOptions);
-
-		private static string GetErrorMessage(ParserException ex) => @$"{ex.Message} ({ex.Description}). Ln: {ex.LineNumber}. Col: {ex.Column}.";
-
-		protected override void Visit(ref IForEach forEach)
+		public class EcmaScriptDataModelHandler : DataModelHandlerBase
 		{
-			base.Visit(ref forEach);
+			public required Func<IForEach, EcmaScriptForEachEvaluator> EcmaScriptForEachEvaluatorFactory { private get; [UsedImplicitly] init; }
+			public required Func<ICustomAction, EcmaScriptCustomActionEvaluator> EcmaScriptCustomActionEvaluatorFactory { private get; [UsedImplicitly] init; }
+			public required Func<IExternalScriptExpression, EcmaScriptExternalScriptExpressionEvaluator> EcmaScriptExternalScriptExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+			public required Func<IExternalDataExpression, EcmaScriptExternalDataExpressionEvaluator> EcmaScriptExternalDataExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+			public required IErrorProcessorService<EcmaScriptDataModelHandler> EcmaScriptErrorProcessorService { private get; [UsedImplicitly] init; }
+			public required Func<IValueExpression, Program, EcmaScriptValueExpressionEvaluator> EcmaScriptValueExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+			public required Func<IConditionExpression, Program, EcmaScriptConditionExpressionEvaluator> EcmaScriptConditionExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+			public required Func<IScriptExpression, Program, EcmaScriptScriptExpressionEvaluator> EcmaScriptScriptExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+			public required Func<ILocationExpression, (Program, Expression?), EcmaScriptLocationExpressionEvaluator> EcmaScriptLocationExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
 
-			forEach = new EcmaScriptForEachEvaluator(forEach);
-		}
+			private static readonly ParserOptions ParserOptions = new() { Tolerant = true };
 
-		protected override void Visit(ref ICustomAction customAction)
-		{
-			base.Visit(ref customAction);
+			private readonly JavaScriptParser _parser = new();
 
-			customAction = new EcmaScriptCustomActionEvaluator(customAction);
-		}
-
-		protected override void Visit(ref IValueExpression valueExpression)
-		{
-			base.Visit(ref valueExpression);
-
-			if (valueExpression.Expression is { } expression)
+			public override string ConvertToText(DataModelValue value) =>
+				DataModelConverter.ToJson(value, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
+		
+			//TODO: move it
+			/*
+			public override void ExecutionContextCreated(out ImmutableDictionary<string, string> dataModelVars)
 			{
-				var program = Parse(expression);
+				if (executionContext is null) throw new ArgumentNullException(nameof(executionContext));
 
-				foreach (var parserException in program.Errors)
-				{
-					AddErrorMessage(valueExpression, GetErrorMessage(parserException));
-				}
+				base.ExecutionContextCreated(executionContext, out dataModelVars);
 
-				valueExpression = new EcmaScriptValueExpressionEvaluator(valueExpression, program);
+				executionContext.RuntimeItems[EcmaScriptEngine.Key] = new EcmaScriptEngine(executionContext);
+
+				dataModelVars = dataModelVars.SetItem(EcmaScriptHelper.JintVersionPropertyName, EcmaScriptHelper.JintVersionValue);
+			}*/
+
+			private Program Parse(string source) => _parser.Parse(source, ParserOptions);
+
+			private static string GetErrorMessage(ParserException ex) => @$"{ex.Message} ({ex.Description}). Ln: {ex.LineNumber}. Col: {ex.Column}.";
+
+			protected override void Visit(ref IForEach forEach)
+			{
+				base.Visit(ref forEach);
+
+				forEach = EcmaScriptForEachEvaluatorFactory(forEach);
 			}
-			else
+
+			protected override void Visit(ref ICustomAction customAction)
 			{
-				AddErrorMessage(valueExpression, Resources.ErrorMessage_ValueExpressionMustBePresent);
+				base.Visit(ref customAction);
+
+				customAction = EcmaScriptCustomActionEvaluatorFactory(customAction);
 			}
-		}
 
-		protected override void Visit(ref IConditionExpression conditionExpression)
-		{
-			base.Visit(ref conditionExpression);
-
-			if (conditionExpression.Expression is { } expression)
+			protected override void Visit(ref IValueExpression valueExpression)
 			{
-				var program = Parse(expression);
+				base.Visit(ref valueExpression);
 
-				foreach (var parserException in program.Errors)
+				if (valueExpression.Expression is { } expression)
 				{
-					AddErrorMessage(conditionExpression, GetErrorMessage(parserException));
-				}
+					var program = Parse(expression);
 
-				conditionExpression = new EcmaScriptConditionExpressionEvaluator(conditionExpression, program);
-			}
-			else
-			{
-				AddErrorMessage(conditionExpression, Resources.ErrorMessage_ConditionExpressionMustBePresent);
-			}
-		}
+					foreach (var parserException in program.Errors)
+					{
+						AddErrorMessage(valueExpression, GetErrorMessage(parserException));
+					}
 
-		protected override void Visit(ref ILocationExpression locationExpression)
-		{
-			base.Visit(ref locationExpression);
-
-			if (locationExpression.Expression is { } expression)
-			{
-				var program = Parse(expression);
-
-				foreach (var parserException in program.Errors)
-				{
-					AddErrorMessage(locationExpression, GetErrorMessage(parserException));
-				}
-
-				var leftExpression = EcmaScriptLocationExpressionEvaluator.GetLeftExpression(program);
-
-				if (leftExpression is not null)
-				{
-					locationExpression = new EcmaScriptLocationExpressionEvaluator(locationExpression, program, leftExpression);
+					valueExpression = EcmaScriptValueExpressionEvaluatorFactory(valueExpression, program);
 				}
 				else
 				{
-					AddErrorMessage(locationExpression, Resources.ErrorMessage_InvalidLocationExpression);
+					AddErrorMessage(valueExpression, Resources.ErrorMessage_ValueExpressionMustBePresent);
 				}
 			}
-			else
+
+			protected override void Visit(ref IConditionExpression conditionExpression)
 			{
-				AddErrorMessage(locationExpression, Resources.ErrorMessage_LocationExpressionMustBePresent);
-			}
-		}
+				base.Visit(ref conditionExpression);
 
-		protected override void Visit(ref IScriptExpression scriptExpression)
-		{
-			base.Visit(ref scriptExpression);
-
-			if (scriptExpression.Expression is { } expression)
-			{
-				var program = Parse(expression);
-
-				foreach (var parserException in program.Errors)
+				if (conditionExpression.Expression is { } expression)
 				{
-					AddErrorMessage(scriptExpression, GetErrorMessage(parserException));
+					var program = Parse(expression);
+
+					foreach (var parserException in program.Errors)
+					{
+						AddErrorMessage(conditionExpression, GetErrorMessage(parserException));
+					}
+
+					conditionExpression = EcmaScriptConditionExpressionEvaluatorFactory(conditionExpression, program);
 				}
-
-				scriptExpression = new EcmaScriptScriptExpressionEvaluator(scriptExpression, program);
+				else
+				{
+					AddErrorMessage(conditionExpression, Resources.ErrorMessage_ConditionExpressionMustBePresent);
+				}
 			}
-			else
+
+			protected override void Visit(ref ILocationExpression locationExpression)
 			{
-				AddErrorMessage(scriptExpression, Resources.ErrorMessage_ScriptExpressionMustBePresent);
+				base.Visit(ref locationExpression);
+
+				if (locationExpression.Expression is { } expression)
+				{
+					var program = Parse(expression);
+
+					foreach (var parserException in program.Errors)
+					{
+						AddErrorMessage(locationExpression, GetErrorMessage(parserException));
+					}
+
+					var leftExpression = EcmaScriptLocationExpressionEvaluator.GetLeftExpression(program);
+
+					if (leftExpression is not null)
+					{
+						locationExpression = EcmaScriptLocationExpressionEvaluatorFactory(locationExpression, (program, leftExpression));
+					}
+					else
+					{
+						AddErrorMessage(locationExpression, Resources.ErrorMessage_InvalidLocationExpression);
+					}
+				}
+				else
+				{
+					AddErrorMessage(locationExpression, Resources.ErrorMessage_LocationExpressionMustBePresent);
+				}
 			}
-		}
 
-		protected override void Visit(ref IExternalScriptExpression externalScriptExpression)
-		{
-			base.Visit(ref externalScriptExpression);
-
-			externalScriptExpression = new EcmaScriptExternalScriptExpressionEvaluator(externalScriptExpression);
-		}
-
-		protected override void Visit(ref IInlineContent inlineContent)
-		{
-			base.Visit(ref inlineContent);
-
-			inlineContent = new EcmaScriptInlineContentEvaluator(inlineContent);
-		}
-
-		protected override void Visit(ref IContentBody contentBody)
-		{
-			base.Visit(ref contentBody);
-
-			contentBody = new EcmaScriptContentBodyEvaluator(contentBody);
-		}
-
-		protected override void Visit(ref IExternalDataExpression externalDataExpression)
-		{
-			base.Visit(ref externalDataExpression);
-
-			externalDataExpression = new EcmaScriptExternalDataExpressionEvaluator(externalDataExpression);
-		}
-
-		private static bool CanHandle(string dataModelType) => dataModelType == DataModelType;
-
-		private class DataModelHandlerFactory : IDataModelHandlerFactory
-		{
-		#region Interface IDataModelHandlerFactory
-
-			public ValueTask<IDataModelHandlerFactoryActivator?> TryGetActivator(IFactoryContext factoryContext, string dataModelType, CancellationToken token) =>
-				new(CanHandle(dataModelType) ? DataModelHandlerFactoryActivator.Instance : null);
-
-		#endregion
-		}
-
-		private class DataModelHandlerFactoryActivator : IDataModelHandlerFactoryActivator
-		{
-			public static IDataModelHandlerFactoryActivator Instance { get; } = new DataModelHandlerFactoryActivator();
-
-		#region Interface IDataModelHandlerFactoryActivator
-
-			public ValueTask<IDataModelHandler> CreateHandler(IFactoryContext factoryContext,
-															  string dataModelType,
-															  IErrorProcessor? errorProcessor,
-															  CancellationToken token)
+			protected override void Visit(ref IScriptExpression scriptExpression)
 			{
-				Infra.Assert(CanHandle(dataModelType));
+				base.Visit(ref scriptExpression);
 
-				return new ValueTask<IDataModelHandler>(new EcmaScriptDataModelHandler(errorProcessor));
+				if (scriptExpression.Expression is { } expression)
+				{
+					var program = Parse(expression);
+
+					foreach (var parserException in program.Errors)
+					{
+						AddErrorMessage(scriptExpression, GetErrorMessage(parserException));
+					}
+
+					scriptExpression = EcmaScriptScriptExpressionEvaluatorFactory(scriptExpression, program);
+				}
+				else
+				{
+					AddErrorMessage(scriptExpression, Resources.ErrorMessage_ScriptExpressionMustBePresent);
+				}
 			}
 
-		#endregion
+			protected override void Visit(ref IExternalScriptExpression externalScriptExpression)
+			{
+				base.Visit(ref externalScriptExpression);
+
+				externalScriptExpression = EcmaScriptExternalScriptExpressionEvaluatorFactory(externalScriptExpression);
+			}
+
+			protected override void Visit(ref IInlineContent inlineContent)
+			{
+				base.Visit(ref inlineContent);
+
+				inlineContent = new EcmaScriptInlineContentEvaluator(inlineContent);
+			}
+
+			protected override void Visit(ref IContentBody contentBody)
+			{
+				base.Visit(ref contentBody);
+
+				contentBody = new EcmaScriptContentBodyEvaluator(contentBody);
+			}
+
+			protected override void Visit(ref IExternalDataExpression externalDataExpression)
+			{
+				base.Visit(ref externalDataExpression);
+
+				externalDataExpression = EcmaScriptExternalDataExpressionEvaluatorFactory(externalDataExpression);
+			}
+
+			private void AddErrorMessage(object entity, string message, Exception? exception = default) => EcmaScriptErrorProcessorService.AddError(entity, message, exception);
 		}
 	}
-}

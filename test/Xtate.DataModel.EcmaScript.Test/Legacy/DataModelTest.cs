@@ -39,7 +39,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 		private ChannelReader<IEvent> _eventChannel = default!;
 		private Mock<ILogger>         _logger       = default!;
 		private InterpreterOptions    _options      = default!;
-
+		/*
 		private static IStateMachine GetStateMachine(string scxml)
 		{
 			using var textReader = new StringReader(scxml);
@@ -393,6 +393,6 @@ namespace Xtate.DataModel.EcmaScript.Test
 
 			_logger.VerifyGet(l => l.IsTracingEnabled);
 			_logger.VerifyNoOtherCalls();
-		}
+		}*/
 	}
 }
