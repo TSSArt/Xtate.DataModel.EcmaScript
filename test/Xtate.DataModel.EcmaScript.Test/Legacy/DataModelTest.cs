@@ -33,6 +33,7 @@ namespace Xtate.DataModel.EcmaScript.Test
 	public class DataModelTest
 	{
 		private ChannelReader<IEvent> _eventChannel = default!;
+<<<<<<< Updated upstream
 		private Mock<ILoggerOld>         _logger       = default!;
 		private Mock<ILogWriter>         _logger2       = default!;
 		//private InterpreterOptions    _options      = default!;
@@ -50,6 +51,12 @@ namespace Xtate.DataModel.EcmaScript.Test
 							"</onentry></state></scxml>";
 
 		private async Task RunStateMachine(Func<string, string> getter, string innerXml)
+=======
+		private Mock<ILogger>         _logger       = default!;
+		private InterpreterOptions    _options      = default!;
+		/*
+		private static IStateMachine GetStateMachine(string scxml)
+>>>>>>> Stashed changes
 		{
 			// Arrange
 			var services = new ServiceCollection();
@@ -498,8 +505,14 @@ namespace Xtate.DataModel.EcmaScript.Test
 		{
 			await RunStateMachine(EcmaScriptDataModel, innerXml: "<state id='s1'><transition cond=\"In('s2')\" target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
+<<<<<<< Updated upstream
 			_logger2.Verify(l => l.IsEnabled(Level.Trace));
 			_logger2.VerifyNoOtherCalls();
 		}
+=======
+			_logger.VerifyGet(l => l.IsTracingEnabled);
+			_logger.VerifyNoOtherCalls();
+		}*/
+>>>>>>> Stashed changes
 	}
 }

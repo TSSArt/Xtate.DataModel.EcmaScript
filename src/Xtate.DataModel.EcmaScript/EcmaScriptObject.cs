@@ -22,11 +22,9 @@ using Xtate.Core;
 
 namespace Xtate.DataModel.EcmaScript
 {
-	internal class EcmaScriptObject : IObject
+	internal class EcmaScriptObject(JsValue jsValue) : IObject
 	{
-		public EcmaScriptObject(JsValue jsValue) => JsValue = jsValue;
-
-		public JsValue JsValue { get; }
+		public JsValue JsValue { get; } = jsValue;
 
 	#region Interface IObject
 

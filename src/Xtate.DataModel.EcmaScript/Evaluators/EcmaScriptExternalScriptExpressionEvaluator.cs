@@ -1,43 +1,52 @@
 ﻿#region Copyright © 2019-2021 Sergii Artemenko
 
-// This file is part of the Xtate project. <https://xtate.net/>
-// 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-// 
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+	// This file is part of the Xtate project. <https://xtate.net/>
+	// 
+	// This program is free software: you can redistribute it and/or modify
+	// it under the terms of the GNU Affero General Public License as published
+	// by the Free Software Foundation, either version 3 of the License, or
+	// (at your option) any later version.
+	// 
+	// This program is distributed in the hope that it will be useful,
+	// but WITHOUT ANY WARRANTY; without even the implied warranty of
+	// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	// GNU Affero General Public License for more details.
+	// 
+	// You should have received a copy of the GNU Affero General Public License
+	// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #endregion
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Jint.Parser;
-using Jint.Parser.Ast;
-using Xtate.Core;
+	using System;
+	using System.Threading.Tasks;
+	using Jint.Parser;
+	using Jint.Parser.Ast;
+	using Xtate.Core;
 
+<<<<<<< Updated upstream
 namespace Xtate.DataModel.EcmaScript
 {
 	public class EcmaScriptExternalScriptExpressionEvaluator : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
-	{
-		private readonly IExternalScriptExpression _externalScriptExpression;
-		private          Program?                  _program;
+=======
+	namespace Xtate.DataModel.EcmaScript;
 
+	public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression)
+		: IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
+>>>>>>> Stashed changes
+	{
+		private Program? _program;
+
+<<<<<<< Updated upstream
 		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
 
 		public EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression) => _externalScriptExpression = externalScriptExpression;
+=======
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+>>>>>>> Stashed changes
 
 	#region Interface IAncestorProvider
 
-		object IAncestorProvider.Ancestor => _externalScriptExpression;
+		object IAncestorProvider.Ancestor => externalScriptExpression;
 
 	#endregion
 
@@ -56,19 +65,13 @@ namespace Xtate.DataModel.EcmaScript
 
 	#region Interface IExternalScriptConsumer
 
-		public void SetContent(string content)
-		{
-			if (content is null) throw new ArgumentNullException(nameof(content));
-
-			_program = new JavaScriptParser().Parse(content);
-		}
+		public void SetContent(string content) => _program = new JavaScriptParser().Parse(content);
 
 	#endregion
 
 	#region Interface IExternalScriptExpression
 
-		public Uri? Uri => _externalScriptExpression.Uri;
+		public Uri? Uri => externalScriptExpression.Uri;
 
 	#endregion
 	}
-}

@@ -1,32 +1,33 @@
 ﻿#region Copyright © 2019-2021 Sergii Artemenko
 
-// This file is part of the Xtate project. <https://xtate.net/>
-// 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-// 
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+	// This file is part of the Xtate project. <https://xtate.net/>
+	// 
+	// This program is free software: you can redistribute it and/or modify
+	// it under the terms of the GNU Affero General Public License as published
+	// by the Free Software Foundation, either version 3 of the License, or
+	// (at your option) any later version.
+	// 
+	// This program is distributed in the hope that it will be useful,
+	// but WITHOUT ANY WARRANTY; without even the implied warranty of
+	// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	// GNU Affero General Public License for more details.
+	// 
+	// You should have received a copy of the GNU Affero General Public License
+	// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #endregion
 
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Jint.Parser.Ast;
-using Xtate.Core;
-using JintIdentifier = Jint.Parser.Ast.Identifier;
+	using System.Linq;
+	using Jint.Parser.Ast;
+	using JintIdentifier = Jint.Parser.Ast.Identifier;
 
+<<<<<<< Updated upstream
 namespace Xtate.DataModel.EcmaScript
 {
+=======
+	namespace Xtate.DataModel.EcmaScript;
+
+>>>>>>> Stashed changes
 	public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 	{
 		private readonly Program?            _declare;
@@ -62,6 +63,8 @@ namespace Xtate.DataModel.EcmaScript
 			}
 		}
 
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+
 	#region Interface IAncestorProvider
 
 		object IAncestorProvider.Ancestor => _locationExpression;
@@ -77,7 +80,11 @@ namespace Xtate.DataModel.EcmaScript
 			return new EcmaScriptObject(engine.Eval(_program, startNewScope: true));
 		}
 
+<<<<<<< Updated upstream
 		public ValueTask<string> GetName() => _name is not null ? new(_name) : throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated);
+=======
+		public ValueTask<string> GetName() => new(_name ?? throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated));
+>>>>>>> Stashed changes
 
 		public async ValueTask SetValue(IObject value)
 		{
@@ -91,6 +98,7 @@ namespace Xtate.DataModel.EcmaScript
 									   };
 
 			var engine = await EngineFactory().ConfigureAwait(false);
+<<<<<<< Updated upstream
 
 			engine.Exec(assignmentExpression, startNewScope: false);
 		}
@@ -105,6 +113,9 @@ namespace Xtate.DataModel.EcmaScript
 			var engine = await EngineFactory().ConfigureAwait(false);
 
 			engine.Exec(_declare, startNewScope: false);
+=======
+			engine.Exec(assignmentExpression, startNewScope: false);
+>>>>>>> Stashed changes
 		}
 
 	#endregion
@@ -114,6 +125,18 @@ namespace Xtate.DataModel.EcmaScript
 		public string? Expression => _locationExpression.Expression;
 
 	#endregion
+
+		public async ValueTask DeclareLocalVariable()
+		{
+			if (_declare is null)
+			{
+				throw new ExecutionException(Resources.Exception_InvalidLocalVariableName);
+			}
+
+			var engine = await EngineFactory().ConfigureAwait(false);
+
+			engine.Exec(_declare, startNewScope: false);
+		}
 
 		private static Program CreateDeclareStatement(JintIdentifier identifier)
 		{
@@ -143,4 +166,3 @@ namespace Xtate.DataModel.EcmaScript
 				   };
 		}
 	}
-}

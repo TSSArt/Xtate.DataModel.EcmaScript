@@ -1,22 +1,23 @@
 ﻿#region Copyright © 2019-2021 Sergii Artemenko
 
-// This file is part of the Xtate project. <https://xtate.net/>
-// 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-// 
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+	// This file is part of the Xtate project. <https://xtate.net/>
+	// 
+	// This program is free software: you can redistribute it and/or modify
+	// it under the terms of the GNU Affero General Public License as published
+	// by the Free Software Foundation, either version 3 of the License, or
+	// (at your option) any later version.
+	// 
+	// This program is distributed in the hope that it will be useful,
+	// but WITHOUT ANY WARRANTY; without even the implied warranty of
+	// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	// GNU Affero General Public License for more details.
+	// 
+	// You should have received a copy of the GNU Affero General Public License
+	// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #endregion
 
+<<<<<<< Updated upstream
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,10 +40,24 @@ namespace Xtate.DataModel.EcmaScript
 			_valueExpression = valueExpression;
 			_program = program;
 		}
+=======
+	using System;
+	using System.Threading.Tasks;
+	using Jint.Native.Array;
+	using Jint.Parser.Ast;
+	using Xtate.Core;
+
+	namespace Xtate.DataModel.EcmaScript;
+
+	public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Program program)
+		: IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider
+	{
+		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+>>>>>>> Stashed changes
 
 	#region Interface IAncestorProvider
 
-		object IAncestorProvider.Ancestor => _valueExpression;
+		object IAncestorProvider.Ancestor => valueExpression;
 
 	#endregion
 
@@ -52,7 +67,11 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);
 
+<<<<<<< Updated upstream
 			var array = engine.Eval(_program, startNewScope: true).AsArray();
+=======
+			var array = engine.Eval(program, startNewScope: true).AsArray();
+>>>>>>> Stashed changes
 
 			var result = new IObject[array.GetLength()];
 
@@ -69,19 +88,17 @@ namespace Xtate.DataModel.EcmaScript
 
 	#endregion
 
-	#region Interface IDebugEntityId
-
-		FormattableString? IDebugEntityId.EntityId => null;
-
-	#endregion
-
 	#region Interface IIntegerEvaluator
 
 		async ValueTask<int> IIntegerEvaluator.EvaluateInteger()
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);
 
+<<<<<<< Updated upstream
 			return (int) engine.Eval(_program, startNewScope: true).AsNumber();
+=======
+			return (int) engine.Eval(program, startNewScope: true).AsNumber();
+>>>>>>> Stashed changes
 		}
 
 	#endregion
@@ -92,7 +109,11 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);
 
+<<<<<<< Updated upstream
 			return new EcmaScriptObject(engine.Eval(_program, startNewScope: true));
+=======
+			return new EcmaScriptObject(engine.Eval(program, startNewScope: true));
+>>>>>>> Stashed changes
 		}
 
 	#endregion
@@ -103,15 +124,18 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);
 
+<<<<<<< Updated upstream
 			return engine.Eval(_program, startNewScope: true).ToString() ?? string.Empty;
+=======
+			return engine.Eval(program, startNewScope: true).ToString();
+>>>>>>> Stashed changes
 		}
 
 	#endregion
 
 	#region Interface IValueExpression
 
-		public string? Expression => _valueExpression.Expression;
+		public string? Expression => valueExpression.Expression;
 
 	#endregion
 	}
-}
