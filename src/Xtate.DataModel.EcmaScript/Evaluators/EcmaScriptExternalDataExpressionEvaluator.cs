@@ -17,31 +17,6 @@
 
 #endregion
 
-<<<<<<< Updated upstream
-using System.Threading.Tasks;
-using Xtate.Core;
-
-namespace Xtate.DataModel.EcmaScript
-{
-	public class EcmaScriptExternalDataExpressionEvaluator : DefaultExternalDataExpressionEvaluator
-	{
-		private const string MediaTypeApplicationJson = @"application/json";
-
-		public EcmaScriptExternalDataExpressionEvaluator(IExternalDataExpression externalDataExpression) : base(externalDataExpression) { }
-
-		protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource)
-		{
-			Infra.Requires(resource);
-
-			var mediaType = resource.ContentType?.MediaType;
-
-			if (mediaType == MediaTypeApplicationJson)
-			{
-				return await DataModelConverter.FromJsonContentAsync(resource).ConfigureAwait(false);
-			}
-
-			throw new EcmaScriptDataModelException(string.Format(Resources.Exception_Unrecognized_MediaType, mediaType));
-=======
 	using System.Threading.Tasks;
 	using Xtate.Core;
 
@@ -56,6 +31,5 @@ namespace Xtate.DataModel.EcmaScript
 			var content = await resource.GetContent().ConfigureAwait(false);
 
 			return DataModelConverter.FromJson(content);
->>>>>>> Stashed changes
 		}
 	}

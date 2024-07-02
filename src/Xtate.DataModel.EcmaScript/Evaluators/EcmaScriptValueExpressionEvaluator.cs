@@ -17,30 +17,6 @@
 
 #endregion
 
-<<<<<<< Updated upstream
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Jint.Native.Array;
-using Jint.Parser.Ast;
-using Xtate.Core;
-using IServiceProvider = Xtate.IoC.IServiceProvider;
-
-namespace Xtate.DataModel.EcmaScript
-{
-	public class EcmaScriptValueExpressionEvaluator : IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider, IDebugEntityId
-	{
-		private readonly Program          _program;
-		private readonly IValueExpression _valueExpression;
-
-		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
-
-		public EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Program program)
-		{
-			_valueExpression = valueExpression;
-			_program = program;
-		}
-=======
 	using System;
 	using System.Threading.Tasks;
 	using Jint.Native.Array;
@@ -53,7 +29,6 @@ namespace Xtate.DataModel.EcmaScript
 		: IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider
 	{
 		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
->>>>>>> Stashed changes
 
 	#region Interface IAncestorProvider
 
@@ -67,11 +42,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);
 
-<<<<<<< Updated upstream
-			var array = engine.Eval(_program, startNewScope: true).AsArray();
-=======
 			var array = engine.Eval(program, startNewScope: true).AsArray();
->>>>>>> Stashed changes
 
 			var result = new IObject[array.GetLength()];
 
@@ -94,11 +65,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);
 
-<<<<<<< Updated upstream
-			return (int) engine.Eval(_program, startNewScope: true).AsNumber();
-=======
 			return (int) engine.Eval(program, startNewScope: true).AsNumber();
->>>>>>> Stashed changes
 		}
 
 	#endregion
@@ -109,11 +76,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);
 
-<<<<<<< Updated upstream
-			return new EcmaScriptObject(engine.Eval(_program, startNewScope: true));
-=======
 			return new EcmaScriptObject(engine.Eval(program, startNewScope: true));
->>>>>>> Stashed changes
 		}
 
 	#endregion
@@ -124,11 +87,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);
 
-<<<<<<< Updated upstream
-			return engine.Eval(_program, startNewScope: true).ToString() ?? string.Empty;
-=======
 			return engine.Eval(program, startNewScope: true).ToString();
->>>>>>> Stashed changes
 		}
 
 	#endregion

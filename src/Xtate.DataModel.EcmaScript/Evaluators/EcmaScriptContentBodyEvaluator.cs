@@ -17,21 +17,9 @@
 
 #endregion
 
-<<<<<<< Updated upstream
-namespace Xtate.DataModel.EcmaScript
-{
-	public class EcmaScriptContentBodyEvaluator : DefaultContentBodyEvaluator
-	{
-		public EcmaScriptContentBodyEvaluator(IContentBody contentBody) : base(contentBody) { }
-
-		protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;
-	}
-}
-=======
 	namespace Xtate.DataModel.EcmaScript;
 
 	public class EcmaScriptContentBodyEvaluator(IContentBody contentBody) : DefaultContentBodyEvaluator(contentBody)
 	{
 		protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;
 	}
->>>>>>> Stashed changes

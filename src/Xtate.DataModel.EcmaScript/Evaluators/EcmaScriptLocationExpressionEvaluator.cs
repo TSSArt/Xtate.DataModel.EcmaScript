@@ -21,13 +21,8 @@
 	using Jint.Parser.Ast;
 	using JintIdentifier = Jint.Parser.Ast.Identifier;
 
-<<<<<<< Updated upstream
-namespace Xtate.DataModel.EcmaScript
-{
-=======
 	namespace Xtate.DataModel.EcmaScript;
 
->>>>>>> Stashed changes
 	public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 	{
 		private readonly Program?            _declare;
@@ -35,8 +30,6 @@ namespace Xtate.DataModel.EcmaScript
 		private readonly ILocationExpression _locationExpression;
 		private readonly string?             _name;
 		private readonly Program             _program;
-
-		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
 
 		public EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, Program program, Expression? leftExpression)
 		{
@@ -80,11 +73,7 @@ namespace Xtate.DataModel.EcmaScript
 			return new EcmaScriptObject(engine.Eval(_program, startNewScope: true));
 		}
 
-<<<<<<< Updated upstream
-		public ValueTask<string> GetName() => _name is not null ? new(_name) : throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated);
-=======
 		public ValueTask<string> GetName() => new(_name ?? throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated));
->>>>>>> Stashed changes
 
 		public async ValueTask SetValue(IObject value)
 		{
@@ -98,24 +87,7 @@ namespace Xtate.DataModel.EcmaScript
 									   };
 
 			var engine = await EngineFactory().ConfigureAwait(false);
-<<<<<<< Updated upstream
-
 			engine.Exec(assignmentExpression, startNewScope: false);
-		}
-
-		public async ValueTask DeclareLocalVariable()
-		{
-			if (_declare is null)
-			{
-				throw new ExecutionException(Resources.Exception_InvalidLocalVariableName);
-			}
-
-			var engine = await EngineFactory().ConfigureAwait(false);
-
-			engine.Exec(_declare, startNewScope: false);
-=======
-			engine.Exec(assignmentExpression, startNewScope: false);
->>>>>>> Stashed changes
 		}
 
 	#endregion

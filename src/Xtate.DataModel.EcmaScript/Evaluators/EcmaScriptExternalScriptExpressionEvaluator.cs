@@ -23,26 +23,14 @@
 	using Jint.Parser.Ast;
 	using Xtate.Core;
 
-<<<<<<< Updated upstream
-namespace Xtate.DataModel.EcmaScript
-{
-	public class EcmaScriptExternalScriptExpressionEvaluator : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
-=======
 	namespace Xtate.DataModel.EcmaScript;
 
 	public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression)
 		: IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
->>>>>>> Stashed changes
 	{
 		private Program? _program;
 
-<<<<<<< Updated upstream
-		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
-
-		public EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression) => _externalScriptExpression = externalScriptExpression;
-=======
 		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
->>>>>>> Stashed changes
 
 	#region Interface IAncestorProvider
 

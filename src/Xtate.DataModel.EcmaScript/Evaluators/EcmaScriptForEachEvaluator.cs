@@ -17,31 +17,17 @@
 
 #endregion
 
-<<<<<<< Updated upstream
-using System;
-using System.Threading.Tasks;
-
-namespace Xtate.DataModel.EcmaScript
-{
-=======
 	using System;
 	using System.Threading.Tasks;
 	using Xtate.Core;
 
 	namespace Xtate.DataModel.EcmaScript;
 
->>>>>>> Stashed changes
 	public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 	{
 		private readonly EcmaScriptLocationExpressionEvaluator? _indexEvaluator;
 		private readonly EcmaScriptLocationExpressionEvaluator  _itemEvaluator;
 
-<<<<<<< Updated upstream
-		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
-
-		public override async ValueTask Execute()
-		{
-=======
 		public EcmaScriptForEachEvaluator(IForEach forEach) : base(forEach)
 		{
 			var itemEvaluator = base.Item?.As<EcmaScriptLocationExpressionEvaluator>();
@@ -55,22 +41,12 @@ namespace Xtate.DataModel.EcmaScript
 
 		public override async ValueTask Execute()
 		{
->>>>>>> Stashed changes
 			var engine = await EngineFactory().ConfigureAwait(false);
 
 			engine.EnterExecutionContext();
 
 			try
 			{
-<<<<<<< Updated upstream
-				await ItemEvaluator.DeclareLocalVariable().ConfigureAwait(false);
-				
-				if (IndexEvaluator is not null)
-				{
-					await IndexEvaluator.DeclareLocalVariable().ConfigureAwait(false);
-				}
-
-=======
 				await _itemEvaluator.DeclareLocalVariable().ConfigureAwait(false);
 
 				if (_indexEvaluator is not null)
@@ -78,7 +54,6 @@ namespace Xtate.DataModel.EcmaScript
 					await _indexEvaluator.DeclareLocalVariable().ConfigureAwait(false);
 				}
 
->>>>>>> Stashed changes
 				await base.Execute().ConfigureAwait(false);
 			}
 			finally

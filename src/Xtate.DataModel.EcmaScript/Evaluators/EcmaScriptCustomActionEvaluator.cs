@@ -17,30 +17,15 @@
 
 #endregion
 
-<<<<<<< Updated upstream
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Xtate.DataModel.EcmaScript
-{
-	public class EcmaScriptCustomActionEvaluator : DefaultCustomActionEvaluator
-=======
 	using System;
 	using System.Threading.Tasks;
 
 	namespace Xtate.DataModel.EcmaScript;
 
 	public class EcmaScriptCustomActionEvaluator(ICustomAction customAction) : DefaultCustomActionEvaluator(customAction)
->>>>>>> Stashed changes
 	{
 		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
 
-<<<<<<< Updated upstream
-		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
-
-=======
->>>>>>> Stashed changes
 		public override async ValueTask Execute()
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);

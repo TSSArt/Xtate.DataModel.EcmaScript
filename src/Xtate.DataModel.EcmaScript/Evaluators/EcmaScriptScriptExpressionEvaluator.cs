@@ -17,28 +17,6 @@
 
 #endregion
 
-<<<<<<< Updated upstream
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Jint.Parser.Ast;
-using Xtate.Core;
-
-namespace Xtate.DataModel.EcmaScript
-{
-	public class EcmaScriptScriptExpressionEvaluator : IScriptExpression, IExecEvaluator, IAncestorProvider
-	{
-		private readonly Program           _program;
-		private readonly IScriptExpression _scriptExpression;
-
-		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; init; }
-
-		public EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Program program)
-		{
-			_scriptExpression = scriptExpression;
-			_program = program;
-		}
-=======
 	using System;
 	using System.Threading.Tasks;
 	using Jint.Parser.Ast;
@@ -49,7 +27,6 @@ namespace Xtate.DataModel.EcmaScript
 	public class EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Program program) : IScriptExpression, IExecEvaluator, IAncestorProvider
 	{
 		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
->>>>>>> Stashed changes
 
 	#region Interface IAncestorProvider
 
@@ -63,11 +40,7 @@ namespace Xtate.DataModel.EcmaScript
 		{
 			var engine = await EngineFactory().ConfigureAwait(false);
 
-<<<<<<< Updated upstream
-			engine.Exec(_program, startNewScope: true);
-=======
 			engine.Exec(program, startNewScope: true);
->>>>>>> Stashed changes
 		}
 
 	#endregion

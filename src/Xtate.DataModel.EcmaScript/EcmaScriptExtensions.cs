@@ -18,15 +18,6 @@
 #endregion
 
 using System;
-<<<<<<< Updated upstream
-using System.Threading.Tasks;
-using Jint.Parser.Ast;
-using Xtate.Core;
-using Xtate.DataModel;
-using Xtate.IoC;
-using Xtate.DataModel.EcmaScript;
-using Xtate.DataModel.XPath;
-=======
 using Jint.Parser.Ast;
 using Xtate.Core;
 using Xtate.DataModel;
@@ -34,70 +25,18 @@ using Xtate.DataModel.EcmaScript;
 using Xtate.DataModel.XPath;
 using Xtate.IoC;
 using Xtate.Scxml;
->>>>>>> Stashed changes
 
 namespace Xtate
 {
-	[PublicAPI]
 	public static class EcmaScriptExtensions
 	{
 		public static void RegisterEcmaScriptDataModelHandler(this IServiceCollection services)
 		{
-<<<<<<< Updated upstream
-			if (services.IsRegistered<EcmaScriptDataModelHandlerProvider>())
-=======
 			if (services.IsRegistered<EcmaScriptDataModelHandler>())
->>>>>>> Stashed changes
 			{
 				return;
 			}
 
-<<<<<<< Updated upstream
-			services.RegisterDataModelHandlerBase();
-			services.RegisterErrorProcessor();
-			services.RegisterNameTable();
-
-			services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Program>();
-			services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
-			services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
-			services.AddTypeSync<EcmaScriptContentBodyEvaluator, IContentBody>();
-			services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
-			services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
-			services.AddTypeSync<EcmaScriptInlineContentEvaluator, IInlineContent>();
-			services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
-			services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
-			services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
-
-			services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
-
-			services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>();
-			services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
-		}
-
-		public static IServiceCollection AddEcmaScript(this IServiceCollection services)
-		{
-			if (services is null) throw new ArgumentNullException(nameof(services));
-
-			//services.AddIErrorProcessorService<EcmaScriptDataModelHandler>();
-
-			//services.AddTransient(
-			//	async provider => new EcmaScriptDataModelHandler(
-			//		await provider.GetRequiredService<IErrorProcessorService<EcmaScriptDataModelHandler>>().ConfigureAwait(false),
-			//		await provider.GetRequiredService<IExecutionContext>().ConfigureAwait(false)));
-
-			services.AddType<EcmaScriptDataModelHandler>();
-
-			//TODO:delete
-			/*	services.AddForwarding<IDataModelHandler?, string?>(
-					async (sp, dataModel) => dataModel == EcmaScriptDataModelHandler.DataModelType
-						? await sp.GetRequiredService<EcmaScriptDataModelHandler>().ConfigureAwait(false)
-						: default);*/
-
-			//services.AddShared<IDataModelHandlerProvider>(SharedWithin.Container, sp => new EcmaScriptDataModelHandlerProvider(sp.GetRequiredFactory<EcmaScriptDataModelHandler>()));
-			services.AddSharedImplementation<EcmaScriptDataModelHandlerProvider>(SharedWithin.Container).For<IDataModelHandlerProvider>();
-
-			return services;
-=======
 			services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
 			services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
 			services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
@@ -142,14 +81,6 @@ namespace Xtate
 
 			services.AddImplementation<EcmaScriptDataModelHandler>().For<IDataModelHandler>();
 			services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
->>>>>>> Stashed changes
 		}
 	}
-
-	//TODO:moveout
-	public class EcmaScriptDataModelHandlerProvider : DataModelHandlerProviderBase<EcmaScriptDataModelHandler>
-	{
-		protected override bool CanHandle(string dataModelType) => dataModelType == @"ecmascript";
-	}
-
 }
