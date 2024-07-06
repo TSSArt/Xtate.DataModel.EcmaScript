@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Xtate.Core;
+using Xtate.CustomAction;
 using Xtate.IoC;
 
 namespace Xtate.DataModel.EcmaScript.Test;
@@ -30,11 +31,12 @@ namespace Xtate.DataModel.EcmaScript.Test;
 public class ExecutableTest
 {
 	//private Mock<ICustomActionExecutor>         _customActionExecutor          = default!;
-	//private Mock<ICustomActionFactory>          _customActionProvider          = default!;
-	//private Mock<ICustomActionFactoryActivator> _customActionProviderActivator = default!;
+	private Mock<CustomActionBase>          _customAction          = default!;
+	private Mock<ICustomActionActivator> _customActionActivator = default!;
+	private Mock<ICustomActionProvider> _customActionProvider = default!;
 	private ChannelReader<IEvent>        _eventChannel          = default!;
 	private Mock<IEventController>       _eventController       = default!;
-	private Mock<IEventQueueReader>      _eventQueueReader      = default!;
+	private Mock<IEventQueueReader>      _eventQueueReader      = default!; 
 	private Mock<IExternalCommunication> _externalCommunication = default!;
 	private Mock<ILogger>                _logger                = default!;
 	private Mock<ILogWriter>             _logWriter             = default!;
@@ -59,40 +61,25 @@ public class ExecutableTest
 	private static ValueTask<IStateMachine> NoneDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='null'>" + xml + "</scxml>");
 	private static ValueTask<IStateMachine> EcmaDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'>" + xml + "</scxml>");
 
-	private async Task RunStateMachine(Func<string, ValueTask<IStateMachine>> getter, string innerXml)
-	{
-		var stateMachine = getter(innerXml);
-
-		var services = new ServiceCollection();
-		services.RegisterStateMachineInterpreter();
-		services.RegisterEcmaScriptDataModelHandler();
-		services.AddForwarding(_ => stateMachine);
-		services.AddForwarding(_ => _logWriter.Object);
-		services.AddForwarding(_ => _eventController.Object);
-		services.AddForwarding(_ => _eventQueueReader.Object);
-		var provider = services.BuildProvider();
-
-		var stateMachineInterpreter = await provider.GetRequiredService<IStateMachineInterpreter>();
-
-		try
-		{
-			//await stateMachineInterpreter.RunAsync(SessionId.New(), stateMachine, _eventChannel, _options);
-			await stateMachineInterpreter.RunAsync();
-
-			Assert.Fail("StateMachineQueueClosedException should be raised");
-		}
-		catch (StateMachineQueueClosedException)
-		{
-			//ignore
-		}
-	}
-
 	[TestInitialize]
 	public void Init()
 	{
 		var channel = Channel.CreateUnbounded<IEvent>();
 		channel.Writer.Complete();
 		_eventChannel = channel.Reader;
+
+		_logWriter = new Mock<ILogWriter>();
+
+		_customAction = new Mock<CustomActionBase>();
+		_customAction.Setup(x => x.Execute()).Callback(() => _logWriter.Object.Write(Level.Info, "Custom"));
+
+		_customActionActivator = new Mock<ICustomActionActivator>();
+		_customActionActivator.Setup(x => x.Activate(It.IsAny<string>())).Returns(_customAction.Object);
+
+		_customActionProvider = new Mock<ICustomActionProvider>();
+		_customActionProvider.Setup(x => x.TryGetActivator("http://www.w3.org/2005/07/scxml", "custom")).Returns(_customActionActivator.Object);
+//		Xtate.IoC.DependencyInjectionException: Factory of [Xtate.Core.StateMachineInterpreter] raised exception. ---> Xtate.IoC.DependencyInjectionException: Factory of [Xtate.CustomAction.CustomActionContainer] raised exception. ---> Xtate.InfrastructureException: There is no any CustomActionProvider registered for processing custom action node: <>
+
 		/*
 			_customActionExecutor = new Mock<ICustomActionExecutor>();
 
@@ -116,13 +103,44 @@ public class ExecutableTest
 					   Logger = _logger.Object,
 					   ExternalCommunication = _externalCommunication.Object
 				   };*/
-		_logWriter = new Mock<ILogWriter>();
 		_eventController = new Mock<IEventController>();
 		_eventQueueReader = new Mock<IEventQueueReader>();
 
-		//_eventQueueReader.Setup(x => x.)
+		IEvent tmp = null!;
+		//_eventQueueReader.Setup(x => x.TryReadEvent(out tmp)).Returns(false);
+		//_eventQueueReader.Setup(x => x.WaitToEvent()).Returns(new ValueTask<bool>(false));
+		_logWriter.Setup(x => x.IsEnabled(It.IsAny<Level>())).Returns(true);
 	}
+	
+	private async Task RunStateMachine(Func<string, ValueTask<IStateMachine>> getter, string innerXml)
+	{
+		var stateMachine = getter(innerXml);
 
+		var services = new ServiceCollection();
+		services.RegisterStateMachineInterpreter();
+		services.RegisterEcmaScriptDataModelHandler();
+		services.AddForwarding(_ => _customActionProvider.Object);
+		services.AddForwarding(_ => stateMachine);
+		services.AddForwarding<ILogWriter, string>((sp, v) => _logWriter.Object);
+		//services.AddForwarding(_ => _eventController.Object);
+		services.AddForwarding(_ => _eventQueueReader.Object);
+		var provider = services.BuildProvider();
+
+		var stateMachineInterpreter = await provider.GetRequiredService<IStateMachineInterpreter>();
+
+		try
+		{
+			//await stateMachineInterpreter.RunAsync(SessionId.New(), stateMachine, _eventChannel, _options);
+			await stateMachineInterpreter.RunAsync();
+
+			Assert.Fail("StateMachineQueueClosedException should be raised");
+		}
+		catch (StateMachineQueueClosedException)
+		{
+			//ignore
+		}
+	}
+	
 	[TestMethod]
 	public async Task ContentJsonTest()
 	{
@@ -132,11 +150,11 @@ public class ExecutableTest
 			"<state id='s1'><onentry><send><content>{ \"key\":\"value\" }</content></send></onentry></state>");
 
 		//_externalCommunication.Verify(a => a.TrySendEvent(It.IsAny<IOutgoingEvent>(), It.IsAny<CancellationToken>()));
-		_eventController.Verify(a => a.Send(It.IsAny<IOutgoingEvent>()));
+		//_eventController.Verify(a => a.Send(It.IsAny<IOutgoingEvent>()));
+		_logWriter.Verify(l => l.Write(Level.Trace, "Send event: ''", It.IsAny<IEnumerable<LoggingParameter>>()));
 	}
-	
+
 	[TestMethod]
-	[Ignore]
 	public async Task RaiseTest()
 	{
 		await RunStateMachine(
@@ -151,7 +169,6 @@ public class ExecutableTest
 	}
 	
 	[TestMethod]
-	[Ignore]
 	public async Task SendInternalTest()
 	{
 		await RunStateMachine(
@@ -164,7 +181,6 @@ public class ExecutableTest
 	}
 
 	[TestMethod]
-	[Ignore]
 	public async Task RaiseWithEventDescriptorTest()
 	{
 		await RunStateMachine(
@@ -177,7 +193,6 @@ public class ExecutableTest
 	}
 
 	[TestMethod]
-	[Ignore]
 	public async Task RaiseWithEventDescriptor2Test()
 	{
 		await RunStateMachine(
@@ -190,7 +205,6 @@ public class ExecutableTest
 	}
 
 	[TestMethod]
-	[Ignore]
 	public async Task CustomActionTest()
 	{
 		await RunStateMachine(

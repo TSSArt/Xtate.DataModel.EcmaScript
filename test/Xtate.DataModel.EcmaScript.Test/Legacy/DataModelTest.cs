@@ -1,5 +1,5 @@
-﻿#region Copyright © 2019-2021 Sergii Artemenko
-
+﻿// Copyright © 2019-2024 Sergii Artemenko
+// 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -15,384 +15,403 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#endregion
-
 using System;
-using System.Collections.Immutable;
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using System.Xml;
+using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Xtate.Builder;
 using Xtate.Core;
-using Xtate.Scxml;
+using Xtate.IoC;
 
-namespace Xtate.DataModel.EcmaScript.Test
+namespace Xtate.DataModel.EcmaScript.Test;
+
+[TestClass]
+public class DataModelTest
 {
-	[TestClass]
-	public class DataModelTest
+	private Mock<IEventQueueReader> _eventQueueReader = default!;
+	private Mock<ILogMethods>       _logMethods       = default!;
+	private Mock<ILogWriter> _logWriter = default!;
+	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
-		private ChannelReader<IEvent> _eventChannel = default!;
-		private Mock<ILogger>         _logger       = default!;
-		private InterpreterOptions    _options      = default!;
-		/*
-		private static IStateMachine GetStateMachine(string scxml)
+		var services = new ServiceCollection();
+		services.RegisterStateMachineFactory();
+		services.AddForwarding<IScxmlStateMachine>(_ => new ScxmlStateMachine(scxml));
+		var provider = services.BuildProvider();
+
+		return await provider.GetRequiredService<IStateMachine>();
+	}
+
+	private static ValueTask<IStateMachine> NoneDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='null'>" + xml + "</scxml>");
+
+	private static ValueTask<IStateMachine> EcmaScriptDataModel(string xml) =>
+		GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'>" + xml + "</scxml>");
+
+	private static ValueTask<IStateMachine> NoNameOnEntry(string xml) =>
+		GetStateMachine(
+			"<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
+			"</onentry></state></scxml>");
+
+	private static ValueTask<IStateMachine> WithNameOnEntry(string xml) =>
+		GetStateMachine(
+			"<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript' name='MyName'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
+			"</onentry></state></scxml>");
+
+	private Task RunStateMachine(Func<string, ValueTask<IStateMachine>> getter, string innerXml) => RunStateMachineBase<StateMachineQueueClosedException>(getter, innerXml);
+
+	private Task RunStateMachineWithError(Func<string, ValueTask<IStateMachine>> getter, string innerXml) => RunStateMachineBase<StateMachineDestroyedException>(getter, innerXml);
+
+	private async Task RunStateMachineBase<E>(Func<string, ValueTask<IStateMachine>> getter, string innerXml) where E : Exception
+	{
+		var stateMachine = getter(innerXml);
+
+		var services = new ServiceCollection();
+		services.RegisterEcmaScriptDataModelHandler();
+		services.RegisterStateMachineInterpreter();
+		services.AddForwarding(_ => stateMachine);
+		services.AddForwarding(_ => _logMethods.Object);
+		services.AddImplementation<LogWriter, string>().For<ILogWriter>();
+		services.AddForwarding(_ => _eventQueueReader.Object);
+
+		//services.AddForwarding(_ => _eventController.Object);
+		var provider = services.BuildProvider();
+
+		var stateMachineInterpreter = await provider.GetRequiredService<IStateMachineInterpreter>();
+
+		try
 		{
-			using var textReader = new StringReader(scxml);
-			using var reader = XmlReader.Create(textReader);
-			var scxmlDirector = new ScxmlDirector(reader, BuilderFactory.Instance, new ScxmlDirectorOptions { StateMachineValidator = StateMachineValidator.Instance });
-			return scxmlDirector.ConstructStateMachine().AsTask().GetAwaiter().GetResult();
+			//await stateMachineInterpreter.RunAsync(SessionId.New(), stateMachine, _eventChannel, _options);
+			await stateMachineInterpreter.RunAsync();
+
+			Assert.Fail($"{typeof(E).Name} should be raised");
+		}
+		catch (E)
+		{
+			//ignore
+		}
+	}
+
+	[TestInitialize]
+	public void Init()
+	{
+		var channel = Channel.CreateUnbounded<IEvent>();
+		channel.Writer.Complete();
+		_logWriter = new Mock<ILogWriter>();
+		_logWriter.Setup(x => x.IsEnabled(It.IsAny<Level>())).Returns(true);
+		_eventQueueReader = new Mock<IEventQueueReader>();
+		_logMethods = new Mock<ILogMethods>();
+	}
+
+	[TestMethod]
+	public async Task LogWriteTest()
+	{
+		await RunStateMachine(NoNameOnEntry, innerXml: "<log label='output'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", "output", default));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task LogExpressionWriteTest()
+	{
+		await RunStateMachine(NoNameOnEntry, innerXml: "<log expr=\"'output'\"/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "output"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task LogSessionIdWriteTest()
+	{
+		await RunStateMachine(NoNameOnEntry, innerXml: "<log expr='_sessionid'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, It.Is<DataModelValue>(v => v.AsString().Length > 0)));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task LogNameWriteTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_name'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "MyName"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task LogNullNameWriteTest()
+	{
+		await RunStateMachine(NoNameOnEntry, innerXml: "<log expr='_name'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, DataModelValue.Null));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task LogNonExistedTest()
+	{
+		await RunStateMachineWithError(NoNameOnEntry, innerXml: "<log expr='_not_existed'/>");
+
+		_logMethods.Verify(l => l.Error("IStateMachineInterpreter", "Execution error in entity '(#-1)'.", It.Is<Exception>(e => e.Message == "_not_existed is not defined")));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task ExecutionBlockWithErrorInsideTest()
+	{
+		await RunStateMachineWithError(WithNameOnEntry, innerXml: "<log expr='_name'/><log expr='_not_existed'/><log expr='_name'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "MyName"));
+		_logMethods.Verify(l => l.Error("IStateMachineInterpreter", "Execution error in entity '(#-1)'.", It.Is<Exception>(e => e.Message == "_not_existed is not defined")));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task InterpreterVersionVariableTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.interpreter.version'/>");
+
+		var version = typeof(StateMachineInterpreter).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+		_logMethods.Verify(l => l.Info("ILog", default, version));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task InterpreterNameVariableTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.interpreter.name'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Xtate.Core.StateMachineInterpreter"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task DataModelNameVariableTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.name'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Xtate.DataModel.EcmaScript.EcmaScriptDataModelHandler"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task DataModelAssemblyVariableTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.assembly'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Xtate.DataModel.EcmaScript"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task DataModelVersionVariableTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.version'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, It.Is<DataModelValue>(v => v.AsString().Length > 0)));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task JintVersionVariableTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.vars.JintVersion'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "2.11.58"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task ExecutionScriptTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<script>my='1'+'a';</script><log expr='my'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "1a"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task SimpleAssignTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<assign location='x' expr='\"Hello World\"'/><log expr='x'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Hello World"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task ComplexAssignTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<script>my=[]; my[3]={};</script><assign location='my[3].yy' expr=\"'Hello World'\"/><log expr='my[3].yy'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Hello World"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task UserAssignTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<assign location='_name1' expr=\"'Hello World'\"/><log expr='_name1'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Hello World"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task SystemAssignTest()
+	{
+		await RunStateMachineWithError(WithNameOnEntry, innerXml: "<assign location='_name' expr=\"'Hello World'\"/>");
+
+		_logMethods.Verify(l => l.Error("IStateMachineInterpreter", "Execution error in entity '(#-1)'.", It.IsAny<InvalidOperationException>()));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task IfTrueTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='1==1'><log expr=\"'Hello World'\"/></if>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Hello World"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task IfFalseTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='1==0'><log expr=\"'Hello World'\"/></if>");
+
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task IfElseTrueTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='true'><log expr=\"'Hello World'\"/><else/><log expr=\"'Bye World'\"/></if>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Hello World"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task IfElseFalseTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='false'><log expr=\"'Hello World'\"/><else/><log expr=\"'Bye World'\"/></if>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Bye World"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task SwitchTest()
+	{
+		await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='false'><log expr=\"'Hello World'\"/><elseif cond='true'/><log expr=\"'Maybe World'\"/><else/><log expr=\"'Bye World'\"/></if>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "Maybe World"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task ForeachNoIndexTest()
+	{
+		await RunStateMachine(
+			WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm'>"
+							 + "<log expr=\"itm\"/></foreach><log expr='typeof(itm)'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "aaa"));
+		_logMethods.Verify(l => l.Info("ILog", default, "bbb"));
+		_logMethods.Verify(l => l.Info("ILog", default, "undefined"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task ForeachWithIndexTest()
+	{
+		await RunStateMachine(
+			WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm' index='idx'>"
+							 + "<log expr=\"idx + '-' + itm\"/></foreach><log expr='typeof(itm)'/><log expr='typeof(idx)'/>");
+
+		_logMethods.Verify(l => l.Info("ILog", default, "0-aaa"));
+		_logMethods.Verify(l => l.Info("ILog", default, "1-bbb"));
+		_logMethods.Verify(l => l.Info("ILog", default, "undefined"));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task NoneDataModelTransitionWithConditionTrueTest()
+	{
+		await RunStateMachine(NoneDataModel, innerXml: "<state id='s1'><transition cond='In(s1)' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
+
+		_logMethods.Verify(l => l.Info("ILog", "Hello", default));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task NoneDataModelTransitionWithConditionFalseTest()
+	{
+		await RunStateMachine(NoneDataModel, innerXml: "<state id='s1'><transition cond='In(s2)' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
+
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task EcmaScriptDataModelTransitionWithConditionTrueTest()
+	{
+		await RunStateMachine(EcmaScriptDataModel, innerXml: "<state id='s1'><transition cond=\"In('s1')\" target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
+
+		_logMethods.Verify(l => l.Info("ILog", "Hello", default));
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	[TestMethod]
+	public async Task EcmaScriptDataModelTransitionWithConditionFalseTest()
+	{
+		await RunStateMachine(EcmaScriptDataModel, innerXml: "<state id='s1'><transition cond=\"In('s2')\" target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
+
+		_logMethods.VerifyNoOtherCalls();
+	}
+
+	public interface ILogMethods
+	{
+		void Info(string category, string? message, DataModelValue arg);
+		void Error(string category, string? message, Exception? ex);
+		void Trace(string category, string? message);
+	}
+
+	[UsedImplicitly]
+	private class LogWriter(string category, ILogMethods logMethods) : ILogWriter
+	{
+	#region Interface ILogWriter
+
+		public bool IsEnabled(Level level) => level is Level.Info or Level.Warning or Level.Error;
+
+		public ValueTask Write(Level level, string? message, IEnumerable<LoggingParameter>? parameters = default)
+		{
+			var prms = parameters?.ToDictionary(p => p.Name, p => p) ?? [];
+
+			switch (level)
+			{
+				case Level.Info when prms.ContainsKey("Parameter"):
+					logMethods.Info(category, message, DataModelValue.FromObject(prms["Parameter"].Value));
+					break;
+				case Level.Info when prms.Count == 0:
+					logMethods.Info(category, message, arg: default);
+					break;
+				case Level.Error when prms.ContainsKey("Exception"):
+					logMethods.Error(category, message, (Exception?) prms["Exception"].Value);
+					break;
+				case Level.Trace:
+					logMethods.Trace(category, message);
+					break;
+				default: throw new NotSupportedException();
+			}
+
+			return default;
 		}
 
-		private static IStateMachine NoneDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='null'>" + xml + "</scxml>");
-
-		private static IStateMachine EcmaScriptDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'>" + xml + "</scxml>");
-
-		private static IStateMachine NoNameOnEntry(string xml) =>
-			GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
-							"</onentry></state></scxml>");
-
-		private static IStateMachine WithNameOnEntry(string xml) =>
-			GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript' name='MyName'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
-							"</onentry></state></scxml>");
-
-		private Task RunStateMachine(Func<string, IStateMachine> getter, string innerXml)
-		{
-			// arrange
-			var stateMachine = getter(innerXml);
-
-			// act
-			async Task Action() => await StateMachineInterpreter.RunAsync(stateMachine, _eventChannel, _options);
-
-			// assert
-			return Assert.ThrowsExceptionAsync<StateMachineQueueClosedException>(Action);
-		}
-
-		private Task RunStateMachineWithError(Func<string, IStateMachine> getter, string innerXml)
-		{
-			// arrange
-			var stateMachine = getter(innerXml);
-
-			// act
-			async Task Action() => await StateMachineInterpreter.RunAsync(stateMachine, _eventChannel, _options);
-
-			// assert
-			return Assert.ThrowsExceptionAsync<StateMachineDestroyedException>(Action);
-		}
-
-		[TestInitialize]
-		public void Init()
-		{
-			var channel = Channel.CreateUnbounded<IEvent>();
-			channel.Writer.Complete();
-			_eventChannel = channel.Reader;
-
-			_logger = new Mock<ILogger>();
-			_options = new InterpreterOptions
-					   {
-						   DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory),
-						   Logger = _logger.Object
-					   };
-			_logger.Setup(e => e.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "MyName", It.IsAny<DataModelValue>(), default, It.IsAny<CancellationToken>()))
-				   .Callback((ILoggerContext _,
-							  LogLevel _,
-							  string lbl,
-							  object prm,
-							  Exception? _,
-							  CancellationToken _) => Console.WriteLine(lbl + @":" + prm));
-			_logger.SetupGet(e => e.IsTracingEnabled).Returns(false);
-		}
-
-		[TestMethod]
-		public async Task LogWriteTest()
-		{
-			await RunStateMachine(NoNameOnEntry, innerXml: "<log label='output'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "output", default, default, default), Times.Once);
-		}
-
-		[TestMethod]
-		public async Task LogExpressionWriteTest()
-		{
-			await RunStateMachine(NoNameOnEntry, innerXml: "<log expr=\"'output'\"/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("output"), default, default), Times.Once);
-		}
-
-		[TestMethod]
-		public async Task LogSessionIdWriteTest()
-		{
-			await RunStateMachine(NoNameOnEntry, innerXml: "<log expr='_sessionid'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, It.Is<DataModelValue>(v => v.AsString().Length > 0), default, default), Times.Once);
-		}
-
-		[TestMethod]
-		public async Task LogNameWriteTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_name'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("MyName"), default, default), Times.Once);
-		}
-
-		[TestMethod]
-		public async Task LogNullNameWriteTest()
-		{
-			await RunStateMachine(NoNameOnEntry, innerXml: "<log expr='_name'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, DataModelValue.Null, default, default), Times.Once);
-		}
-
-		[TestMethod]
-		public async Task LogNonExistedTest()
-		{
-			await RunStateMachineWithError(NoNameOnEntry, innerXml: "<log expr='_not_existed'/>");
-
-			_logger.Verify(l => l.LogError(It.IsAny<IInterpreterLoggerContext>(), ErrorType.Execution, It.IsAny<Exception>(), "(#7)", It.IsAny<CancellationToken>()), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task ExecutionBlockWithErrorInsideTest()
-		{
-			await RunStateMachineWithError(WithNameOnEntry, innerXml: "<log expr='_name'/><log expr='_not_existed'/><log expr='_name'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("MyName"), default, default), Times.Once);
-			_logger.Verify(l => l.LogError(It.IsAny<IInterpreterLoggerContext>(), ErrorType.Execution, It.IsNotNull<Exception>(), "(#9)", default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task InterpreterVersionVariableTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.interpreter.version'/>");
-
-			var version = typeof(StateMachineInterpreter).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue(version), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task InterpreterNameVariableTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.interpreter.name'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Xtate.Core.StateMachineInterpreter"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task DataModelNameVariableTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.name'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Xtate.DataModel.EcmaScript.EcmaScriptDataModelHandler"), default, default),
-						   Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task DataModelAssemblyVariableTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.assembly'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Xtate.DataModel.EcmaScript"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task DataModelVersionVariableTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.version'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, It.IsAny<DataModelValue>(), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task JintVersionVariableTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.vars.JintVersion'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("2.11.58"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task ExecutionScriptTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<script>my='1'+'a';</script><log expr='my'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("1a"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task SimpleAssignTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<assign location='x' expr='\"Hello World\"'/><log expr='x'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task ComplexAssignTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<script>my=[]; my[3]={};</script><assign location='my[3].yy' expr=\"'Hello World'\"/><log expr='my[3].yy'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task UserAssignTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<assign location='_name1' expr=\"'Hello World'\"/><log expr='_name1'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task SystemAssignTest()
-		{
-			await RunStateMachineWithError(WithNameOnEntry, innerXml: "<assign location='_name' expr=\"'Hello World'\"/>");
-
-			_logger.Verify(l => l.LogError(It.IsAny<IInterpreterLoggerContext>(), ErrorType.Execution, It.IsNotNull<InvalidOperationException>(), "(#7)", default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task IfTrueTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='1==1'><log expr=\"'Hello World'\"/></if>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task IfFalseTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='1==0'><log expr=\"'Hello World'\"/></if>");
-
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task IfElseTrueTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='true'><log expr=\"'Hello World'\"/><else/><log expr=\"'Bye World'\"/></if>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Hello World"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task IfElseFalseTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='false'><log expr=\"'Hello World'\"/><else/><log expr=\"'Bye World'\"/></if>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Bye World"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task SwitchTest()
-		{
-			await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='false'><log expr=\"'Hello World'\"/><elseif cond='true'/><log expr=\"'Maybe World'\"/><else/><log expr=\"'Bye World'\"/></if>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("Maybe World"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task ForeachNoIndexTest()
-		{
-			await RunStateMachine(WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm'>"
-												   + "<log expr=\"itm\"/></foreach><log expr='typeof(itm)'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("aaa"), default, default), Times.Once);
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("bbb"), default, default), Times.Once);
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("undefined"), default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task ForeachWithIndexTest()
-		{
-			await RunStateMachine(WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm' index='idx'>"
-												   + "<log expr=\"idx + '-' + itm\"/></foreach><log expr='typeof(itm)'/><log expr='typeof(idx)'/>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("0-aaa"), default, default), Times.Once);
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("1-bbb"), default, default), Times.Once);
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, null, new DataModelValue("undefined"), default, default), Times.Exactly(2));
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task NoneDataModelTransitionWithConditionTrueTest()
-		{
-			await RunStateMachine(NoneDataModel, innerXml: "<state id='s1'><transition cond='In(s1)' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task NoneDataModelTransitionWithConditionFalseTest()
-		{
-			await RunStateMachine(NoneDataModel, innerXml: "<state id='s1'><transition cond='In(s2)' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
-
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task EcmaScriptDataModelTransitionWithConditionTrueTest()
-		{
-			await RunStateMachine(EcmaScriptDataModel, innerXml: "<state id='s1'><transition cond=\"In('s1')\" target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
-
-			_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}
-
-		[TestMethod]
-		public async Task EcmaScriptDataModelTransitionWithConditionFalseTest()
-		{
-			await RunStateMachine(EcmaScriptDataModel, innerXml: "<state id='s1'><transition cond=\"In('s2')\" target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
-
-			_logger.VerifyGet(l => l.IsTracingEnabled);
-			_logger.VerifyNoOtherCalls();
-		}*/
+	#endregion
 	}
 }

@@ -48,23 +48,13 @@
 
 			private static readonly ParserOptions ParserOptions = new() { Tolerant = true };
 
-			private readonly JavaScriptParser _parser = new();
+			private readonly JavaScriptParser                    _parser = new();
 
 			public override string ConvertToText(DataModelValue value) =>
 				DataModelConverter.ToJson(value, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
-		
-			//TODO: move it
-			/*
-			public override void ExecutionContextCreated(out ImmutableDictionary<string, string> dataModelVars)
-			{
-				if (executionContext is null) throw new ArgumentNullException(nameof(executionContext));
 
-				base.ExecutionContextCreated(executionContext, out dataModelVars);
-
-				executionContext.RuntimeItems[EcmaScriptEngine.Key] = new EcmaScriptEngine(executionContext);
-
-				dataModelVars = dataModelVars.SetItem(EcmaScriptHelper.JintVersionPropertyName, EcmaScriptHelper.JintVersionValue);
-			}*/
+			public override ImmutableDictionary<string, string> DataModelVars { get; } =
+				ImmutableDictionary<string, string>.Empty.Add(EcmaScriptHelper.JintVersionPropertyName, EcmaScriptHelper.JintVersionValue);
 
 			private Program Parse(string source) => _parser.Parse(source, ParserOptions);
 

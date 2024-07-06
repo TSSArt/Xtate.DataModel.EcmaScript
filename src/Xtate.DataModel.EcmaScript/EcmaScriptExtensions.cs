@@ -79,8 +79,10 @@ namespace Xtate
 			services.AddImplementationSync<InFunctionProvider>().For<IXPathFunctionProvider>();
 			services.AddTypeSync<InFunction>();*/
 
-			services.AddImplementation<EcmaScriptDataModelHandler>().For<IDataModelHandler>();
+			services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>();
 			services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
+
+			services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
 		}
 	}
 }
