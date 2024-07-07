@@ -1,5 +1,5 @@
-﻿#region Copyright © 2019-2021 Sergii Artemenko
-
+﻿// Copyright © 2019-2024 Sergii Artemenko
+// 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -15,10 +15,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#endregion
-
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using Jint;
 using Jint.Native;
@@ -27,149 +23,148 @@ using Jint.Runtime.Descriptors;
 using Jint.Runtime.Environments;
 using Jint.Runtime.Interop;
 
-namespace Xtate.DataModel.EcmaScript
+namespace Xtate.DataModel.EcmaScript;
+
+public class EcmaScriptEngine
 {
-	public class EcmaScriptEngine
+	public static readonly object Key = new();
+
+	private readonly Engine          _jintEngine;
+	private readonly HashSet<string> _variableSet = [];
+
+	public EcmaScriptEngine(IDataModelController? dataModelController)
 	{
-		public required IInStateController? InStateController { private get; [UsedImplicitly] init; }
+		_jintEngine = new Engine(options => options.Culture(CultureInfo.InvariantCulture).LimitRecursion(1024).Strict());
 
-		public static readonly object Key = new();
+		var global = _jintEngine.Global;
+		var inFunction = new DelegateWrapper(_jintEngine, new Func<string, bool>(state => InStateController?.InState((Identifier) state) ?? false));
+		global.FastAddProperty(EcmaScriptHelper.InFunctionName, inFunction, writable: false, enumerable: false, configurable: false);
 
-		private readonly Engine          _jintEngine;
-		private readonly HashSet<string> _variableSet = [];
-
-		public EcmaScriptEngine(IDataModelController? dataModelController)
+		if (dataModelController is not null)
 		{
-			_jintEngine = new Engine(options => options.Culture(CultureInfo.InvariantCulture).LimitRecursion(1024).Strict());
+			SyncRootVariables(dataModelController.DataModel);
+		}
+	}
 
-			var global = _jintEngine.Global;
-			var inFunction = new DelegateWrapper(_jintEngine, new Func<string, bool>(state => InStateController?.InState((Identifier) state) ?? false));
-			global.FastAddProperty(EcmaScriptHelper.InFunctionName, inFunction, writable: false, enumerable: false, configurable: false);
+	public required IInStateController? InStateController { private get; [UsedImplicitly] init; }
 
-			if (dataModelController is not null)
+	private void SyncRootVariables(DataModelList dataModel)
+	{
+		var global = _jintEngine.Global;
+		List<string>? toRemove = default;
+		foreach (var name in _variableSet)
+		{
+			if (!dataModel.TryGet(name, caseInsensitive: false, out _))
 			{
-				SyncRootVariables(dataModelController.DataModel);
+				toRemove ??= new List<string>();
+				toRemove.Add(name);
 			}
 		}
 
-		private void SyncRootVariables(DataModelList dataModel)
+		if (toRemove is not null)
 		{
-			var global = _jintEngine.Global;
-			List<string>? toRemove = default;
-			foreach (var name in _variableSet)
+			foreach (var property in toRemove)
 			{
-				if (!dataModel.TryGet(name, caseInsensitive: false, out _))
-				{
-					toRemove ??= new List<string>();
-					toRemove.Add(name);
-				}
-			}
-
-			if (toRemove is not null)
-			{
-				foreach (var property in toRemove)
-				{
-					_variableSet.Remove(property);
-					global.RemoveOwnProperty(property);
-				}
-			}
-
-			foreach (var keyValue in dataModel.KeyValues)
-			{
-				if (!string.IsNullOrEmpty(keyValue.Key) && global.GetOwnProperty(keyValue.Key) == PropertyDescriptor.Undefined)
-				{
-					var descriptor = EcmaScriptHelper.CreatePropertyAccessor(_jintEngine, dataModel, keyValue.Key);
-					global.FastSetProperty(keyValue.Key, descriptor);
-					_variableSet.Add(keyValue.Key);
-				}
+				_variableSet.Remove(property);
+				global.RemoveOwnProperty(property);
 			}
 		}
 
-		public void EnterExecutionContext()
+		foreach (var keyValue in dataModel.KeyValues)
 		{
-			var lexicalEnvironment = LexicalEnvironment.NewDeclarativeEnvironment(_jintEngine, _jintEngine.ExecutionContext.LexicalEnvironment);
-			_jintEngine.EnterExecutionContext(lexicalEnvironment, lexicalEnvironment, _jintEngine.ExecutionContext.ThisBinding);
-		}
-
-		public void LeaveExecutionContext()
-		{
-			_jintEngine.LeaveExecutionContext();
-		}
-
-		public JsValue Eval(Program program, bool startNewScope)
-		{
-			if (!startNewScope)
+			if (!string.IsNullOrEmpty(keyValue.Key) && global.GetOwnProperty(keyValue.Key) == PropertyDescriptor.Undefined)
 			{
-				return _jintEngine.Execute(program).GetCompletionValue();
-			}
-
-			EnterExecutionContext();
-			try
-			{
-				return _jintEngine.Execute(program).GetCompletionValue();
-			}
-			finally
-			{
-				LeaveExecutionContext();
+				var descriptor = EcmaScriptHelper.CreatePropertyAccessor(_jintEngine, dataModel, keyValue.Key);
+				global.FastSetProperty(keyValue.Key, descriptor);
+				_variableSet.Add(keyValue.Key);
 			}
 		}
+	}
 
-		public JsValue Eval(Expression expression, bool startNewScope)
+	public void EnterExecutionContext()
+	{
+		var lexicalEnvironment = LexicalEnvironment.NewDeclarativeEnvironment(_jintEngine, _jintEngine.ExecutionContext.LexicalEnvironment);
+		_jintEngine.EnterExecutionContext(lexicalEnvironment, lexicalEnvironment, _jintEngine.ExecutionContext.ThisBinding);
+	}
+
+	public void LeaveExecutionContext()
+	{
+		_jintEngine.LeaveExecutionContext();
+	}
+
+	public JsValue Eval(Program program, bool startNewScope)
+	{
+		if (!startNewScope)
 		{
-			if (!startNewScope)
-			{
-				return JsValue.FromObject(_jintEngine, _jintEngine.EvaluateExpression(expression));
-			}
-
-			EnterExecutionContext();
-			try
-			{
-				return JsValue.FromObject(_jintEngine, _jintEngine.EvaluateExpression(expression));
-			}
-			finally
-			{
-				LeaveExecutionContext();
-			}
+			return _jintEngine.Execute(program).GetCompletionValue();
 		}
 
-		public void Exec(Program program, bool startNewScope)
+		EnterExecutionContext();
+		try
 		{
-			if (!startNewScope)
-			{
-				_jintEngine.Execute(program);
+			return _jintEngine.Execute(program).GetCompletionValue();
+		}
+		finally
+		{
+			LeaveExecutionContext();
+		}
+	}
 
-				return;
-			}
-
-			EnterExecutionContext();
-			try
-			{
-				_jintEngine.Execute(program);
-			}
-			finally
-			{
-				LeaveExecutionContext();
-			}
+	public JsValue Eval(Expression expression, bool startNewScope)
+	{
+		if (!startNewScope)
+		{
+			return JsValue.FromObject(_jintEngine, _jintEngine.EvaluateExpression(expression));
 		}
 
-		public void Exec(Expression expression, bool startNewScope)
+		EnterExecutionContext();
+		try
 		{
-			if (!startNewScope)
-			{
-				_jintEngine.EvaluateExpression(expression);
+			return JsValue.FromObject(_jintEngine, _jintEngine.EvaluateExpression(expression));
+		}
+		finally
+		{
+			LeaveExecutionContext();
+		}
+	}
 
-				return;
-			}
+	public void Exec(Program program, bool startNewScope)
+	{
+		if (!startNewScope)
+		{
+			_jintEngine.Execute(program);
 
-			EnterExecutionContext();
-			try
-			{
-				_jintEngine.EvaluateExpression(expression);
-			}
-			finally
-			{
-				LeaveExecutionContext();
-			}
+			return;
+		}
+
+		EnterExecutionContext();
+		try
+		{
+			_jintEngine.Execute(program);
+		}
+		finally
+		{
+			LeaveExecutionContext();
+		}
+	}
+
+	public void Exec(Expression expression, bool startNewScope)
+	{
+		if (!startNewScope)
+		{
+			_jintEngine.EvaluateExpression(expression);
+
+			return;
+		}
+
+		EnterExecutionContext();
+		try
+		{
+			_jintEngine.EvaluateExpression(expression);
+		}
+		finally
+		{
+			LeaveExecutionContext();
 		}
 	}
 }

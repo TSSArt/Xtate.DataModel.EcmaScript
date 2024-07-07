@@ -31,12 +31,12 @@ namespace Xtate.DataModel.EcmaScript.Test;
 public class ExecutableTest
 {
 	//private Mock<ICustomActionExecutor>         _customActionExecutor          = default!;
-	private Mock<CustomActionBase>          _customAction          = default!;
+	private Mock<CustomActionBase>       _customAction          = default!;
 	private Mock<ICustomActionActivator> _customActionActivator = default!;
-	private Mock<ICustomActionProvider> _customActionProvider = default!;
+	private Mock<ICustomActionProvider>  _customActionProvider  = default!;
 	private ChannelReader<IEvent>        _eventChannel          = default!;
 	private Mock<IEventController>       _eventController       = default!;
-	private Mock<IEventQueueReader>      _eventQueueReader      = default!; 
+	private Mock<IEventQueueReader>      _eventQueueReader      = default!;
 	private Mock<IExternalCommunication> _externalCommunication = default!;
 	private Mock<ILogger>                _logger                = default!;
 	private Mock<ILogWriter>             _logWriter             = default!;
@@ -71,14 +71,15 @@ public class ExecutableTest
 		_logWriter = new Mock<ILogWriter>();
 
 		_customAction = new Mock<CustomActionBase>();
-		_customAction.Setup(x => x.Execute()).Callback(() => _logWriter.Object.Write(Level.Info, 0, "Custom"));
+		_customAction.Setup(x => x.Execute()).Callback(() => _logWriter.Object.Write(Level.Info, eventId: 0, message: "Custom"));
 
 		_customActionActivator = new Mock<ICustomActionActivator>();
 		_customActionActivator.Setup(x => x.Activate(It.IsAny<string>())).Returns(_customAction.Object);
 
 		_customActionProvider = new Mock<ICustomActionProvider>();
 		_customActionProvider.Setup(x => x.TryGetActivator("http://www.w3.org/2005/07/scxml", "custom")).Returns(_customActionActivator.Object);
-//		Xtate.IoC.DependencyInjectionException: Factory of [Xtate.Core.StateMachineInterpreter] raised exception. ---> Xtate.IoC.DependencyInjectionException: Factory of [Xtate.CustomAction.CustomActionContainer] raised exception. ---> Xtate.InfrastructureException: There is no any CustomActionProvider registered for processing custom action node: <>
+
+		//		Xtate.IoC.DependencyInjectionException: Factory of [Xtate.Core.StateMachineInterpreter] raised exception. ---> Xtate.IoC.DependencyInjectionException: Factory of [Xtate.CustomAction.CustomActionContainer] raised exception. ---> Xtate.InfrastructureException: There is no any CustomActionProvider registered for processing custom action node: <>
 
 		/*
 			_customActionExecutor = new Mock<ICustomActionExecutor>();
@@ -107,11 +108,12 @@ public class ExecutableTest
 		_eventQueueReader = new Mock<IEventQueueReader>();
 
 		IEvent tmp = null!;
+
 		//_eventQueueReader.Setup(x => x.TryReadEvent(out tmp)).Returns(false);
 		//_eventQueueReader.Setup(x => x.WaitToEvent()).Returns(new ValueTask<bool>(false));
 		_logWriter.Setup(x => x.IsEnabled(It.IsAny<Level>())).Returns(true);
 	}
-	
+
 	private async Task RunStateMachine(Func<string, ValueTask<IStateMachine>> getter, string innerXml)
 	{
 		var stateMachine = getter(innerXml);
@@ -122,6 +124,7 @@ public class ExecutableTest
 		services.AddForwarding(_ => _customActionProvider.Object);
 		services.AddForwarding(_ => stateMachine);
 		services.AddForwarding<ILogWriter, Type>((sp, v) => _logWriter.Object);
+
 		//services.AddForwarding(_ => _eventController.Object);
 		services.AddForwarding(_ => _eventQueueReader.Object);
 		var provider = services.BuildProvider();
@@ -140,7 +143,7 @@ public class ExecutableTest
 			//ignore
 		}
 	}
-	
+
 	[TestMethod]
 	public async Task ContentJsonTest()
 	{
@@ -162,12 +165,13 @@ public class ExecutableTest
 			innerXml:
 			"<state id='s1'><onentry><raise event='my'/></onentry><transition event='my' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
-		_logWriter.Verify(l => l.Write(Level.Info, 1,"Hello", It.IsAny<IEnumerable<LoggingParameter>>()));
+		_logWriter.Verify(l => l.Write(Level.Info, 1, "Hello", It.IsAny<IEnumerable<LoggingParameter>>()));
+
 		//_logWriter.Verify(l => l.Write(It.IsAny<Level>(), It.IsAny<string>(), It.IsAny<IEnumerable<LoggingParameter>>()));
 
 		//_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
 	}
-	
+
 	[TestMethod]
 	public async Task SendInternalTest()
 	{

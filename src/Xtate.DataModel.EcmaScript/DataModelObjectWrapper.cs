@@ -1,5 +1,5 @@
-﻿#region Copyright © 2019-2021 Sergii Artemenko
-
+﻿// Copyright © 2019-2024 Sergii Artemenko
+// 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -15,65 +15,60 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#endregion
-
-using System.Collections.Generic;
 using Jint;
 using Jint.Native.Object;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
-using Xtate.Core;
 
-namespace Xtate.DataModel.EcmaScript
+namespace Xtate.DataModel.EcmaScript;
+
+internal class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 {
-	internal class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
+	private readonly DataModelList _list;
+
+	public DataModelObjectWrapper(Engine engine, DataModelList list) : base(engine)
 	{
-		private readonly DataModelList _list;
+		_list = list;
 
-		public DataModelObjectWrapper(Engine engine, DataModelList list) : base(engine)
+		Extensible = list.Access == DataModelAccess.Writable;
+	}
+
+#region Interface IObjectWrapper
+
+	public object Target => _list;
+
+#endregion
+
+	public override void RemoveOwnProperty(string property)
+	{
+		_list.RemoveAll(property, caseInsensitive: false);
+
+		base.RemoveOwnProperty(property);
+	}
+
+	public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
+	{
+		foreach (var pair in _list.KeyValuePairs)
 		{
-			_list = list;
-
-			Extensible = list.Access == DataModelAccess.Writable;
+			yield return new KeyValuePair<string, PropertyDescriptor>(pair.Key, GetOwnProperty(pair.Key));
 		}
+	}
 
-	#region Interface IObjectWrapper
+	public override PropertyDescriptor GetOwnProperty(string property)
+	{
+		var descriptor = base.GetOwnProperty(property);
 
-		public object Target => _list;
-
-	#endregion
-
-		public override void RemoveOwnProperty(string property)
+		if (descriptor != PropertyDescriptor.Undefined)
 		{
-			_list.RemoveAll(property, caseInsensitive: false);
-
-			base.RemoveOwnProperty(property);
-		}
-
-		public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
-		{
-			foreach (var pair in _list.KeyValuePairs)
-			{
-				yield return new KeyValuePair<string, PropertyDescriptor>(pair.Key, GetOwnProperty(pair.Key));
-			}
-		}
-
-		public override PropertyDescriptor GetOwnProperty(string property)
-		{
-			var descriptor = base.GetOwnProperty(property);
-
-			if (descriptor != PropertyDescriptor.Undefined)
-			{
-				return descriptor;
-			}
-
-			descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property);
-
-			base.SetOwnProperty(property, descriptor);
-
 			return descriptor;
 		}
 
-		public override bool HasOwnProperty(string property) => _list.ContainsKey(property, caseInsensitive: false);
+		descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property);
+
+		base.SetOwnProperty(property, descriptor);
+
+		return descriptor;
 	}
+
+	public override bool HasOwnProperty(string property) => _list.ContainsKey(property, caseInsensitive: false);
 }

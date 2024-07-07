@@ -34,7 +34,8 @@ public class DataModelTest
 {
 	private Mock<IEventQueueReader> _eventQueueReader = default!;
 	private Mock<ILogMethods>       _logMethods       = default!;
-	private Mock<ILogWriter> _logWriter = default!;
+	private Mock<ILogWriter>        _logWriter        = default!;
+
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
 		var services = new ServiceCollection();
@@ -388,7 +389,10 @@ public class DataModelTest
 
 		public bool IsEnabled(Level level) => level is Level.Info or Level.Warning or Level.Error;
 
-		public ValueTask Write(Level level, int eventId, string? message, IEnumerable<LoggingParameter>? parameters = default)
+		public ValueTask Write(Level level,
+							   int eventId,
+							   string? message,
+							   IEnumerable<LoggingParameter>? parameters = default)
 		{
 			var prms = parameters?.ToDictionary(p => p.Name, p => p) ?? [];
 

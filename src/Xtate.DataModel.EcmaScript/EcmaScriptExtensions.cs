@@ -1,5 +1,5 @@
-﻿#region Copyright © 2019-2021 Sergii Artemenko
-
+﻿// Copyright © 2019-2024 Sergii Artemenko
+// 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -15,75 +15,68 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#endregion
-
-using System;
 using Jint.Parser.Ast;
-using Xtate.Core;
 using Xtate.DataModel;
 using Xtate.DataModel.EcmaScript;
-using Xtate.DataModel.XPath;
 using Xtate.IoC;
-using Xtate.Scxml;
 
-namespace Xtate
+namespace Xtate;
+
+public static class EcmaScriptExtensions
 {
-	public static class EcmaScriptExtensions
+	public static void RegisterEcmaScriptDataModelHandler(this IServiceCollection services)
 	{
-		public static void RegisterEcmaScriptDataModelHandler(this IServiceCollection services)
+		if (services.IsRegistered<EcmaScriptDataModelHandler>())
 		{
-			if (services.IsRegistered<EcmaScriptDataModelHandler>())
-			{
-				return;
-			}
-
-			services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
-			services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
-			services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
-			services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
-			services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Program>();
-			services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
-			services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
-			services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
-
-			//TODO:delete
-			/*
-			 
-			 
-			   public required Func<, , > EcmaScriptValueExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
-			   public required Func<, Program, > EcmaScriptConditionExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
-			   public required Func<, Program, > EcmaScriptScriptExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
-			   public required Func<, Program, >  { private get; [UsedImplicitly] init; }
-*/
-			/*
-			services.RegisterDataModelHandlerBase();
-			services.RegisterErrorProcessor();
-			services.RegisterNameTable();
-
-			services.AddTypeSync<XPathValueExpressionEvaluator, IValueExpression, XPathCompiledExpression>();
-			services.AddTypeSync<XPathConditionExpressionEvaluator, IConditionExpression, XPathCompiledExpression>();
-			services.AddTypeSync<XPathLocationExpressionEvaluator, ILocationExpression, XPathCompiledExpression>();
-			services.AddTypeSync<XPathLocationExpression, ILocationExpression, (XPathAssignType, string?)>();
-			services.AddTypeSync<XPathContentBodyEvaluator, IContentBody>();
-			services.AddTypeSync<XPathExternalDataExpressionEvaluator, IExternalDataExpression>();
-			services.AddTypeSync<XPathInlineContentEvaluator, IInlineContent>();
-
-			//services.AddType<XPathExpressionContextOld, IXmlNamespacesInfo?>();  //TODO:
-			//services.AddType<XPathVarDescriptorOld, string>();
-
-			services.AddTypeSync<XPathExpressionContext, IXmlNamespacesInfo?>();
-			services.AddTypeSync<XPathVarDescriptor, string>();
-			services.AddTypeSync<XPathCompiledExpression, string, IXmlNamespacesInfo?>();
-			services.AddTypeSync<XPathXmlParserContextFactory>();
-			services.AddSharedType<XPathEngine>(SharedWithin.Scope);
-
-			services.AddImplementationSync<InFunctionProvider>().For<IXPathFunctionProvider>();
-			services.AddTypeSync<InFunction>();*/
-
-			services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>();
-			services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
-
-			services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
+			return;
 		}
+
+		services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
+		services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
+		services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
+		services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
+		services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Program>();
+		services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
+		services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
+		services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
+
+		//TODO:delete
+		/*
+
+
+		   public required Func<, , > EcmaScriptValueExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+		   public required Func<, Program, > EcmaScriptConditionExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+		   public required Func<, Program, > EcmaScriptScriptExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+		   public required Func<, Program, >  { private get; [UsedImplicitly] init; }
+*/
+		/*
+		services.RegisterDataModelHandlerBase();
+		services.RegisterErrorProcessor();
+		services.RegisterNameTable();
+
+		services.AddTypeSync<XPathValueExpressionEvaluator, IValueExpression, XPathCompiledExpression>();
+		services.AddTypeSync<XPathConditionExpressionEvaluator, IConditionExpression, XPathCompiledExpression>();
+		services.AddTypeSync<XPathLocationExpressionEvaluator, ILocationExpression, XPathCompiledExpression>();
+		services.AddTypeSync<XPathLocationExpression, ILocationExpression, (XPathAssignType, string?)>();
+		services.AddTypeSync<XPathContentBodyEvaluator, IContentBody>();
+		services.AddTypeSync<XPathExternalDataExpressionEvaluator, IExternalDataExpression>();
+		services.AddTypeSync<XPathInlineContentEvaluator, IInlineContent>();
+
+		//services.AddType<XPathExpressionContextOld, IXmlNamespacesInfo?>();  //TODO:
+		//services.AddType<XPathVarDescriptorOld, string>();
+
+		services.AddTypeSync<XPathExpressionContext, IXmlNamespacesInfo?>();
+		services.AddTypeSync<XPathVarDescriptor, string>();
+		services.AddTypeSync<XPathCompiledExpression, string, IXmlNamespacesInfo?>();
+		services.AddTypeSync<XPathXmlParserContextFactory>();
+		services.AddSharedType<XPathEngine>(SharedWithin.Scope);
+
+		services.AddImplementationSync<InFunctionProvider>().For<IXPathFunctionProvider>();
+		services.AddTypeSync<InFunction>();*/
+
+		services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>();
+		services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
+
+		services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
 	}
 }
