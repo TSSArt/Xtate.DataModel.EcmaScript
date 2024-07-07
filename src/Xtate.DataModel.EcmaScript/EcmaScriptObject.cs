@@ -1,5 +1,5 @@
-﻿#region Copyright © 2019-2021 Sergii Artemenko
-
+﻿// Copyright © 2019-2024 Sergii Artemenko
+// 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -15,21 +15,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#endregion
-
 using Jint.Native;
-using Xtate.Core;
 
-namespace Xtate.DataModel.EcmaScript
+namespace Xtate.DataModel.EcmaScript;
+
+internal class EcmaScriptObject(JsValue jsValue) : IObject
 {
-	internal class EcmaScriptObject(JsValue jsValue) : IObject
-	{
-		public JsValue JsValue { get; } = jsValue;
+	public JsValue JsValue { get; } = jsValue;
 
-	#region Interface IObject
+#region Interface IObject
 
-		public object ToObject() => JsValue.ToObject();
+	public object ToObject() => JsValue.ToObject();
 
-	#endregion
-	}
+#endregion
 }

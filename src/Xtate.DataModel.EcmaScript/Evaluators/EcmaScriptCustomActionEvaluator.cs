@@ -1,44 +1,39 @@
-﻿#region Copyright © 2019-2021 Sergii Artemenko
+﻿// Copyright © 2019-2024 Sergii Artemenko
+// 
+// This file is part of the Xtate project. <https://xtate.net/>
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+// 
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-	// This file is part of the Xtate project. <https://xtate.net/>
-	// 
-	// This program is free software: you can redistribute it and/or modify
-	// it under the terms of the GNU Affero General Public License as published
-	// by the Free Software Foundation, either version 3 of the License, or
-	// (at your option) any later version.
-	// 
-	// This program is distributed in the hope that it will be useful,
-	// but WITHOUT ANY WARRANTY; without even the implied warranty of
-	// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	// GNU Affero General Public License for more details.
-	// 
-	// You should have received a copy of the GNU Affero General Public License
-	// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+namespace Xtate.DataModel.EcmaScript;
 
-#endregion
+public class EcmaScriptCustomActionEvaluator(ICustomAction customAction) : DefaultCustomActionEvaluator(customAction)
+{
+	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
 
-	using System;
-	using System.Threading.Tasks;
-
-	namespace Xtate.DataModel.EcmaScript;
-
-	public class EcmaScriptCustomActionEvaluator(ICustomAction customAction) : DefaultCustomActionEvaluator(customAction)
+	public override async ValueTask Execute()
 	{
-		public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-		public override async ValueTask Execute()
+		engine.EnterExecutionContext();
+
+		try
 		{
-			var engine = await EngineFactory().ConfigureAwait(false);
-
-			engine.EnterExecutionContext();
-
-			try
-			{
-				await base.Execute().ConfigureAwait(false);
-			}
-			finally
-			{
-				engine.LeaveExecutionContext();
-			}
+			await base.Execute().ConfigureAwait(false);
+		}
+		finally
+		{
+			engine.LeaveExecutionContext();
 		}
 	}
+}
