@@ -46,6 +46,7 @@ namespace Xtate
 			services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
 			services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
 
+			//TODO:delete
 			/*
 			 
 			 

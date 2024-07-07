@@ -73,7 +73,7 @@ public class DataModelTest
 		services.RegisterStateMachineInterpreter();
 		services.AddForwarding(_ => stateMachine);
 		services.AddForwarding(_ => _logMethods.Object);
-		services.AddImplementation<LogWriter, string>().For<ILogWriter>();
+		services.AddImplementation<LogWriter, Type>().For<ILogWriter>();
 		services.AddForwarding(_ => _eventQueueReader.Object);
 
 		//services.AddForwarding(_ => _eventController.Object);
@@ -382,29 +382,29 @@ public class DataModelTest
 	}
 
 	[UsedImplicitly]
-	private class LogWriter(string category, ILogMethods logMethods) : ILogWriter
+	private class LogWriter(Type source, ILogMethods logMethods) : ILogWriter
 	{
 	#region Interface ILogWriter
 
 		public bool IsEnabled(Level level) => level is Level.Info or Level.Warning or Level.Error;
 
-		public ValueTask Write(Level level, string? message, IEnumerable<LoggingParameter>? parameters = default)
+		public ValueTask Write(Level level, int eventId, string? message, IEnumerable<LoggingParameter>? parameters = default)
 		{
 			var prms = parameters?.ToDictionary(p => p.Name, p => p) ?? [];
 
 			switch (level)
 			{
 				case Level.Info when prms.ContainsKey("Parameter"):
-					logMethods.Info(category, message, DataModelValue.FromObject(prms["Parameter"].Value));
+					logMethods.Info(source.Name, message, DataModelValue.FromObject(prms["Parameter"].Value));
 					break;
 				case Level.Info when prms.Count == 0:
-					logMethods.Info(category, message, arg: default);
+					logMethods.Info(source.Name, message, arg: default);
 					break;
 				case Level.Error when prms.ContainsKey("Exception"):
-					logMethods.Error(category, message, (Exception?) prms["Exception"].Value);
+					logMethods.Error(source.Name, message, (Exception?) prms["Exception"].Value);
 					break;
 				case Level.Trace:
-					logMethods.Trace(category, message);
+					logMethods.Trace(source.Name, message);
 					break;
 				default: throw new NotSupportedException();
 			}
