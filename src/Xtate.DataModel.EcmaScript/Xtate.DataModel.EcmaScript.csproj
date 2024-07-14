@@ -10,8 +10,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Xtate.SharedContent" Version="0.2.20" />
-		<PackageReference Include="Jint" Version="2.11.58" />
+		<PackageReference Include="Xtate.SharedContent" Version="0.*" />
+		<PackageReference Include="Jint" Version="[2.11.58,3.0)" />
 		<PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0" PrivateAssets="all" />
 		<PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="5.0.0.1" PrivateAssets="all" />
 	</ItemGroup>
@@ -21,7 +21,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(UseProjectReference)'==''">
-		<PackageReference Include="Xtate.Core" Version="0.2.81" />
+		<PackageReference Include="Xtate.Core" Version="0.*" />
 	</ItemGroup>
 
 	<ItemGroup>
