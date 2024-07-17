@@ -32,9 +32,10 @@ namespace Xtate.DataModel.EcmaScript.Test;
 [TestClass]
 public class DataModelTest
 {
-	private Mock<IEventQueueReader> _eventQueueReader = default!;
-	private Mock<ILogMethods>       _logMethods       = default!;
-	private Mock<ILogWriter>        _logWriter        = default!;
+	private Mock<IEventQueueReader>                    _eventQueueReader = default!;
+	private Mock<ILogMethods>                          _logMethods       = default!;
+	private Mock<ILogWriter<ILog>>                     _logWriterL       = default!;
+	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI       = default!;
 
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
@@ -74,7 +75,7 @@ public class DataModelTest
 		services.RegisterStateMachineInterpreter();
 		services.AddForwarding(_ => stateMachine);
 		services.AddForwarding(_ => _logMethods.Object);
-		services.AddImplementation<LogWriter, Type>().For<ILogWriter>();
+		services.AddImplementation<LogWriter<Any>>().For<ILogWriter<Any>>();
 		services.AddForwarding(_ => _eventQueueReader.Object);
 
 		//services.AddForwarding(_ => _eventController.Object);
@@ -100,8 +101,10 @@ public class DataModelTest
 	{
 		var channel = Channel.CreateUnbounded<IEvent>();
 		channel.Writer.Complete();
-		_logWriter = new Mock<ILogWriter>();
-		_logWriter.Setup(x => x.IsEnabled(It.IsAny<Level>())).Returns(true);
+		_logWriterL = new Mock<ILogWriter<ILog>>();
+		_logWriterL.Setup(x => x.IsEnabled(It.IsAny<Level>())).Returns(true);
+		_logWriterI = new Mock<ILogWriter<IStateMachineInterpreter>>();
+		_logWriterI.Setup(x => x.IsEnabled(It.IsAny<Level>())).Returns(true);
 		_eventQueueReader = new Mock<IEventQueueReader>();
 		_logMethods = new Mock<ILogMethods>();
 	}
@@ -383,37 +386,43 @@ public class DataModelTest
 	}
 
 	[UsedImplicitly]
-	private class LogWriter(Type source, ILogMethods logMethods) : ILogWriter
+	private class LogWriter<TSource>(ILogMethods logMethods) : ILogWriter<TSource>
 	{
 	#region Interface ILogWriter
 
 		public bool IsEnabled(Level level) => level is Level.Info or Level.Warning or Level.Error;
 
-		public ValueTask Write(Level level,
+		public async ValueTask Write(Level level,
 							   int eventId,
 							   string? message,
-							   IEnumerable<LoggingParameter>? parameters = default)
+							   IAsyncEnumerable<LoggingParameter>? parameters = default)
 		{
-			var prms = parameters?.ToDictionary(p => p.Name, p => p) ?? [];
+			var prms = new Dictionary<string, LoggingParameter>();
+
+			if (parameters is not null)
+			{
+				await foreach (var parameter in parameters)
+				{
+					prms[parameter.Name] = parameter;
+				}
+			}
 
 			switch (level)
 			{
 				case Level.Info when prms.ContainsKey("Parameter"):
-					logMethods.Info(source.Name, message, DataModelValue.FromObject(prms["Parameter"].Value));
+					logMethods.Info(typeof(TSource).Name, message, DataModelValue.FromObject(prms["Parameter"].Value));
 					break;
 				case Level.Info when prms.Count == 0:
-					logMethods.Info(source.Name, message, arg: default);
+					logMethods.Info(typeof(TSource).Name, message, arg: default);
 					break;
 				case Level.Error when prms.ContainsKey("Exception"):
-					logMethods.Error(source.Name, message, (Exception?) prms["Exception"].Value);
+					logMethods.Error(typeof(TSource).Name, message, (Exception?) prms["Exception"].Value);
 					break;
 				case Level.Trace:
-					logMethods.Trace(source.Name, message);
+					logMethods.Trace(typeof(TSource).Name, message);
 					break;
 				default: throw new NotSupportedException();
 			}
-
-			return default;
 		}
 
 	#endregion
