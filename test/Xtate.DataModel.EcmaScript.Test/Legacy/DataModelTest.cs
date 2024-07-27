@@ -17,7 +17,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -34,8 +33,8 @@ public class DataModelTest
 {
 	private Mock<IEventQueueReader>                    _eventQueueReader = default!;
 	private Mock<ILogMethods>                          _logMethods       = default!;
-	private Mock<ILogWriter<ILog>>                     _logWriterL       = default!;
 	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI       = default!;
+	private Mock<ILogWriter<ILog>>                     _logWriterL       = default!;
 
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
@@ -388,14 +387,14 @@ public class DataModelTest
 	[UsedImplicitly]
 	private class LogWriter<TSource>(ILogMethods logMethods) : ILogWriter<TSource>
 	{
-	#region Interface ILogWriter
+	#region Interface ILogWriter<TSource>
 
 		public bool IsEnabled(Level level) => level is Level.Info or Level.Warning or Level.Error;
 
 		public async ValueTask Write(Level level,
-							   int eventId,
-							   string? message,
-							   IAsyncEnumerable<LoggingParameter>? parameters = default)
+									 int eventId,
+									 string? message,
+									 IAsyncEnumerable<LoggingParameter>? parameters = default)
 		{
 			var prms = new Dictionary<string, LoggingParameter>();
 
@@ -412,7 +411,7 @@ public class DataModelTest
 				case Level.Info when prms.ContainsKey("Parameter"):
 					logMethods.Info(typeof(TSource).Name, message, DataModelValue.FromObject(prms["Parameter"].Value));
 					break;
-				case Level.Info when prms.Count == 0:
+				case Level.Info:
 					logMethods.Info(typeof(TSource).Name, message, arg: default);
 					break;
 				case Level.Error when prms.ContainsKey("Exception"):

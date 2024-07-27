@@ -39,9 +39,9 @@ public class ExecutableTest
 	private Mock<IEventQueueReader>                    _eventQueueReader      = default!;
 	private Mock<IExternalCommunication>               _externalCommunication = default!;
 	private Mock<ILogger>                              _logger                = default!;
-	private Mock<ILogWriter<ILog>>                     _logWriterL            = default!;
-	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI            = default!;
 	private Mock<ILogWriter<IEventController>>         _logWriterE            = default!;
+	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI            = default!;
+	private Mock<ILogWriter<ILog>>                     _logWriterL            = default!;
 	private InterpreterOptions                         _options               = default!;
 
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
