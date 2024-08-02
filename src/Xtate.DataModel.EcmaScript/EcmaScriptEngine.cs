@@ -56,7 +56,7 @@ public class EcmaScriptEngine
 		{
 			if (!dataModel.TryGet(name, caseInsensitive: false, out _))
 			{
-				toRemove ??= new List<string>();
+				toRemove ??= [];
 				toRemove.Add(name);
 			}
 		}
