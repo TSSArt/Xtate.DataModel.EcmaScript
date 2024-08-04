@@ -40,7 +40,7 @@ public class DataModelTest
 	{
 		var services = new ServiceCollection();
 		services.AddModule<StateMachineFactoryModule>();
-		services.AddForwarding<IScxmlStateMachine>(_ => new ScxmlStateMachine(scxml));
+		services.AddConstant<IScxmlStateMachine>(new ScxmlStateMachine(scxml));
 		var provider = services.BuildProvider();
 
 		return await provider.GetRequiredService<IStateMachine>();
@@ -67,17 +67,17 @@ public class DataModelTest
 
 	private async Task RunStateMachineBase<E>(Func<string, ValueTask<IStateMachine>> getter, string innerXml) where E : Exception
 	{
-		var stateMachine = getter(innerXml);
+		var stateMachine = await getter(innerXml);
 
 		var services = new ServiceCollection();
 		services.AddModule<EcmaScriptDataModelHandlerModule>();
 		services.AddModule<StateMachineInterpreterModule>();
-		services.AddForwarding(_ => stateMachine);
-		services.AddForwarding(_ => _logMethods.Object);
+		services.AddConstant(stateMachine);
+		services.AddConstant(_logMethods.Object);
 		services.AddImplementation<LogWriter<Any>>().For<ILogWriter<Any>>();
-		services.AddForwarding(_ => _eventQueueReader.Object);
+		services.AddConstant(_eventQueueReader.Object);
 
-		//services.AddForwarding(_ => _eventController.Object);
+		//services.AddConstant(_ => _eventController.Object);
 		var provider = services.BuildProvider();
 
 		var stateMachineInterpreter = await provider.GetRequiredService<IStateMachineInterpreter>();

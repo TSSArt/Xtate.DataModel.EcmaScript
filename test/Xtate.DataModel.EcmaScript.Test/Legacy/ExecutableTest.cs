@@ -48,7 +48,7 @@ public class ExecutableTest
 	{
 		var services = new ServiceCollection();
 		services.AddModule<StateMachineFactoryModule>();
-		services.AddForwarding<IScxmlStateMachine>(_ => new ScxmlStateMachine(scxml));
+		services.AddConstant<IScxmlStateMachine>(new ScxmlStateMachine(scxml));
 		var provider = services.BuildProvider();
 
 		//using var textReader = new StringReader(scxml);
@@ -122,19 +122,19 @@ public class ExecutableTest
 
 	private async Task RunStateMachine(Func<string, ValueTask<IStateMachine>> getter, string innerXml)
 	{
-		var stateMachine = getter(innerXml);
+		var stateMachine = await getter(innerXml);
 
 		var services = new ServiceCollection();
 		services.AddModule<StateMachineInterpreterModule>();
 		services.AddModule<EcmaScriptDataModelHandlerModule>();
-		services.AddForwarding(_ => _customActionProvider.Object);
-		services.AddForwarding(_ => stateMachine);
-		services.AddForwarding<ILogWriter<ILog>>(_ => _logWriterL.Object);
-		services.AddForwarding<ILogWriter<IStateMachineInterpreter>>(_ => _logWriterI.Object);
-		services.AddForwarding<ILogWriter<IEventController>>(_ => _logWriterE.Object);
+		services.AddConstant(_customActionProvider.Object);
+		services.AddConstant(stateMachine);
+		services.AddConstant(_logWriterL.Object);
+		services.AddConstant(_logWriterI.Object);
+		services.AddConstant(_logWriterE.Object);
 
-		//services.AddForwarding(_ => _eventController.Object);
-		services.AddForwarding(_ => _eventQueueReader.Object);
+		//services.AddConstant(_ => _eventController.Object);
+		services.AddConstant(_eventQueueReader.Object);
 		var provider = services.BuildProvider();
 
 		var stateMachineInterpreter = await provider.GetRequiredService<IStateMachineInterpreter>();
