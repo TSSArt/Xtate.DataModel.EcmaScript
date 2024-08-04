@@ -47,7 +47,7 @@ public class ExecutableTest
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
 		var services = new ServiceCollection();
-		services.RegisterStateMachineFactory();
+		services.AddModule<StateMachineFactoryModule>();
 		services.AddForwarding<IScxmlStateMachine>(_ => new ScxmlStateMachine(scxml));
 		var provider = services.BuildProvider();
 
@@ -125,8 +125,8 @@ public class ExecutableTest
 		var stateMachine = getter(innerXml);
 
 		var services = new ServiceCollection();
-		services.RegisterStateMachineInterpreter();
-		services.RegisterEcmaScriptDataModelHandler();
+		services.AddModule<StateMachineInterpreterModule>();
+		services.AddModule<EcmaScriptDataModelHandlerModule>();
 		services.AddForwarding(_ => _customActionProvider.Object);
 		services.AddForwarding(_ => stateMachine);
 		services.AddForwarding<ILogWriter<ILog>>(_ => _logWriterL.Object);

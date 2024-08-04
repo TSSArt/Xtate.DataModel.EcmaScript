@@ -22,23 +22,18 @@ using Xtate.IoC;
 
 namespace Xtate;
 
-public static class EcmaScriptExtensions
+public class EcmaScriptDataModelHandlerModule : Module
 {
-	public static void RegisterEcmaScriptDataModelHandler(this IServiceCollection services)
+	protected override void AddServices()
 	{
-		if (services.IsRegistered<EcmaScriptDataModelHandler>())
-		{
-			return;
-		}
-
-		services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
-		services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
-		services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
-		services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
-		services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Program>();
-		services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
-		services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
-		services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
+		Services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
+		Services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
+		Services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
+		Services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
+		Services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Program>();
+		Services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
+		Services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
+		Services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
 
 		//TODO:delete
 		/*
@@ -50,9 +45,9 @@ public static class EcmaScriptExtensions
 		   public required Func<, Program, >  { private get; [UsedImplicitly] init; }
 */
 		/*
-		services.RegisterDataModelHandlerBase();
-		services.RegisterErrorProcessor();
-		services.RegisterNameTable();
+		services.AddModule<DataModelHandlerBaseModule>();
+		services.AddModule<ErrorProcessorModule>();
+		services.AddModule<NameTableModule>();
 
 		services.AddTypeSync<XPathValueExpressionEvaluator, IValueExpression, XPathCompiledExpression>();
 		services.AddTypeSync<XPathConditionExpressionEvaluator, IConditionExpression, XPathCompiledExpression>();
@@ -74,9 +69,14 @@ public static class EcmaScriptExtensions
 		services.AddImplementationSync<InFunctionProvider>().For<IXPathFunctionProvider>();
 		services.AddTypeSync<InFunction>();*/
 
-		services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>();
-		services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
+		Services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
+		Services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
 
-		services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
+		var implementation = Services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>();
+
+		if (!Services.IsRegistered<IDataModelHandler>())
+		{
+			implementation.For<IDataModelHandler>();
+		}
 	}
 }

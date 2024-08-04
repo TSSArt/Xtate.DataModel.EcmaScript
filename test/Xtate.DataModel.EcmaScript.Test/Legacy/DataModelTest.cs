@@ -39,7 +39,7 @@ public class DataModelTest
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
 		var services = new ServiceCollection();
-		services.RegisterStateMachineFactory();
+		services.AddModule<StateMachineFactoryModule>();
 		services.AddForwarding<IScxmlStateMachine>(_ => new ScxmlStateMachine(scxml));
 		var provider = services.BuildProvider();
 
@@ -70,8 +70,8 @@ public class DataModelTest
 		var stateMachine = getter(innerXml);
 
 		var services = new ServiceCollection();
-		services.RegisterEcmaScriptDataModelHandler();
-		services.RegisterStateMachineInterpreter();
+		services.AddModule<EcmaScriptDataModelHandlerModule>();
+		services.AddModule<StateMachineInterpreterModule>();
 		services.AddForwarding(_ => stateMachine);
 		services.AddForwarding(_ => _logMethods.Object);
 		services.AddImplementation<LogWriter<Any>>().For<ILogWriter<Any>>();
