@@ -69,22 +69,19 @@ public class DataModelTest
 	{
 		var stateMachine = await getter(innerXml);
 
-		var services = new ServiceCollection();
-		services.AddModule<EcmaScriptDataModelHandlerModule>();
-		services.AddModule<StateMachineInterpreterModule>();
-		services.AddConstant(stateMachine);
-		services.AddConstant(_logMethods.Object);
-		services.AddImplementation<LogWriter<Any>>().For<ILogWriter<Any>>();
-		services.AddConstant(_eventQueueReader.Object);
+		await using var container = Container.Create<EcmaScriptDataModelHandlerModule, StateMachineInterpreterModule>(
+			s =>
+			{
+				s.AddConstant(stateMachine);
+				s.AddConstant(_logMethods.Object);
+				s.AddConstant(_eventQueueReader.Object);
+				s.AddImplementation<LogWriter<Any>>().For<ILogWriter<Any>>();
+			});
 
-		//services.AddConstant(_ => _eventController.Object);
-		var provider = services.BuildProvider();
-
-		var stateMachineInterpreter = await provider.GetRequiredService<IStateMachineInterpreter>();
+		var stateMachineInterpreter = await container.GetRequiredService<IStateMachineInterpreter>();
 
 		try
 		{
-			//await stateMachineInterpreter.RunAsync(SessionId.New(), stateMachine, _eventChannel, _options);
 			await stateMachineInterpreter.RunAsync();
 
 			Assert.Fail($"{typeof(E).Name} should be raised");
