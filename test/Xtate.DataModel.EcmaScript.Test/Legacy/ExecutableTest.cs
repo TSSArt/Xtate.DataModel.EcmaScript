@@ -31,9 +31,9 @@ namespace Xtate.DataModel.EcmaScript.Test;
 public class ExecutableTest
 {
 	//private Mock<ICustomActionExecutor>         _customActionExecutor          = default!;
-	private Mock<CustomActionBase>                     _customAction          = default!;
-	private Mock<ICustomActionActivator>               _customActionActivator = default!;
-	private Mock<ICustomActionProvider>                _customActionProvider  = default!;
+	private Mock<IAction>                              _customAction          = default!;
+	private Mock<IActionActivator>                     _customActionActivator = default!;
+	private Mock<IActionProvider>                      _customActionProvider  = default!;
 	private ChannelReader<IEvent>                      _eventChannel          = default!;
 	private Mock<IEventController>                     _eventController       = default!;
 	private Mock<IEventQueueReader>                    _eventQueueReader      = default!;
@@ -74,13 +74,13 @@ public class ExecutableTest
 		_logWriterI = new Mock<ILogWriter<IStateMachineInterpreter>>();
 		_logWriterE = new Mock<ILogWriter<IEventController>>();
 
-		_customAction = new Mock<CustomActionBase>();
+		_customAction = new Mock<IAction>();
 		_customAction.Setup(x => x.Execute()).Callback(() => _logWriterL.Object.Write(Level.Info, eventId: 0, message: "Custom"));
 
-		_customActionActivator = new Mock<ICustomActionActivator>();
+		_customActionActivator = new Mock<IActionActivator>();
 		_customActionActivator.Setup(x => x.Activate(It.IsAny<string>())).Returns(_customAction.Object);
 
-		_customActionProvider = new Mock<ICustomActionProvider>();
+		_customActionProvider = new Mock<IActionProvider>();
 		_customActionProvider.Setup(x => x.TryGetActivator("http://www.w3.org/2005/07/scxml", "custom")).Returns(_customActionActivator.Object);
 
 		//		Xtate.IoC.DependencyInjectionException: Factory of [Xtate.Core.StateMachineInterpreter] raised exception. ---> Xtate.IoC.DependencyInjectionException: Factory of [Xtate.CustomAction.CustomActionContainer] raised exception. ---> Xtate.InfrastructureException: There is no any CustomActionProvider registered for processing custom action node: <>
