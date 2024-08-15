@@ -111,7 +111,7 @@ public class ExecutableTest
 		_eventController = new Mock<IEventController>();
 		_eventQueueReader = new Mock<IEventQueueReader>();
 
-		IEvent tmp = null!;
+		//IEvent tmp = null!;
 
 		//_eventQueueReader.Setup(x => x.TryReadEvent(out tmp)).Returns(false);
 		//_eventQueueReader.Setup(x => x.WaitToEvent()).Returns(new ValueTask<bool>(false));
