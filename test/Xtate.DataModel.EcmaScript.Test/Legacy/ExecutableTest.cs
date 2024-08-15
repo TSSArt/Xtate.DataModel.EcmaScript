@@ -30,7 +30,6 @@ namespace Xtate.DataModel.EcmaScript.Test;
 [TestClass]
 public class ExecutableTest
 {
-	//private Mock<ICustomActionExecutor>         _customActionExecutor          = default!;
 	private Mock<IAction>                              _customAction          = default!;
 	private Mock<IActionActivator>                     _customActionActivator = default!;
 	private Mock<IActionProvider>                      _customActionProvider  = default!;
@@ -42,7 +41,6 @@ public class ExecutableTest
 	private Mock<ILogWriter<IEventController>>         _logWriterE            = default!;
 	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI            = default!;
 	private Mock<ILogWriter<ILog>>                     _logWriterL            = default!;
-	private InterpreterOptions                         _options               = default!;
 
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
