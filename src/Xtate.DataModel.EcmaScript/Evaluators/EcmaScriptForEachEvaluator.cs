@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
+
 namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
@@ -25,7 +27,9 @@ public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 	public EcmaScriptForEachEvaluator(IForEach forEach) : base(forEach)
 	{
 		var itemEvaluator = base.Item?.As<EcmaScriptLocationExpressionEvaluator>();
-		Infra.NotNull(itemEvaluator);
+		
+		Debug.Assert(itemEvaluator is not null);
+		
 		_itemEvaluator = itemEvaluator;
 
 		_indexEvaluator = base.Index?.As<EcmaScriptLocationExpressionEvaluator>();

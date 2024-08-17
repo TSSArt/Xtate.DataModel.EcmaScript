@@ -19,7 +19,7 @@ namespace Xtate.DataModel.EcmaScript {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -106,6 +106,33 @@ namespace Xtate.DataModel.EcmaScript {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Assertion failed..
+        /// </summary>
+        internal static string Exception_AssertionFailed {
+            get {
+                return ResourceManager.GetString("Exception_AssertionFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} ({1})..
+        /// </summary>
+        internal static string Exception_AssertUnmatched {
+            get {
+                return ResourceManager.GetString("Exception_AssertUnmatched", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} ({1}:{2})..
+        /// </summary>
+        internal static string Exception_AssertUnmatchedWithValue {
+            get {
+                return ResourceManager.GetString("Exception_AssertUnmatchedWithValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to External script missed..
         /// </summary>
         internal static string Exception_ExternalScriptMissed {
@@ -129,6 +156,15 @@ namespace Xtate.DataModel.EcmaScript {
         internal static string Exception_NameOfLocationExpressionCantBeEvaluated {
             get {
                 return ResourceManager.GetString("Exception_NameOfLocationExpressionCantBeEvaluated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unmatched value..
+        /// </summary>
+        internal static string Exception_UnmatchedValue {
+            get {
+                return ResourceManager.GetString("Exception_UnmatchedValue", resourceCulture);
             }
         }
         

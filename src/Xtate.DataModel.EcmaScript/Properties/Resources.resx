@@ -144,4 +144,16 @@
   <data name="ErrorMessage_ScriptExpressionMustBePresent" xml:space="preserve">
     <value>Script Expression must be present.</value>
   </data>
+  <data name="Exception_AssertionFailed" xml:space="preserve">
+    <value>Assertion failed.</value>
+  </data>
+  <data name="Exception_AssertUnmatched" xml:space="preserve">
+    <value>{0} ({1}).</value>
+  </data>
+  <data name="Exception_AssertUnmatchedWithValue" xml:space="preserve">
+    <value>{0} ({1}:{2}).</value>
+  </data>
+  <data name="Exception_UnmatchedValue" xml:space="preserve">
+    <value>Unmatched value.</value>
+  </data>
 </root>

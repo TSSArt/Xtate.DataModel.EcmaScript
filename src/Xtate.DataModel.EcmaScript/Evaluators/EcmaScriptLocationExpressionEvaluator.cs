@@ -43,14 +43,16 @@ public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocati
 			case JintIdentifier identifier:
 				_name = identifier.Name;
 				_declare = CreateDeclareStatement(identifier);
+
 				break;
 
 			case MemberExpression memberExpression:
 				_name = ((JintIdentifier) memberExpression.Property).Name;
+
 				break;
 
 			default:
-				throw Infra.Unexpected<Exception>(leftExpression);
+				throw new InvalidOperationException();
 		}
 	}
 

@@ -21,8 +21,6 @@ public class EcmaScriptExternalDataExpressionEvaluator(IExternalDataExpression e
 {
 	protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource)
 	{
-		Infra.NotNull(resource);
-
 		var content = await resource.GetContent().ConfigureAwait(false);
 
 		return DataModelConverter.FromJson(content);

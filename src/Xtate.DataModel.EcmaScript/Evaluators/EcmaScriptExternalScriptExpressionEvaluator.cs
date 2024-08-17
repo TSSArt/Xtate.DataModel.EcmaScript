@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
 using Jint.Parser;
 using Jint.Parser.Ast;
 
@@ -37,7 +38,7 @@ public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpressi
 
 	public async ValueTask Execute()
 	{
-		Infra.NotNull(_program, Resources.Exception_ExternalScriptMissed);
+		Debug.Assert(_program is not null, Resources.Exception_ExternalScriptMissed);
 
 		var engine = await EngineFactory().ConfigureAwait(false);
 

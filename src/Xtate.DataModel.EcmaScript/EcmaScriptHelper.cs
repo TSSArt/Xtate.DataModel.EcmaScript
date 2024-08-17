@@ -87,7 +87,7 @@ internal static class EcmaScriptHelper
 				   DataModelValueType.Number    => new JsValue(value.AsNumber()),
 				   DataModelValueType.DateTime  => new JsValue(value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo)),
 				   DataModelValueType.List      => new JsValue(GetWrapper(engine, value.AsList())),
-				   _                            => Infra.Unexpected<JsValue>(value.Type, Resources.Exception_UnsupportedValueType)
+				   _                            => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
 			   };
 	}
 
@@ -102,7 +102,7 @@ internal static class EcmaScriptHelper
 				   Types.Number                     => new DataModelValue(value.AsNumber()),
 				   Types.Object when value.IsDate() => new DataModelValue(value.AsDate().ToDateTime()),
 				   Types.Object                     => CreateDataModelValue(value.AsObject()),
-				   _                                => Infra.Unexpected<DataModelValue>(value.Type, Resources.Exception_UnsupportedValueType)
+				   _                                => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
 			   };
 	}
 
