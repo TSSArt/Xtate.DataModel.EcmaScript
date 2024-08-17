@@ -6,6 +6,11 @@
 		<TargetFrameworks>net8.0;netstandard2.0;net462</TargetFrameworks>
 		<PackageId>Xtate.DataModel.EcmaScript</PackageId>
 		<RepositoryUrl>https://github.com/TSSArt/Xtate.DataModel.EcmaScript</RepositoryUrl>
+		<WarningLevel>9999</WarningLevel>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='net462'">
+		<NoWarn>$(NoWarn);nullable</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
