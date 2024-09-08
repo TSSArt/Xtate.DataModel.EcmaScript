@@ -39,8 +39,8 @@ public class DataModelTest
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
 		var services = new ServiceCollection();
-		services.AddModule<StateMachineFactoryModuleForTests>();
-		services.AddConstant<IScxmlStateMachine>(new ScxmlStateMachine(scxml));
+		services.AddModule<StateMachineFactoryModule>();
+		services.AddConstant<IScxmlStateMachine>(new ScxmlStringStateMachine(scxml));
 		var provider = services.BuildProvider();
 
 		return await provider.GetRequiredService<IStateMachine>();
