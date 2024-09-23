@@ -79,6 +79,8 @@ public class DataModelTest
 			});
 
 		var stateMachineInterpreter = await container.GetRequiredService<IStateMachineInterpreter>();
+		var sharedInstanceSetter = await container.GetRequiredService<ISharedInstanceSetter<IStateMachineInterpreter>>();
+		sharedInstanceSetter.SetValue(stateMachineInterpreter);
 
 		try
 		{
