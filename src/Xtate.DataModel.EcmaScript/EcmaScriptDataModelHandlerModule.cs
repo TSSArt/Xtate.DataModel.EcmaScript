@@ -71,12 +71,6 @@ public class EcmaScriptDataModelHandlerModule : Module
 
 		Services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
 		Services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
-
-		var implementation = Services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>();
-
-		if (!Services.IsRegistered<IDataModelHandler>())
-		{
-			implementation.For<IDataModelHandler>();
-		}
+		Services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>(Option.IfNotRegistered);
 	}
 }

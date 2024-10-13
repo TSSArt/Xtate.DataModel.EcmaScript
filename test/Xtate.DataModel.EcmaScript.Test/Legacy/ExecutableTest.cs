@@ -40,7 +40,7 @@ public class ExecutableTest
 	private Mock<ILogger>                              _logger                = default!;
 	private Mock<ILogWriter<IEventController>>         _logWriterE            = default!;
 	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI            = default!;
-	private Mock<ILogWriter<ILog>>                     _logWriterL            = default!;
+	private Mock<ILogWriter<ILogController>>           _logWriterL            = default!;
 
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
@@ -68,7 +68,7 @@ public class ExecutableTest
 		channel.Writer.Complete();
 		_eventChannel = channel.Reader;
 
-		_logWriterL = new Mock<ILogWriter<ILog>>();
+		_logWriterL = new Mock<ILogWriter<ILogController>>();
 		_logWriterI = new Mock<ILogWriter<IStateMachineInterpreter>>();
 		_logWriterE = new Mock<ILogWriter<IEventController>>();
 
@@ -130,6 +130,7 @@ public class ExecutableTest
 		services.AddConstant(_logWriterL.Object);
 		services.AddConstant(_logWriterI.Object);
 		services.AddConstant(_logWriterE.Object);
+		services.AddConstant(new Mock<IExternalCommunication>().Object);
 
 		//services.AddConstant(_ => _eventController.Object);
 		services.AddConstant(_eventQueueReader.Object);
@@ -160,7 +161,7 @@ public class ExecutableTest
 
 		//_externalCommunication.Verify(a => a.TrySendEvent(It.IsAny<IOutgoingEvent>(), It.IsAny<CancellationToken>()));
 		//_eventController.Verify(a => a.Send(It.IsAny<IOutgoingEvent>()));
-		_logWriterE.Verify(l => l.Write(Level.Trace, 1, "Send event: ''", It.IsAny<IAsyncEnumerable<LoggingParameter>>()));
+		_logWriterE.Verify(l => l.Write(Level.Trace, 1, "Send event: ''", It.IsAny<IEnumerable<LoggingParameter>>()));
 	}
 
 	[TestMethod]
@@ -171,7 +172,7 @@ public class ExecutableTest
 			innerXml:
 			"<state id='s1'><onentry><raise event='my'/></onentry><transition event='my' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
-		_logWriterL.Verify(l => l.Write(Level.Info, 1, "Hello", It.IsAny<IAsyncEnumerable<LoggingParameter>>()));
+		_logWriterL.Verify(l => l.Write(Level.Info, 1, "Hello", It.IsAny<IEnumerable<LoggingParameter>>()));
 
 		//_logWriter.Verify(l => l.Write(It.IsAny<Level>(), It.IsAny<string>(), It.IsAny<IAsyncEnumerable<LoggingParameter>>()));
 
@@ -187,7 +188,7 @@ public class ExecutableTest
 			"<state id='s1'><onentry><send event='my' target='_internal'/></onentry><transition event='my' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
 		//_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
-		_logWriterL.Verify(l => l.Write(Level.Info, 1, "Hello", It.IsAny<IAsyncEnumerable<LoggingParameter>>()));
+		_logWriterL.Verify(l => l.Write(Level.Info, 1, "Hello", It.IsAny<IEnumerable<LoggingParameter>>()));
 	}
 
 	[TestMethod]
@@ -199,7 +200,7 @@ public class ExecutableTest
 			"<state id='s1'><onentry><raise event='my.suffix'/></onentry><transition event='my' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
 		//_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
-		_logWriterL.Verify(l => l.Write(Level.Info, 1, "Hello", It.IsAny<IAsyncEnumerable<LoggingParameter>>()));
+		_logWriterL.Verify(l => l.Write(Level.Info, 1, "Hello", It.IsAny<IEnumerable<LoggingParameter>>()));
 	}
 
 	[TestMethod]
@@ -211,7 +212,7 @@ public class ExecutableTest
 			"<state id='s1'><onentry><raise event='my.suffix'/></onentry><transition event='my.*' target='s2'/></state><state id='s2'><onentry><log label='Hello'/></onentry></state>");
 
 		//_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Hello", default, default, default), Times.Once);
-		_logWriterL.Verify(l => l.Write(Level.Info, 1, "Hello", It.IsAny<IAsyncEnumerable<LoggingParameter>>()));
+		_logWriterL.Verify(l => l.Write(Level.Info, 1, "Hello", It.IsAny<IEnumerable<LoggingParameter>>()));
 	}
 
 	[TestMethod]
@@ -223,6 +224,6 @@ public class ExecutableTest
 			"<state id='s1'><onentry><custom my='name'/></onentry></state>");
 
 		//_logger.Verify(l => l.ExecuteLog(It.IsAny<ILoggerContext>(), LogLevel.Info, "Custom", default, default, default), Times.Once);
-		_logWriterL.Verify(l => l.Write(Level.Info, 0, "Custom", It.IsAny<IAsyncEnumerable<LoggingParameter>>()));
+		_logWriterL.Verify(l => l.Write(Level.Info, 0, "Custom", It.IsAny<IEnumerable<LoggingParameter>>()));
 	}
 }

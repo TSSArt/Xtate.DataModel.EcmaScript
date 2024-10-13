@@ -84,7 +84,7 @@ internal static class EcmaScriptHelper
 				   DataModelValueType.Null      => JsValue.Null,
 				   DataModelValueType.Boolean   => new JsValue(value.AsBoolean()),
 				   DataModelValueType.String    => new JsValue(value.AsString()),
-				   DataModelValueType.Number    => new JsValue(value.AsNumber()),
+				   DataModelValueType.Number    => new JsValue(value.AsNumber().ToDouble()),
 				   DataModelValueType.DateTime  => new JsValue(value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo)),
 				   DataModelValueType.List      => new JsValue(GetWrapper(engine, value.AsList())),
 				   _                            => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
