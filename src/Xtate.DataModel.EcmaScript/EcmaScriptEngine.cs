@@ -32,21 +32,17 @@ public class EcmaScriptEngine
 	private readonly Engine          _jintEngine;
 	private readonly HashSet<string> _variableSet = [];
 
-	public EcmaScriptEngine(IDataModelController? dataModelController)
+	public EcmaScriptEngine()
 	{
 		_jintEngine = new Engine(options => options.Culture(CultureInfo.InvariantCulture).LimitRecursion(1024).Strict());
 
 		var global = _jintEngine.Global;
-		var inFunction = new DelegateWrapper(_jintEngine, new Func<string, bool>(state => InStateController?.InState((Identifier) state) ?? false));
+		var inFunction = new DelegateWrapper(_jintEngine, new Func<string, bool>(state => InStateController.InState((Identifier) state)));
 		global.FastAddProperty(EcmaScriptHelper.InFunctionName, inFunction, writable: false, enumerable: false, configurable: false);
-
-		if (dataModelController is not null)
-		{
-			SyncRootVariables(dataModelController.DataModel);
-		}
 	}
 
-	public required IInStateController? InStateController { private get; [UsedImplicitly] init; }
+	public required IDataModelController DataModelController { private get; [UsedImplicitly] init; }
+	public required IInStateController   InStateController   { private get; [UsedImplicitly] init; }
 
 	private void SyncRootVariables(DataModelList dataModel)
 	{
@@ -94,6 +90,8 @@ public class EcmaScriptEngine
 
 	public JsValue Eval(Program program, bool startNewScope)
 	{
+		SyncRootVariables(DataModelController.DataModel);
+
 		if (!startNewScope)
 		{
 			return _jintEngine.Execute(program).GetCompletionValue();
@@ -112,6 +110,8 @@ public class EcmaScriptEngine
 
 	public JsValue Eval(Expression expression, bool startNewScope)
 	{
+		SyncRootVariables(DataModelController.DataModel);
+
 		if (!startNewScope)
 		{
 			return JsValue.FromObject(_jintEngine, _jintEngine.EvaluateExpression(expression));
@@ -130,6 +130,8 @@ public class EcmaScriptEngine
 
 	public void Exec(Program program, bool startNewScope)
 	{
+		SyncRootVariables(DataModelController.DataModel);
+
 		if (!startNewScope)
 		{
 			_jintEngine.Execute(program);
@@ -150,6 +152,8 @@ public class EcmaScriptEngine
 
 	public void Exec(Expression expression, bool startNewScope)
 	{
+		SyncRootVariables(DataModelController.DataModel);
+
 		if (!startNewScope)
 		{
 			_jintEngine.EvaluateExpression(expression);
