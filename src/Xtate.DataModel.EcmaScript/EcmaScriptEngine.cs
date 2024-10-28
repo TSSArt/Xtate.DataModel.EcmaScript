@@ -102,6 +102,10 @@ public class EcmaScriptEngine
 		{
 			return _jintEngine.Execute(program).GetCompletionValue();
 		}
+		catch
+		{
+			throw;
+		}
 		finally
 		{
 			LeaveExecutionContext();

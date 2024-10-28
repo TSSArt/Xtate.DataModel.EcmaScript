@@ -40,6 +40,8 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 	public required  Func<IConditionExpression, Program, EcmaScriptConditionExpressionEvaluator>              EcmaScriptConditionExpressionEvaluatorFactory      { private get; [UsedImplicitly] init; }
 	public required  Func<IScriptExpression, Program, EcmaScriptScriptExpressionEvaluator>                    EcmaScriptScriptExpressionEvaluatorFactory         { private get; [UsedImplicitly] init; }
 	public required  Func<ILocationExpression, (Program, Expression?), EcmaScriptLocationExpressionEvaluator> EcmaScriptLocationExpressionEvaluatorFactory       { private get; [UsedImplicitly] init; }
+	public required  Func<IInlineContent, EcmaScriptInlineContentEvaluator>                                   EcmaScriptInlineContentEvaluatorFactory            { private get; [UsedImplicitly] init; }
+	public required  Func<IContentBody, EcmaScriptContentBodyEvaluator>                                       EcmaScriptContentBodyEvaluatorFactory              { private get; [UsedImplicitly] init; }
 
 	public override ImmutableDictionary<string, string> DataModelVars { get; } =
 		ImmutableDictionary<string, string>.Empty.Add(EcmaScriptHelper.JintVersionPropertyName, EcmaScriptHelper.JintVersionValue);
@@ -168,14 +170,14 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 	{
 		base.Visit(ref inlineContent);
 
-		inlineContent = new EcmaScriptInlineContentEvaluator(inlineContent);
+		inlineContent = EcmaScriptInlineContentEvaluatorFactory(inlineContent);
 	}
 
 	protected override void Visit(ref IContentBody contentBody)
 	{
 		base.Visit(ref contentBody);
 
-		contentBody = new EcmaScriptContentBodyEvaluator(contentBody);
+		contentBody = EcmaScriptContentBodyEvaluatorFactory(contentBody);
 	}
 
 	protected override void Visit(ref IExternalDataExpression externalDataExpression)

@@ -34,6 +34,8 @@ public class EcmaScriptDataModelHandlerModule : Module
 		Services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
 		Services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
 		Services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
+		Services.AddTypeSync<EcmaScriptInlineContentEvaluator, IInlineContent>();
+		Services.AddTypeSync<EcmaScriptContentBodyEvaluator, IContentBody>();
 
 		//TODO:delete
 		/*
