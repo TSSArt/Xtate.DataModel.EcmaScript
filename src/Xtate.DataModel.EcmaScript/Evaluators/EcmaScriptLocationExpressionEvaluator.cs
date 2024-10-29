@@ -23,11 +23,15 @@ namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 {
-	private readonly Program?            _declare;
-	private readonly Expression?         _leftExpression;
+	private readonly Program? _declare;
+
+	private readonly Expression? _leftExpression;
+
 	private readonly ILocationExpression _locationExpression;
-	private readonly string?             _name;
-	private readonly Program             _program;
+
+	private readonly string? _name;
+
+	private readonly Program _program;
 
 	public EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, Program program, Expression? leftExpression)
 	{

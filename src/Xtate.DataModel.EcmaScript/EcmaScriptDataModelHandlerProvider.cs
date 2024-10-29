@@ -17,5 +17,4 @@
 
 namespace Xtate.DataModel.EcmaScript;
 
-
 public class EcmaScriptDataModelHandlerProvider() : DataModelHandlerProviderBase<EcmaScriptDataModelHandler>(@"ecmascript");

@@ -22,14 +22,15 @@ namespace Xtate.DataModel.EcmaScript;
 public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 {
 	private readonly EcmaScriptLocationExpressionEvaluator? _indexEvaluator;
-	private readonly EcmaScriptLocationExpressionEvaluator  _itemEvaluator;
+
+	private readonly EcmaScriptLocationExpressionEvaluator _itemEvaluator;
 
 	public EcmaScriptForEachEvaluator(IForEach forEach) : base(forEach)
 	{
 		var itemEvaluator = base.Item?.As<EcmaScriptLocationExpressionEvaluator>();
-		
+
 		Debug.Assert(itemEvaluator is not null);
-		
+
 		_itemEvaluator = itemEvaluator;
 
 		_indexEvaluator = base.Index?.As<EcmaScriptLocationExpressionEvaluator>();

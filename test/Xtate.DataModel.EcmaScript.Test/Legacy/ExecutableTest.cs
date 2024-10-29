@@ -30,17 +30,27 @@ namespace Xtate.DataModel.EcmaScript.Test;
 [TestClass]
 public class ExecutableTest
 {
-	private Mock<IAction>                              _customAction          = default!;
-	private Mock<IActionActivator>                     _customActionActivator = default!;
-	private Mock<IActionProvider>                      _customActionProvider  = default!;
-	private ChannelReader<IEvent>                      _eventChannel          = default!;
-	private Mock<IEventController>                     _eventController       = default!;
-	private Mock<IEventQueueReader>                    _eventQueueReader      = default!;
-	private Mock<IExternalCommunication>               _externalCommunication = default!;
-	private Mock<ILogger>                              _logger                = default!;
-	private Mock<ILogWriter<IEventController>>         _logWriterE            = default!;
-	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI            = default!;
-	private Mock<ILogWriter<ILogController>>           _logWriterL            = default!;
+	private Mock<IAction> _customAction = default!;
+
+	private Mock<IActionActivator> _customActionActivator = default!;
+
+	private Mock<IActionProvider> _customActionProvider = default!;
+
+	private ChannelReader<IEvent> _eventChannel = default!;
+
+	private Mock<IEventController> _eventController = default!;
+
+	private Mock<IEventQueueReader> _eventQueueReader = default!;
+
+	private Mock<IExternalCommunication> _externalCommunication = default!;
+
+	private Mock<ILogger> _logger = default!;
+
+	private Mock<ILogWriter<IEventController>> _logWriterE = default!;
+
+	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI = default!;
+
+	private Mock<ILogWriter<ILogController>> _logWriterL = default!;
 
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
@@ -59,6 +69,7 @@ public class ExecutableTest
 	}
 
 	private static ValueTask<IStateMachine> NoneDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='null'>" + xml + "</scxml>");
+
 	private static ValueTask<IStateMachine> EcmaDataModel(string xml) => GetStateMachine("<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'>" + xml + "</scxml>");
 
 	[TestInitialize]

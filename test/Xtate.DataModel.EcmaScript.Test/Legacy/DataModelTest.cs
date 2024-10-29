@@ -31,10 +31,13 @@ namespace Xtate.DataModel.EcmaScript.Test;
 [TestClass]
 public class DataModelTest
 {
-	private Mock<IEventQueueReader>                    _eventQueueReader = default!;
-	private Mock<ILogMethods>                          _logMethods       = default!;
-	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI       = default!;
-	private Mock<ILogWriter<ILogController>>           _logWriterL       = default!;
+	private Mock<IEventQueueReader> _eventQueueReader = default!;
+
+	private Mock<ILogMethods> _logMethods = default!;
+
+	private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI = default!;
+
+	private Mock<ILogWriter<ILogController>> _logWriterL = default!;
 
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
@@ -377,7 +380,9 @@ public class DataModelTest
 	public interface ILogMethods
 	{
 		void Info(string category, string? message, DataModelValue arg);
+
 		void Error(string category, string? message, Exception? ex);
+
 		void Trace(string category, string? message);
 	}
 
@@ -388,7 +393,7 @@ public class DataModelTest
 
 		public bool IsEnabled(Type source, Level level) => level is Level.Info or Level.Warning or Level.Error;
 
-		public ValueTask Write(Type source, 
+		public ValueTask Write(Type source,
 							   Level level,
 							   int eventId,
 							   string? message,
@@ -408,15 +413,19 @@ public class DataModelTest
 			{
 				case Level.Info when prms.ContainsKey("Parameter"):
 					logMethods.Info(source.Name, message, DataModelValue.FromObject(prms["Parameter"].Value));
+
 					break;
 				case Level.Info:
 					logMethods.Info(source.Name, message, arg: default);
+
 					break;
 				case Level.Error when prms.ContainsKey("Exception"):
 					logMethods.Error(source.Name, message, (Exception?) prms["Exception"].Value);
+
 					break;
 				case Level.Trace:
 					logMethods.Trace(source.Name, message);
+
 					break;
 				default: throw new NotSupportedException();
 			}

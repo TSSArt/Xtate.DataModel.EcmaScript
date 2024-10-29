@@ -37,7 +37,7 @@ public class EcmaScriptEngine
 
 		var global = _jintEngine.Global;
 
-		global.FastAddProperty(@"In", new DelegateWrapper(_jintEngine, InState), writable: false, enumerable: false, configurable: false);
+		global.FastAddProperty(name: @"In", new DelegateWrapper(_jintEngine, InState), writable: false, enumerable: false, configurable: false);
 	}
 
 	public required IDataModelController DataModelController { private get; [UsedImplicitly] init; }
@@ -50,6 +50,7 @@ public class EcmaScriptEngine
 	{
 		var global = _jintEngine.Global;
 		List<string>? toRemove = default;
+
 		foreach (var name in _variableSet)
 		{
 			if (!dataModel.TryGet(name, caseInsensitive: false, out _))
@@ -100,6 +101,7 @@ public class EcmaScriptEngine
 		}
 
 		EnterExecutionContext();
+
 		try
 		{
 			return _jintEngine.Execute(program).GetCompletionValue();
@@ -120,6 +122,7 @@ public class EcmaScriptEngine
 		}
 
 		EnterExecutionContext();
+
 		try
 		{
 			return JsValue.FromObject(_jintEngine, _jintEngine.EvaluateExpression(expression));
@@ -142,6 +145,7 @@ public class EcmaScriptEngine
 		}
 
 		EnterExecutionContext();
+
 		try
 		{
 			_jintEngine.Execute(program);
@@ -164,6 +168,7 @@ public class EcmaScriptEngine
 		}
 
 		EnterExecutionContext();
+
 		try
 		{
 			_jintEngine.EvaluateExpression(expression);
