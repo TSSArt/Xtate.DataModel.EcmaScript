@@ -55,7 +55,7 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 	public override ImmutableDictionary<string, string> DataModelVars { get; } = ImmutableDictionary<string, string>.Empty.Add(key: @"JintVersion", JintVersionValue);
 
-	public override string ConvertToText(DataModelValue value) => DataModelConverter.ToJson(value, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
+	public override string ConvertToText(DataModelValue value) => DataModelConverter.ToJson(value, DataModelConverter.JsonOptions.WriteIndented | DataModelConverter.JsonOptions.UndefinedToSkipOrNull);
 
 	private Program Parse(string source) => _parser.Parse(source, ParserOptions);
 
