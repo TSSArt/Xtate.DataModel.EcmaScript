@@ -17,5 +17,5 @@
 
 namespace Xtate.DataModel.EcmaScript;
 
-[UsedImplicitly(ImplicitUseKindFlags.InstantiatedWithFixedConstructorSignature)]
+
 public class EcmaScriptDataModelHandlerProvider() : DataModelHandlerProviderBase<EcmaScriptDataModelHandler>(@"ecmascript");
