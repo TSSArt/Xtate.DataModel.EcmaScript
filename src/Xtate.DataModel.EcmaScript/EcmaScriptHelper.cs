@@ -16,7 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
-using System.Reflection;
 using Jint;
 using Jint.Native;
 using Jint.Native.Array;
@@ -29,11 +28,7 @@ namespace Xtate.DataModel.EcmaScript;
 
 internal static class EcmaScriptHelper
 {
-	public const string JintVersionPropertyName = "JintVersion";
-	public const string InFunctionName          = "In";
-
-	public static readonly string[] ParseFormats     = [@"o", @"u", @"s", @"r"];
-	public static readonly string   JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
+	private static readonly string[] ParseFormats = [@"o", @"u", @"s", @"r"];
 
 	private static readonly PropertyDescriptor ReadonlyUndefinedPropertyDescriptor = new(JsValue.Undefined, writable: false, enumerable: false, configurable: false);
 
@@ -71,13 +66,8 @@ internal static class EcmaScriptHelper
 		void Setter(JsValue value) => list[index] = ConvertFromJsValue(value);
 	}
 
-	public static JsValue ConvertToJsValue(Engine engine, DataModelValue value)
+	private static JsValue ConvertToJsValue(Engine engine, DataModelValue value)
 	{
-		static ObjectInstance GetWrapper(Engine engine, DataModelList list) =>
-			DataModelConverter.IsArray(list)
-				? new DataModelArrayWrapper(engine, list)
-				: new DataModelObjectWrapper(engine, list);
-
 		return value.Type switch
 			   {
 				   DataModelValueType.Undefined => JsValue.Undefined,
@@ -89,22 +79,25 @@ internal static class EcmaScriptHelper
 				   DataModelValueType.List      => new JsValue(GetWrapper(engine, value.AsList())),
 				   _                            => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
 			   };
+
+		static ObjectInstance GetWrapper(Engine engine, DataModelList list) =>
+			DataModelConverter.IsArray(list)
+				? new DataModelArrayWrapper(engine, list)
+				: new DataModelObjectWrapper(engine, list);
 	}
 
-	public static DataModelValue ConvertFromJsValue(JsValue value)
-	{
-		return value.Type switch
-			   {
-				   Types.Undefined                  => default,
-				   Types.Null                       => DataModelValue.Null,
-				   Types.Boolean                    => new DataModelValue(value.AsBoolean()),
-				   Types.String                     => CreateDateTimeOrStringValue(value.AsString()),
-				   Types.Number                     => new DataModelValue(value.AsNumber()),
-				   Types.Object when value.IsDate() => new DataModelValue(value.AsDate().ToDateTime()),
-				   Types.Object                     => CreateDataModelValue(value.AsObject()),
-				   _                                => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
-			   };
-	}
+	private static DataModelValue ConvertFromJsValue(JsValue value) =>
+		value.Type switch
+		{
+			Types.Undefined                  => default,
+			Types.Null                       => DataModelValue.Null,
+			Types.Boolean                    => new DataModelValue(value.AsBoolean()),
+			Types.String                     => CreateDateTimeOrStringValue(value.AsString()),
+			Types.Number                     => new DataModelValue(value.AsNumber()),
+			Types.Object when value.IsDate() => new DataModelValue(value.AsDate().ToDateTime()),
+			Types.Object                     => CreateDataModelValue(value.AsObject()),
+			_                                => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
+		};
 
 	private static DataModelValue CreateDateTimeOrStringValue(string value) =>
 		DataModelDateTime.TryParseExact(value, ParseFormats, provider: null, DateTimeStyles.None, out var dateTime)

@@ -15,10 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Global usings
-global using System;
-global using System.Collections.Generic;
-global using System.Threading.Tasks;
-global using System.Diagnostics.CodeAnalysis;
-global using JetBrains.Annotations;
-global using Xtate.Core;
+namespace Xtate.DataModel.EcmaScript;
+
+[UsedImplicitly(ImplicitUseKindFlags.InstantiatedWithFixedConstructorSignature)]
+public class EcmaScriptDataModelHandlerProvider() : DataModelHandlerProviderBase<EcmaScriptDataModelHandler>(@"ecmascript");

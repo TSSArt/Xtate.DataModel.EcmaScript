@@ -37,40 +37,6 @@ public class EcmaScriptDataModelHandlerModule : Module
 		Services.AddTypeSync<EcmaScriptInlineContentEvaluator, IInlineContent>();
 		Services.AddTypeSync<EcmaScriptContentBodyEvaluator, IContentBody>();
 
-		//TODO:delete
-		/*
-
-
-		   public required Func<, , > EcmaScriptValueExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
-		   public required Func<, Program, > EcmaScriptConditionExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
-		   public required Func<, Program, > EcmaScriptScriptExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
-		   public required Func<, Program, >  { private get; [UsedImplicitly] init; }
-*/
-		/*
-		services.AddModule<DataModelHandlerBaseModule>();
-		services.AddModule<ErrorProcessorModule>();
-		services.AddModule<NameTableModule>();
-
-		services.AddTypeSync<XPathValueExpressionEvaluator, IValueExpression, XPathCompiledExpression>();
-		services.AddTypeSync<XPathConditionExpressionEvaluator, IConditionExpression, XPathCompiledExpression>();
-		services.AddTypeSync<XPathLocationExpressionEvaluator, ILocationExpression, XPathCompiledExpression>();
-		services.AddTypeSync<XPathLocationExpression, ILocationExpression, (XPathAssignType, string?)>();
-		services.AddTypeSync<XPathContentBodyEvaluator, IContentBody>();
-		services.AddTypeSync<XPathExternalDataExpressionEvaluator, IExternalDataExpression>();
-		services.AddTypeSync<XPathInlineContentEvaluator, IInlineContent>();
-
-		//services.AddType<XPathExpressionContextOld, IXmlNamespacesInfo?>();  //TODO:
-		//services.AddType<XPathVarDescriptorOld, string>();
-
-		services.AddTypeSync<XPathExpressionContext, IXmlNamespacesInfo?>();
-		services.AddTypeSync<XPathVarDescriptor, string>();
-		services.AddTypeSync<XPathCompiledExpression, string, IXmlNamespacesInfo?>();
-		services.AddTypeSync<XPathXmlParserContextFactory>();
-		services.AddSharedType<XPathEngine>(SharedWithin.Scope);
-
-		services.AddImplementationSync<InFunctionProvider>().For<IXPathFunctionProvider>();
-		services.AddTypeSync<InFunction>();*/
-
 		Services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
 		Services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
 		Services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>(Option.IfNotRegistered);

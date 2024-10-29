@@ -23,7 +23,7 @@ using Jint.Runtime.Interop;
 
 namespace Xtate.DataModel.EcmaScript;
 
-internal class DataModelArrayWrapper : ArrayInstance, IObjectWrapper
+public class DataModelArrayWrapper : ArrayInstance, IObjectWrapper
 {
 	private readonly DataModelList _list;
 

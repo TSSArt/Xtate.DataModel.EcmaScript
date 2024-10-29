@@ -16,18 +16,17 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Collections.Immutable;
+using System.Reflection;
+using Jint;
 using Jint.Parser;
 using Jint.Parser.Ast;
 
 namespace Xtate.DataModel.EcmaScript;
 
-public class EcmaScriptDataModelHandlerProvider : DataModelHandlerProviderBase<EcmaScriptDataModelHandler>
-{
-	protected override bool CanHandle(string? dataModelType) => dataModelType == @"ecmascript";
-}
-
 public class EcmaScriptDataModelHandler : DataModelHandlerBase
 {
+	public static readonly string JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
+	
 	private static readonly ParserOptions ParserOptions = new() { Tolerant = true };
 
 	private readonly JavaScriptParser                                                                         _parser = new();
@@ -43,8 +42,7 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 	public required  Func<IInlineContent, EcmaScriptInlineContentEvaluator>                                   EcmaScriptInlineContentEvaluatorFactory            { private get; [UsedImplicitly] init; }
 	public required  Func<IContentBody, EcmaScriptContentBodyEvaluator>                                       EcmaScriptContentBodyEvaluatorFactory              { private get; [UsedImplicitly] init; }
 
-	public override ImmutableDictionary<string, string> DataModelVars { get; } =
-		ImmutableDictionary<string, string>.Empty.Add(EcmaScriptHelper.JintVersionPropertyName, EcmaScriptHelper.JintVersionValue);
+	public override ImmutableDictionary<string, string> DataModelVars { get; } = ImmutableDictionary<string, string>.Empty.Add(@"JintVersion", JintVersionValue);
 
 	public override string ConvertToText(DataModelValue value) => DataModelConverter.ToJson(value, DataModelConverterJsonOptions.WriteIndented | DataModelConverterJsonOptions.UndefinedToSkipOrNull);
 

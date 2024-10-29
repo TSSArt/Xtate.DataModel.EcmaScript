@@ -27,9 +27,8 @@ namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptEngine
 {
-	public static readonly object Key = new();
+	private readonly Engine _jintEngine;
 
-	private readonly Engine          _jintEngine;
 	private readonly HashSet<string> _variableSet = [];
 
 	public EcmaScriptEngine()
@@ -37,12 +36,15 @@ public class EcmaScriptEngine
 		_jintEngine = new Engine(options => options.Culture(CultureInfo.InvariantCulture).LimitRecursion(1024).Strict());
 
 		var global = _jintEngine.Global;
-		var inFunction = new DelegateWrapper(_jintEngine, new Func<string, bool>(state => InStateController.InState((Identifier) state)));
-		global.FastAddProperty(EcmaScriptHelper.InFunctionName, inFunction, writable: false, enumerable: false, configurable: false);
+
+		global.FastAddProperty(@"In", new DelegateWrapper(_jintEngine, InState), writable: false, enumerable: false, configurable: false);
 	}
 
 	public required IDataModelController DataModelController { private get; [UsedImplicitly] init; }
-	public required IInStateController   InStateController   { private get; [UsedImplicitly] init; }
+
+	public required IInStateController InStateController { private get; [UsedImplicitly] init; }
+
+	private bool InState(string state) => InStateController.InState((Identifier) state);
 
 	private void SyncRootVariables(DataModelList dataModel)
 	{
@@ -101,10 +103,6 @@ public class EcmaScriptEngine
 		try
 		{
 			return _jintEngine.Execute(program).GetCompletionValue();
-		}
-		catch
-		{
-			throw;
 		}
 		finally
 		{
