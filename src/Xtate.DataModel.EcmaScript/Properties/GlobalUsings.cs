@@ -18,8 +18,13 @@
 // Global usings
 
 global using System;
+global using System.Diagnostics;
 global using System.Collections.Generic;
 global using System.Threading.Tasks;
-global using System.Diagnostics.CodeAnalysis;
 global using JetBrains.Annotations;
 global using Xtate.Core;
+global using Jint;
+global using Jint.Native;
+global using Jint.Native.Array;
+global using Jint.Native.Object;
+global using Jint.Parser.Ast;

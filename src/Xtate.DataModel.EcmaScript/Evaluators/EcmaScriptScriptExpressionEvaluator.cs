@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using Jint.Parser.Ast;
-
 namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Program program) : IScriptExpression, IExecEvaluator, IAncestorProvider

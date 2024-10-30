@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using Jint.Parser.Ast;
 using Xtate.DataModel;
 using Xtate.DataModel.EcmaScript;
 using Xtate.IoC;
@@ -38,7 +37,7 @@ public class EcmaScriptDataModelHandlerModule : Module
 		Services.AddTypeSync<EcmaScriptContentBodyEvaluator, IContentBody>();
 
 		Services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
-		Services.AddImplementation<EcmaScriptDataModelHandlerProvider>().For<IDataModelHandlerProvider>();
+		Services.AddImplementation<EcmaScriptDataModelHandler.Provider>().For<IDataModelHandlerProvider>();
 		Services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>(Option.IfNotRegistered);
 	}
 }

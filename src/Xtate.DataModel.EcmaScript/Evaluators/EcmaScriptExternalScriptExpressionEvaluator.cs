@@ -15,9 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.Diagnostics;
 using Jint.Parser;
-using Jint.Parser.Ast;
 
 namespace Xtate.DataModel.EcmaScript;
 

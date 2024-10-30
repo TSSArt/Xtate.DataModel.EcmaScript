@@ -15,9 +15,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using Jint.Native.Array;
-using Jint.Parser.Ast;
-
 namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Program program)

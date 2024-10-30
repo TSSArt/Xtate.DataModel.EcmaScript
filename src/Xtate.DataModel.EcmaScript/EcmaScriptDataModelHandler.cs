@@ -17,14 +17,14 @@
 
 using System.Collections.Immutable;
 using System.Reflection;
-using Jint;
 using Jint.Parser;
-using Jint.Parser.Ast;
 
 namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptDataModelHandler : DataModelHandlerBase
 {
+	public class Provider() : DataModelHandlerProviderBase<EcmaScriptDataModelHandler>(@"ecmascript");
+
 	public static readonly string JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
 
 	private static readonly ParserOptions ParserOptions = new() { Tolerant = true };

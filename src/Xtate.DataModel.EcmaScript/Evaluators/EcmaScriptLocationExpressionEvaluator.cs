@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.Linq;
-using Jint.Parser.Ast;
 using JintIdentifier = Jint.Parser.Ast.Identifier;
 
 namespace Xtate.DataModel.EcmaScript;
@@ -124,17 +122,16 @@ public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocati
 
 	public static Expression? GetLeftExpression(Program program)
 	{
-		if (program.Body.Count != 1)
+		Expression? expression = default;
+
+		foreach (var statement in program.Body)
 		{
-			return null;
+			expression = (statement as ExpressionStatement)?.Expression;
+
+			break;
 		}
 
-		if (program.Body.First() is not ExpressionStatement expressionStatement)
-		{
-			return null;
-		}
-
-		return expressionStatement.Expression switch
+		return expression switch
 			   {
 				   JintIdentifier identifier         => identifier,
 				   MemberExpression memberExpression => memberExpression,
