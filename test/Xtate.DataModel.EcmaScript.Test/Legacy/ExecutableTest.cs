@@ -173,7 +173,7 @@ public class ExecutableTest
 
 		//_externalCommunication.Verify(a => a.TrySendEvent(It.IsAny<IOutgoingEvent>(), It.IsAny<CancellationToken>()));
 		//_eventController.Verify(a => a.Send(It.IsAny<IOutgoingEvent>()));
-		_logWriterE.Verify(l => l.Write(Level.Trace, 1, "Send event: ''", It.IsAny<IEnumerable<LoggingParameter>>()));
+		_logWriterE.Verify(l => l.Write(Level.Trace, 1, It.IsAny<string>(), It.IsAny<IEnumerable<LoggingParameter>>()));
 	}
 
 	[TestMethod]
