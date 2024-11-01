@@ -42,7 +42,7 @@ public class ExecutableTest
 
 	private Mock<IEventQueueReader> _eventQueueReader = default!;
 
-	private Mock<IExternalCommunication> _externalCommunication = default!;
+	//private Mock<IExternalCommunication> _externalCommunication = default!;
 
 	private Mock<ILogger> _logger = default!;
 
@@ -109,7 +109,8 @@ public class ExecutableTest
 								 .Returns(new ValueTask<ICustomActionFactoryActivator?>(_customActionProviderActivator.Object));
 		*/
 		_logger = new Mock<ILogger>();
-		_externalCommunication = new Mock<IExternalCommunication>();
+
+		//_externalCommunication = new Mock<IExternalCommunication>();
 		/*_options = new InterpreterOptions
 				   {
 					   DataModelHandlerFactories = ImmutableArray.Create(EcmaScriptDataModelHandler.Factory),
@@ -141,7 +142,7 @@ public class ExecutableTest
 		services.AddConstant(_logWriterL.Object);
 		services.AddConstant(_logWriterI.Object);
 		services.AddConstant(_logWriterE.Object);
-		services.AddConstant(new Mock<IExternalCommunication>().Object);
+		services.AddConstant(new Mock<IExternalEventCommunication>().Object);
 
 		//services.AddConstant(_ => _eventController.Object);
 		services.AddConstant(_eventQueueReader.Object);
