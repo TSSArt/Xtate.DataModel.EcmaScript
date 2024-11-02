@@ -36,7 +36,7 @@ public class ExecutableTest
 
 	private Mock<IActionProvider> _customActionProvider = default!;
 
-	private ChannelReader<IEvent> _eventChannel = default!;
+	private ChannelReader<IIncomingEvent> _eventChannel = default!;
 
 	private Mock<IEventController> _eventController = default!;
 
@@ -75,7 +75,7 @@ public class ExecutableTest
 	[TestInitialize]
 	public void Init()
 	{
-		var channel = Channel.CreateUnbounded<IEvent>();
+		var channel = Channel.CreateUnbounded<IIncomingEvent>();
 		channel.Writer.Complete();
 		_eventChannel = channel.Reader;
 
@@ -121,7 +121,7 @@ public class ExecutableTest
 		_eventController = new Mock<IEventController>();
 		_eventQueueReader = new Mock<IEventQueueReader>();
 
-		//IEvent tmp = null!;
+		//IIncomingEvent tmp = null!;
 
 		//_eventQueueReader.Setup(x => x.TryReadEvent(out tmp)).Returns(false);
 		//_eventQueueReader.Setup(x => x.WaitToEvent()).Returns(new ValueTask<bool>(false));

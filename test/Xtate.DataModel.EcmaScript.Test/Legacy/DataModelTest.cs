@@ -98,7 +98,7 @@ public class DataModelTest
 	[TestInitialize]
 	public void Init()
 	{
-		var channel = Channel.CreateUnbounded<IEvent>();
+		var channel = Channel.CreateUnbounded<IIncomingEvent>();
 		channel.Writer.Complete();
 		_logWriterL = new Mock<ILogWriter<ILogController>>();
 		_logWriterL.Setup(x => x.IsEnabled(It.IsAny<Level>())).Returns(true);
