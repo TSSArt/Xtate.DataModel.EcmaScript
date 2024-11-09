@@ -142,7 +142,7 @@ public class ExecutableTest
 		services.AddConstant(_logWriterL.Object);
 		services.AddConstant(_logWriterI.Object);
 		services.AddConstant(_logWriterE.Object);
-		services.AddConstant(new Mock<IExternalEventCommunication>().Object);
+		services.AddConstant(new Mock<IExternalCommunication>().Object);
 
 		//services.AddConstant(_ => _eventController.Object);
 		services.AddConstant(_eventQueueReader.Object);
