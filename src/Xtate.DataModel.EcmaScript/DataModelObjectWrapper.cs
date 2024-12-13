@@ -46,9 +46,9 @@ public class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 
 	public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
 	{
-		foreach (var pair in _list.KeyValuePairs)
+		foreach (var (key, _) in _list.KeyValuePairs)
 		{
-			yield return new KeyValuePair<string, PropertyDescriptor>(pair.Key, GetOwnProperty(pair.Key));
+			yield return new KeyValuePair<string, PropertyDescriptor>(key, GetOwnProperty(key));
 		}
 	}
 

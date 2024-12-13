@@ -38,11 +38,11 @@ public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression
 
 		var result = new IObject[array.GetLength()];
 
-		foreach (var pair in array.GetOwnProperties())
+		foreach (var (key, _) in array.GetOwnProperties())
 		{
-			if (ArrayInstance.IsArrayIndex(pair.Key, out var index))
+			if (ArrayInstance.IsArrayIndex(key, out var index))
 			{
-				result[index] = new EcmaScriptObject(array.Get(pair.Key));
+				result[index] = new EcmaScriptObject(array.Get(key));
 			}
 		}
 

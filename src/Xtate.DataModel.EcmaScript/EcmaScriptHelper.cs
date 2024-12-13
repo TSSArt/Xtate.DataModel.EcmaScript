@@ -108,11 +108,11 @@ internal static class EcmaScriptHelper
 			{
 				var list = DataModelConverter.CreateAsArray();
 
-				foreach (var pair in array.GetOwnProperties())
+				foreach (var (key, _) in array.GetOwnProperties())
 				{
-					if (ArrayInstance.IsArrayIndex(pair.Key, out var index))
+					if (ArrayInstance.IsArrayIndex(key, out var index))
 					{
-						list[(int) index] = ConvertFromJsValue(array.Get(pair.Key));
+						list[(int) index] = ConvertFromJsValue(array.Get(key));
 					}
 				}
 
@@ -123,9 +123,9 @@ internal static class EcmaScriptHelper
 			{
 				var list = DataModelConverter.CreateAsObject();
 
-				foreach (var pair in objectInstance.GetOwnProperties())
+				foreach (var (key, _) in objectInstance.GetOwnProperties())
 				{
-					list.Add(pair.Key, ConvertFromJsValue(objectInstance.Get(pair.Key)));
+					list.Add(key, ConvertFromJsValue(objectInstance.Get(key)));
 				}
 
 				return new DataModelValue(list);
