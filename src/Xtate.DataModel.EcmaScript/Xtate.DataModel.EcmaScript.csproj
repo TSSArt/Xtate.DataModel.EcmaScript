@@ -15,7 +15,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Xtate.SharedContent" Version="0.*" />
-		<PackageReference Include="Jint" Version="[2.11.58,3.0)" />
+		<PackageReference Include="Jint" Version="[2.11.58,3)" />
 		<PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="5.0.0.1" PrivateAssets="all" />
 	</ItemGroup>
 
