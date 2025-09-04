@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2024 Sergii Artemenko
+﻿// Copyright © 2019-2025 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -19,21 +19,21 @@ namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptCustomActionEvaluator(ICustomAction customAction) : DefaultCustomActionEvaluator(customAction)
 {
-	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
 
-	public override async ValueTask Execute()
-	{
-		var engine = await EngineFactory().ConfigureAwait(false);
+    public override async ValueTask Execute()
+    {
+        var engine = await EngineFactory().ConfigureAwait(false);
 
-		engine.EnterExecutionContext();
+        engine.EnterExecutionContext();
 
-		try
-		{
-			await base.Execute().ConfigureAwait(false);
-		}
-		finally
-		{
-			engine.LeaveExecutionContext();
-		}
-	}
+        try
+        {
+            await base.Execute().ConfigureAwait(false);
+        }
+        finally
+        {
+            engine.LeaveExecutionContext();
+        }
+    }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2024 Sergii Artemenko
+﻿// Copyright © 2019-2025 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -22,51 +22,51 @@ namespace Xtate.DataModel.EcmaScript;
 
 public class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 {
-	private readonly DataModelList _list;
+    private readonly DataModelList _list;
 
-	public DataModelObjectWrapper(Engine engine, DataModelList list) : base(engine)
-	{
-		_list = list;
+    public DataModelObjectWrapper(Engine engine, DataModelList list) : base(engine)
+    {
+        _list = list;
 
-		Extensible = list.Access == DataModelAccess.Writable;
-	}
+        Extensible = list.Access == DataModelAccess.Writable;
+    }
 
 #region Interface IObjectWrapper
 
-	public object Target => _list;
+    public object Target => _list;
 
 #endregion
 
-	public override void RemoveOwnProperty(string property)
-	{
-		_list.RemoveAll(property, caseInsensitive: false);
+    public override void RemoveOwnProperty(string property)
+    {
+        _list.RemoveAll(property, caseInsensitive: false);
 
-		base.RemoveOwnProperty(property);
-	}
+        base.RemoveOwnProperty(property);
+    }
 
-	public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
-	{
-		foreach (var (key, _) in _list.KeyValuePairs)
-		{
-			yield return new KeyValuePair<string, PropertyDescriptor>(key, GetOwnProperty(key));
-		}
-	}
+    public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
+    {
+        foreach (var (key, _) in _list.KeyValuePairs)
+        {
+            yield return new KeyValuePair<string, PropertyDescriptor>(key, GetOwnProperty(key));
+        }
+    }
 
-	public override PropertyDescriptor GetOwnProperty(string property)
-	{
-		var descriptor = base.GetOwnProperty(property);
+    public override PropertyDescriptor GetOwnProperty(string property)
+    {
+        var descriptor = base.GetOwnProperty(property);
 
-		if (descriptor != PropertyDescriptor.Undefined)
-		{
-			return descriptor;
-		}
+        if (descriptor != PropertyDescriptor.Undefined)
+        {
+            return descriptor;
+        }
 
-		descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property);
+        descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property);
 
-		base.SetOwnProperty(property, descriptor);
+        base.SetOwnProperty(property, descriptor);
 
-		return descriptor;
-	}
+        return descriptor;
+    }
 
-	public override bool HasOwnProperty(string property) => _list.ContainsKey(property, caseInsensitive: false);
+    public override bool HasOwnProperty(string property) => _list.ContainsKey(property, caseInsensitive: false);
 }

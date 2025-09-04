@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2024 Sergii Artemenko
+﻿// Copyright © 2019-2025 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -19,28 +19,28 @@ namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Program program) : IScriptExpression, IExecEvaluator, IAncestorProvider
 {
-	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
 
 #region Interface IAncestorProvider
 
-	object IAncestorProvider.Ancestor => scriptExpression;
+    object IAncestorProvider.Ancestor => scriptExpression;
 
 #endregion
 
 #region Interface IExecEvaluator
 
-	public async ValueTask Execute()
-	{
-		var engine = await EngineFactory().ConfigureAwait(false);
+    public async ValueTask Execute()
+    {
+        var engine = await EngineFactory().ConfigureAwait(false);
 
-		engine.Exec(program, startNewScope: true);
-	}
+        engine.Exec(program, startNewScope: true);
+    }
 
 #endregion
 
 #region Interface IScriptExpression
 
-	public string? Expression => scriptExpression.Expression;
+    public string? Expression => scriptExpression.Expression;
 
 #endregion
 }

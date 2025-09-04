@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2024 Sergii Artemenko
+﻿// Copyright © 2019-2025 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -19,30 +19,30 @@ namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptConditionExpressionEvaluator(IConditionExpression conditionExpression, Program program) : IConditionExpression, IBooleanEvaluator, IAncestorProvider
 {
-	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
 
 #region Interface IAncestorProvider
 
-	object IAncestorProvider.Ancestor => conditionExpression;
+    object IAncestorProvider.Ancestor => conditionExpression;
 
 #endregion
 
 #region Interface IBooleanEvaluator
 
-	async ValueTask<bool> IBooleanEvaluator.EvaluateBoolean()
-	{
-		var engine = await EngineFactory().ConfigureAwait(false);
+    async ValueTask<bool> IBooleanEvaluator.EvaluateBoolean()
+    {
+        var engine = await EngineFactory().ConfigureAwait(false);
 
-		var obj = engine.Eval(program, startNewScope: true);
+        var obj = engine.Eval(program, startNewScope: true);
 
-		return obj.AsBoolean();
-	}
+        return obj.AsBoolean();
+    }
 
 #endregion
 
 #region Interface IConditionExpression
 
-	public string? Expression => conditionExpression.Expression;
+    public string? Expression => conditionExpression.Expression;
 
 #endregion
 }

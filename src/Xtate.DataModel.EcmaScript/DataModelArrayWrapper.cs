@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2024 Sergii Artemenko
+﻿// Copyright © 2019-2025 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -23,80 +23,80 @@ namespace Xtate.DataModel.EcmaScript;
 
 public class DataModelArrayWrapper : ArrayInstance, IObjectWrapper
 {
-	private readonly DataModelList _list;
+    private readonly DataModelList _list;
 
-	public DataModelArrayWrapper(Engine engine, DataModelList list) : base(engine)
-	{
-		_list = list;
+    public DataModelArrayWrapper(Engine engine, DataModelList list) : base(engine)
+    {
+        _list = list;
 
-		var writable = list.Access == DataModelAccess.Writable;
+        var writable = list.Access == DataModelAccess.Writable;
 
-		Extensible = writable;
+        Extensible = writable;
 
-		base.SetOwnProperty(propertyName: @"length", new PropertyDescriptor((uint) _list.Count, writable, enumerable: false, configurable: false));
-	}
+        base.SetOwnProperty(propertyName: @"length", new PropertyDescriptor((uint)_list.Count, writable, enumerable: false, configurable: false));
+    }
 
 #region Interface IObjectWrapper
 
-	public object Target => _list;
+    public object Target => _list;
 
 #endregion
 
-	public override void RemoveOwnProperty(string property)
-	{
-		if (IsArrayIndex(property, out var index))
-		{
-			_list[(int) index] = default;
-		}
+    public override void RemoveOwnProperty(string property)
+    {
+        if (IsArrayIndex(property, out var index))
+        {
+            _list[(int)index] = default;
+        }
 
-		base.RemoveOwnProperty(property);
-	}
+        base.RemoveOwnProperty(property);
+    }
 
-	public override PropertyDescriptor GetOwnProperty(string property)
-	{
-		var descriptor = base.GetOwnProperty(property);
+    public override PropertyDescriptor GetOwnProperty(string property)
+    {
+        var descriptor = base.GetOwnProperty(property);
 
-		if (descriptor == PropertyDescriptor.Undefined && IsArrayIndex(property, out var index))
-		{
-			descriptor = EcmaScriptHelper.CreateArrayIndexAccessor(Engine, _list, (int) index);
-			base.SetOwnProperty(property, descriptor);
-		}
+        if (descriptor == PropertyDescriptor.Undefined && IsArrayIndex(property, out var index))
+        {
+            descriptor = EcmaScriptHelper.CreateArrayIndexAccessor(Engine, _list, (int)index);
+            base.SetOwnProperty(property, descriptor);
+        }
 
-		return descriptor;
-	}
+        return descriptor;
+    }
 
-	protected override void SetOwnProperty(string property, PropertyDescriptor descriptor)
-	{
-		if (property == @"length" && descriptor.Value.IsNumber())
-		{
-			_list.SetLength((int) descriptor.Value.AsNumber());
-		}
+    protected override void SetOwnProperty(string property, PropertyDescriptor descriptor)
+    {
+        if (property == @"length" && descriptor.Value.IsNumber())
+        {
+            _list.SetLength((int)descriptor.Value.AsNumber());
+        }
 
-		base.SetOwnProperty(property, descriptor);
-	}
+        base.SetOwnProperty(property, descriptor);
+    }
 
-	public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
-	{
-		for (var i = 0; i < _list.Count; i ++)
-		{
-			var property = i.ToString(NumberFormatInfo.InvariantInfo);
+    public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
+    {
+        for (var i = 0; i < _list.Count; i ++)
+        {
+            var property = i.ToString(NumberFormatInfo.InvariantInfo);
 
-			if (base.GetOwnProperty(property) == PropertyDescriptor.Undefined)
-			{
-				base.SetOwnProperty(property, EcmaScriptHelper.CreateArrayIndexAccessor(Engine, _list, i));
-			}
-		}
+            if (base.GetOwnProperty(property) == PropertyDescriptor.Undefined)
+            {
+                base.SetOwnProperty(property, EcmaScriptHelper.CreateArrayIndexAccessor(Engine, _list, i));
+            }
+        }
 
-		return base.GetOwnProperties();
-	}
+        return base.GetOwnProperties();
+    }
 
-	public override bool HasOwnProperty(string property)
-	{
-		if (IsArrayIndex(property, out var index) && index < _list.Count)
-		{
-			return true;
-		}
+    public override bool HasOwnProperty(string property)
+    {
+        if (IsArrayIndex(property, out var index) && index < _list.Count)
+        {
+            return true;
+        }
 
-		return base.HasOwnProperty(property);
-	}
+        return base.HasOwnProperty(property);
+    }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2024 Sergii Artemenko
+﻿// Copyright © 2019-2025 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -19,10 +19,10 @@ namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptExternalDataExpressionEvaluator(IExternalDataExpression externalDataExpression) : DefaultExternalDataExpressionEvaluator(externalDataExpression)
 {
-	protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource)
-	{
-		var content = await resource.GetContent().ConfigureAwait(false);
+    protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource)
+    {
+        var content = await resource.GetContent().ConfigureAwait(false);
 
-		return DataModelConverter.FromJson(content);
-	}
+        return DataModelConverter.FromJson(content);
+    }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2024 Sergii Artemenko
+﻿// Copyright © 2019-2025 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -20,40 +20,40 @@ using Jint.Parser;
 namespace Xtate.DataModel.EcmaScript;
 
 public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression)
-	: IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
+    : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
 {
-	private Program? _program;
+    private Program? _program;
 
-	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
 
 #region Interface IAncestorProvider
 
-	object IAncestorProvider.Ancestor => externalScriptExpression;
+    object IAncestorProvider.Ancestor => externalScriptExpression;
 
 #endregion
 
 #region Interface IExecEvaluator
 
-	public async ValueTask Execute()
-	{
-		Debug.Assert(_program is not null, Resources.Exception_ExternalScriptMissed);
+    public async ValueTask Execute()
+    {
+        Debug.Assert(_program is not null, Resources.Exception_ExternalScriptMissed);
 
-		var engine = await EngineFactory().ConfigureAwait(false);
+        var engine = await EngineFactory().ConfigureAwait(false);
 
-		engine.Exec(_program, startNewScope: true);
-	}
+        engine.Exec(_program, startNewScope: true);
+    }
 
 #endregion
 
 #region Interface IExternalScriptConsumer
 
-	public void SetContent(string content) => _program = new JavaScriptParser().Parse(content);
+    public void SetContent(string content) => _program = new JavaScriptParser().Parse(content);
 
 #endregion
 
 #region Interface IExternalScriptExpression
 
-	public Uri? Uri => externalScriptExpression.Uri;
+    public Uri? Uri => externalScriptExpression.Uri;
 
 #endregion
 }
