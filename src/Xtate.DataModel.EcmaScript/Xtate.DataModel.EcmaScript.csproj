@@ -14,9 +14,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Xtate.SharedContent" Version="0.*" />
-		<PackageReference Include="Jint" Version="[2.11.58,3)" />
-		<PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="5.0.0.1" PrivateAssets="all" />
+		<PackageReference Include="Xtate.SharedContent" PrivateAssets="all" />
+		<PackageReference Include="Jint" />
+		<PackageReference Include="ConfigureAwaitChecker.Analyzer" PrivateAssets="all" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(UseProjectReference)'=='true'">
@@ -24,7 +24,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(UseProjectReference)'==''">
-		<PackageReference Include="Xtate.Core" Version="0.*" />
+		<PackageReference Include="Xtate.Core" />
 	</ItemGroup>
 
 	<ItemGroup>

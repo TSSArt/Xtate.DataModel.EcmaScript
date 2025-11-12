@@ -1,0 +1,13 @@
+<Project>
+
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageVersion Include="Xtate.Core" Version="0.*" />
+		<PackageVersion Include="Jint" Version="[2.11.58,3)" />
+	</ItemGroup>
+
+</Project>

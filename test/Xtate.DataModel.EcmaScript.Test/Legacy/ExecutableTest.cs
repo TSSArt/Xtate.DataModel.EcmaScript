@@ -153,7 +153,7 @@ public class ExecutableTest
         try
         {
             //await stateMachineInterpreter.RunAsync(SessionId.New(), stateMachine, _eventChannel, _options);
-            await stateMachineInterpreter.RunAsync();
+            await stateMachineInterpreter.Run();
 
             Assert.Fail("StateMachineQueueClosedException should be raised");
         }

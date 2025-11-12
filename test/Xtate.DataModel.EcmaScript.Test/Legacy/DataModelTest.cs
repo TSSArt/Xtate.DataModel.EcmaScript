@@ -84,7 +84,7 @@ public class DataModelTest
 
         try
         {
-            await stateMachineInterpreter.RunAsync();
+            await stateMachineInterpreter.Run();
 
             Assert.Fail($"{typeof(E).Name} should be raised");
         }
@@ -157,7 +157,7 @@ public class DataModelTest
     {
         await RunStateMachineWithError(NoNameOnEntry, innerXml: "<log expr='_not_existed'/>");
 
-        _logMethods.Verify(l => l.Error("IStateMachineInterpreter", "Execution error in entity [(#-1)].", It.Is<Exception>(e => e.Message == "_not_existed is not defined")));
+        _logMethods.Verify(l => l.Error("StateMachineInterpreter", "Execution error in entity [(#-1)].", It.Is<Exception>(e => e.Message == "_not_existed is not defined")));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -167,7 +167,7 @@ public class DataModelTest
         await RunStateMachineWithError(WithNameOnEntry, innerXml: "<log expr='_name'/><log expr='_not_existed'/><log expr='_name'/>");
 
         _logMethods.Verify(l => l.Info("ILogController", default, "MyName"));
-        _logMethods.Verify(l => l.Error("IStateMachineInterpreter", "Execution error in entity [(#-1)].", It.Is<Exception>(e => e.Message == "_not_existed is not defined")));
+        _logMethods.Verify(l => l.Error("StateMachineInterpreter", "Execution error in entity [(#-1)].", It.Is<Exception>(e => e.Message == "_not_existed is not defined")));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -268,7 +268,7 @@ public class DataModelTest
     {
         await RunStateMachineWithError(WithNameOnEntry, innerXml: "<assign location='_name' expr=\"'Hello World'\"/>");
 
-        _logMethods.Verify(l => l.Error("IStateMachineInterpreter", "Execution error in entity [(#-1)].", It.IsAny<InvalidOperationException>()));
+        _logMethods.Verify(l => l.Error("StateMachineInterpreter", "Execution error in entity [(#-1)].", It.IsAny<InvalidOperationException>()));
         _logMethods.VerifyNoOtherCalls();
     }
 
