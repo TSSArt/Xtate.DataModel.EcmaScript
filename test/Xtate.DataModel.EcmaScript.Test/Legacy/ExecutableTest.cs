@@ -21,9 +21,16 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Xtate.Core;
-using Xtate.CustomAction;
+using Xtate.Class;
+using Xtate.DataModel.EcmaScript.DependencyInjection;
+
+//using Xtate.CustomAction;
+using Xtate.Interpreter;
+using Xtate.Interpreter.DependencyInjection;
 using Xtate.IoC;
+using Xtate.Logging;
+using Xtate.Logging.Provider;
+using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Test;
 
@@ -40,23 +47,25 @@ public class ExecutableTest
 
     private Mock<IEventController> _eventController = default!;
 
-    private Mock<IEventQueueReader> _eventQueueReader = default!;
+    private Mock<IEventReader> _eventQueueReader = default!;
 
     //private Mock<IExternalCommunication> _externalCommunication = default!;
 
     private Mock<ILogger> _logger = default!;
 
-    private Mock<ILogWriter<IEventController>> _logWriterE = default!;
+    private Mock<ILogProvider<IEventController>> _logWriterE = default!;
 
-    private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI = default!;
+    private Mock<ILogProvider<IStateMachineInterpreter>> _logWriterI = default!;
 
-    private Mock<ILogWriter<ILogController>> _logWriterL = default!;
+    private Mock<ILogProvider<ILogController>> _logWriterL = default!;
 
     private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
     {
         var services = new ServiceCollection();
-        services.AddModule<StateMachineFactoryModule>();
-        services.AddConstant<IScxmlStateMachine>(new ScxmlStringStateMachine(scxml));
+//        services.AddModule<StateMachineFactoryModule>();
+//        services.AddConstant<IScxmlStateMachine>(new ScxmlStringStateMachine(scxml));
+		var smc = new ScxmlStringStateMachine(scxml);
+		smc.AddServices(services);
         var provider = services.BuildProvider();
 
         //using var textReader = new StringReader(scxml);
@@ -79,9 +88,9 @@ public class ExecutableTest
         channel.Writer.Complete();
         _eventChannel = channel.Reader;
 
-        _logWriterL = new Mock<ILogWriter<ILogController>>();
-        _logWriterI = new Mock<ILogWriter<IStateMachineInterpreter>>();
-        _logWriterE = new Mock<ILogWriter<IEventController>>();
+        _logWriterL = new Mock<ILogProvider<ILogController>>();
+        _logWriterI = new Mock<ILogProvider<IStateMachineInterpreter>>();
+        _logWriterE = new Mock<ILogProvider<IEventController>>();
 
         _customAction = new Mock<IAction>();
         _customAction.Setup(x => x.Execute()).Callback(() => _logWriterL.Object.Write(Level.Info, eventId: 0, message: "Custom"));
@@ -119,7 +128,7 @@ public class ExecutableTest
                        ExternalCommunication = _externalCommunication.Object
                    };*/
         _eventController = new Mock<IEventController>();
-        _eventQueueReader = new Mock<IEventQueueReader>();
+        _eventQueueReader = new Mock<IEventReader>();
 
         //IIncomingEvent tmp = null!;
 
@@ -157,7 +166,7 @@ public class ExecutableTest
 
             Assert.Fail("StateMachineQueueClosedException should be raised");
         }
-        catch (StateMachineQueueClosedException)
+        catch (StateMachineDestroyedException ex) when (ex.Reason == DestroyReason.QueueClosed)
         {
             //ignore
         }

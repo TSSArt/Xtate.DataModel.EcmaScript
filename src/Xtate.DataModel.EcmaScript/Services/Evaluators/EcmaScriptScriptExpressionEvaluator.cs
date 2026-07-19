@@ -15,34 +15,35 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace Xtate.DataModel.EcmaScript;
+using Xtate.Ancestor;
+using Xtate.StateMachine;
 
-public class EcmaScriptConditionExpressionEvaluator(IConditionExpression conditionExpression, Program program) : IConditionExpression, IBooleanEvaluator, IAncestorProvider
+namespace Xtate.DataModel.EcmaScript.Services;
+
+public class EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Program program) : IScriptExpression, IExecEvaluator, IAncestorProvider
 {
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
 #region Interface IAncestorProvider
 
-    object IAncestorProvider.Ancestor => conditionExpression;
+    object IAncestorProvider.Ancestor => scriptExpression;
 
 #endregion
 
-#region Interface IBooleanEvaluator
+#region Interface IExecEvaluator
 
-    async ValueTask<bool> IBooleanEvaluator.EvaluateBoolean()
+    public async ValueTask Execute()
     {
         var engine = await EngineFactory().ConfigureAwait(false);
 
-        var obj = engine.Eval(program, startNewScope: true);
-
-        return obj.AsBoolean();
+        engine.Exec(program, startNewScope: true);
     }
 
 #endregion
 
-#region Interface IConditionExpression
+#region Interface IScriptExpression
 
-    public string? Expression => conditionExpression.Expression;
+    public string? Expression => scriptExpression.Expression;
 
 #endregion
 }

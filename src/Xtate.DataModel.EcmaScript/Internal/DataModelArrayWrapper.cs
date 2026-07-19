@@ -18,8 +18,9 @@
 using System.Globalization;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
+using Xtate.DataTypes;
 
-namespace Xtate.DataModel.EcmaScript;
+namespace Xtate.DataModel.EcmaScript.Internal;
 
 public class DataModelArrayWrapper : ArrayInstance, IObjectWrapper
 {

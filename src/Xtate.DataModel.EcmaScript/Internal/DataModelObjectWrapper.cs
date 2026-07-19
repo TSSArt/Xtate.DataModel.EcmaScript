@@ -17,8 +17,9 @@
 
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
+using Xtate.DataTypes;
 
-namespace Xtate.DataModel.EcmaScript;
+namespace Xtate.DataModel.EcmaScript.Internal;
 
 public class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 {
@@ -46,7 +47,7 @@ public class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 
     public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
     {
-        foreach (var (key, _) in _list.KeyValuePairs)
+        foreach (var key in _list.Keys)
         {
             yield return new KeyValuePair<string, PropertyDescriptor>(key, GetOwnProperty(key));
         }

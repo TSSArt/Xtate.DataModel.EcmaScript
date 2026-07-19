@@ -15,11 +15,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace Xtate.DataModel.EcmaScript;
+using Xtate.Ancestor.Extensions;
+using Xtate.DataModel.Services;
+using Xtate.StateMachine;
 
-public class EcmaScriptCustomActionEvaluator(ICustomAction customAction) : DefaultCustomActionEvaluator(customAction)
+namespace Xtate.DataModel.EcmaScript.Services;
+
+public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 {
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    private readonly EcmaScriptLocationExpressionEvaluator? _indexEvaluator;
+
+    private readonly EcmaScriptLocationExpressionEvaluator _itemEvaluator;
+
+    public EcmaScriptForEachEvaluator(IForEach forEach) : base(forEach)
+    {
+        var itemEvaluator = base.Item?.UseAncestor.As<EcmaScriptLocationExpressionEvaluator>();
+
+        Debug.Assert(itemEvaluator is not null);
+
+        _itemEvaluator = itemEvaluator;
+
+        _indexEvaluator = base.Index?.UseAncestor.As<EcmaScriptLocationExpressionEvaluator>();
+    }
+
+    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
     public override async ValueTask Execute()
     {
@@ -29,6 +48,13 @@ public class EcmaScriptCustomActionEvaluator(ICustomAction customAction) : Defau
 
         try
         {
+            await _itemEvaluator.DeclareLocalVariable().ConfigureAwait(false);
+
+            if (_indexEvaluator is not null)
+            {
+                await _indexEvaluator.DeclareLocalVariable().ConfigureAwait(false);
+            }
+
             await base.Execute().ConfigureAwait(false);
         }
         finally

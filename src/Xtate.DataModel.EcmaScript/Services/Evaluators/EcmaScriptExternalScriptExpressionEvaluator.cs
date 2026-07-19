@@ -16,15 +16,18 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using Jint.Parser;
+using Xtate.Ancestor;
+using Xtate.DataModel.EcmaScript.Properties;
+using Xtate.StateMachine;
 
-namespace Xtate.DataModel.EcmaScript;
+namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression)
     : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
 {
     private Program? _program;
 
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
 #region Interface IAncestorProvider
 

@@ -15,14 +15,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace Xtate.DataModel.EcmaScript;
+using Xtate.DataModel.Services;
+using Xtate.DataTypes;
+using Xtate.StateMachine;
 
-public class EcmaScriptExternalDataExpressionEvaluator(IExternalDataExpression externalDataExpression) : DefaultExternalDataExpressionEvaluator(externalDataExpression)
+namespace Xtate.DataModel.EcmaScript.Services;
+
+public class EcmaScriptContentBodyEvaluator(IContentBody contentBody) : DefaultContentBodyEvaluator(contentBody)
 {
-    protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource)
-    {
-        var content = await resource.GetContent().ConfigureAwait(false);
-
-        return DataModelConverter.FromJson(content);
-    }
+    protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;
 }

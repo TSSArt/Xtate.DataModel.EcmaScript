@@ -19,8 +19,11 @@ using System.Globalization;
 using Jint.Runtime;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
+using Xtate.DataModel.EcmaScript.Properties;
+using Xtate.DataModel.Services;
+using Xtate.DataTypes;
 
-namespace Xtate.DataModel.EcmaScript;
+namespace Xtate.DataModel.EcmaScript.Internal;
 
 internal static class EcmaScriptHelper
 {

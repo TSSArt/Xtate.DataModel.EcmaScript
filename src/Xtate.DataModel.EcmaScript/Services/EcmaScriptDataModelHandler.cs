@@ -18,11 +18,18 @@
 using System.Collections.Immutable;
 using System.Reflection;
 using Jint.Parser;
+using Xtate.DataModel.EcmaScript.Properties;
+using Xtate.DataModel.Services;
+using Xtate.DataTypes;
+using Xtate.StateMachine;
+using Xtate.StateMachine.Validator;
 
-namespace Xtate.DataModel.EcmaScript;
+namespace Xtate.DataModel.EcmaScript.Services;
 
+[InstantiatedByIoC]
 public class EcmaScriptDataModelHandler : DataModelHandlerBase
 {
+	[InstantiatedByIoC]
     public class Provider() : DataModelHandlerProviderBase<EcmaScriptDataModelHandler>(@"ecmascript");
 
     public static readonly string JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
@@ -31,27 +38,27 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
     private readonly JavaScriptParser _parser = new();
 
-    public required Func<IForEach, EcmaScriptForEachEvaluator> EcmaScriptForEachEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<IForEach, EcmaScriptForEachEvaluator> EcmaScriptForEachEvaluatorFactory { private get; [SetByIoC] init; }
 
-    public required Func<ICustomAction, EcmaScriptCustomActionEvaluator> EcmaScriptCustomActionEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<ICustomAction, EcmaScriptCustomActionEvaluator> EcmaScriptCustomActionEvaluatorFactory { private get; [SetByIoC] init; }
 
-    public required Func<IExternalScriptExpression, EcmaScriptExternalScriptExpressionEvaluator> EcmaScriptExternalScriptExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<IExternalScriptExpression, EcmaScriptExternalScriptExpressionEvaluator> EcmaScriptExternalScriptExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
-    public required Func<IExternalDataExpression, EcmaScriptExternalDataExpressionEvaluator> EcmaScriptExternalDataExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<IExternalDataExpression, EcmaScriptExternalDataExpressionEvaluator> EcmaScriptExternalDataExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
-    public required IErrorProcessorService<EcmaScriptDataModelHandler> EcmaScriptErrorProcessorService { private get; [UsedImplicitly] init; }
+    public required IErrorProcessorService<EcmaScriptDataModelHandler> EcmaScriptErrorProcessorService { private get; [SetByIoC] init; }
 
-    public required Func<IValueExpression, Program, EcmaScriptValueExpressionEvaluator> EcmaScriptValueExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<IValueExpression, Program, EcmaScriptValueExpressionEvaluator> EcmaScriptValueExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
-    public required Func<IConditionExpression, Program, EcmaScriptConditionExpressionEvaluator> EcmaScriptConditionExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<IConditionExpression, Program, EcmaScriptConditionExpressionEvaluator> EcmaScriptConditionExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
-    public required Func<IScriptExpression, Program, EcmaScriptScriptExpressionEvaluator> EcmaScriptScriptExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<IScriptExpression, Program, EcmaScriptScriptExpressionEvaluator> EcmaScriptScriptExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
-    public required Func<ILocationExpression, (Program, Expression?), EcmaScriptLocationExpressionEvaluator> EcmaScriptLocationExpressionEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<ILocationExpression, (Program, Expression?), EcmaScriptLocationExpressionEvaluator> EcmaScriptLocationExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
-    public required Func<IInlineContent, EcmaScriptInlineContentEvaluator> EcmaScriptInlineContentEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<IInlineContent, EcmaScriptInlineContentEvaluator> EcmaScriptInlineContentEvaluatorFactory { private get; [SetByIoC] init; }
 
-    public required Func<IContentBody, EcmaScriptContentBodyEvaluator> EcmaScriptContentBodyEvaluatorFactory { private get; [UsedImplicitly] init; }
+    public required Func<IContentBody, EcmaScriptContentBodyEvaluator> EcmaScriptContentBodyEvaluatorFactory { private get; [SetByIoC] init; }
 
     public override ImmutableDictionary<string, string> DataModelVars { get; } = ImmutableDictionary<string, string>.Empty.Add(key: @"JintVersion", JintVersionValue);
 

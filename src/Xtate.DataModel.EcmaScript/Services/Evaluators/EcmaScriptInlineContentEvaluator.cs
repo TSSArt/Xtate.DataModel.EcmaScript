@@ -15,15 +15,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace Xtate.DataModel.EcmaScript;
+using Xtate.DataModel.Services;
+using Xtate.DataTypes;
+using Xtate.StateMachine;
 
-internal class EcmaScriptObject(JsValue jsValue) : IObject
+namespace Xtate.DataModel.EcmaScript.Services;
+
+public class EcmaScriptInlineContentEvaluator(IInlineContent inlineContent) : DefaultInlineContentEvaluator(inlineContent)
 {
-    public JsValue JsValue { get; } = jsValue;
-
-#region Interface IObject
-
-    public object ToObject() => JsValue.ToObject();
-
-#endregion
+    protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;
 }

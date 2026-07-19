@@ -22,7 +22,6 @@ global using System.Diagnostics;
 global using System.Collections.Generic;
 global using System.Threading.Tasks;
 global using JetBrains.Annotations;
-global using Xtate.Core;
 global using Jint;
 global using Jint.Native;
 global using Jint.Native.Array;

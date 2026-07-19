@@ -15,32 +15,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace Xtate.DataModel.EcmaScript;
+using Xtate.DataTypes;
 
-public class EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Program program) : IScriptExpression, IExecEvaluator, IAncestorProvider
+namespace Xtate.DataModel.EcmaScript.Internal;
+
+internal class EcmaScriptObject(JsValue jsValue) : IObject
 {
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    public JsValue JsValue { get; } = jsValue;
 
-#region Interface IAncestorProvider
+#region Interface IObject
 
-    object IAncestorProvider.Ancestor => scriptExpression;
-
-#endregion
-
-#region Interface IExecEvaluator
-
-    public async ValueTask Execute()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
-
-        engine.Exec(program, startNewScope: true);
-    }
-
-#endregion
-
-#region Interface IScriptExpression
-
-    public string? Expression => scriptExpression.Expression;
+    public object ToObject() => JsValue.ToObject();
 
 #endregion
 }

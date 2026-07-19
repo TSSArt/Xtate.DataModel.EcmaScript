@@ -15,9 +15,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using Xtate.Ancestor;
+using Xtate.DataModel.EcmaScript.Internal;
+using Xtate.DataModel.EcmaScript.Properties;
+using Xtate.DataTypes;
+using Xtate.StateMachine;
 using JintIdentifier = Jint.Parser.Ast.Identifier;
 
-namespace Xtate.DataModel.EcmaScript;
+namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 {
@@ -58,7 +63,7 @@ public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocati
         }
     }
 
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
 #region Interface IAncestorProvider
 

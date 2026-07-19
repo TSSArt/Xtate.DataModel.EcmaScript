@@ -15,12 +15,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace Xtate.DataModel.EcmaScript;
+using Xtate.Ancestor;
+using Xtate.DataModel.EcmaScript.Internal;
+using Xtate.DataTypes;
+using Xtate.StateMachine;
+
+namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Program program)
     : IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider
 {
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [UsedImplicitly] init; }
+    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
 #region Interface IAncestorProvider
 

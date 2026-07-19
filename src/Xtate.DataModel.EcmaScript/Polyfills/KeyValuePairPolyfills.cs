@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2025 Sergii Artemenko
+﻿// Copyright © 2019-2026 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -15,9 +15,21 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace Xtate.DataModel.EcmaScript;
+#if !NETCOREAPP2_0 && !NETCOREAPP2_1_OR_GREATER && !NETSTANDARD2_1
 
-public class EcmaScriptInlineContentEvaluator(IInlineContent inlineContent) : DefaultInlineContentEvaluator(inlineContent)
+// ReSharper disable once CheckNamespace
+namespace System.Collections.Generic;
+
+internal static class KeyValuePairPolyfills
 {
-    protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;
+	extension<TKey, TValue>(KeyValuePair<TKey, TValue> keyValuePair)
+	{
+		public void Deconstruct(out TKey key, out TValue value)
+		{
+			key = keyValuePair.Key;
+			value = keyValuePair.Value;
+		}
+	}
 }
+
+#endif

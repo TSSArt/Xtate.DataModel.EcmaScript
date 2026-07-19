@@ -19,8 +19,10 @@ using System.Globalization;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Environments;
 using Jint.Runtime.Interop;
+using Xtate.DataModel.EcmaScript.Internal;
+using Xtate.DataTypes;
 
-namespace Xtate.DataModel.EcmaScript;
+namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptEngine
 {
@@ -37,11 +39,11 @@ public class EcmaScriptEngine
         global.FastAddProperty(name: @"In", new DelegateWrapper(_jintEngine, InState), writable: false, enumerable: false, configurable: false);
     }
 
-    public required IDataModelController DataModelController { private get; [UsedImplicitly] init; }
+    public required IDataModelController DataModelController { private get; [SetByIoC] init; }
 
-    public required IInStateController InStateController { private get; [UsedImplicitly] init; }
+    public required IInStateController InStateController { private get; [SetByIoC] init; }
 
-    private bool InState(string state) => InStateController.InState((Identifier)state);
+    private bool InState(string state) => InStateController.InState((Xtate.StateMachine.Identifier)state);
 
     private void SyncRootVariables(DataModelList dataModel)
     {

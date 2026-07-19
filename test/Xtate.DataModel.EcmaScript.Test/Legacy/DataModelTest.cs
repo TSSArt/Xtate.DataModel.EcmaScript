@@ -17,34 +17,44 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Xtate.Core;
+using Xtate.Class;
+using Xtate.DataModel.EcmaScript.DependencyInjection;
+using Xtate.DataTypes;
+using Xtate.Interpreter;
+using Xtate.Interpreter.DependencyInjection;
 using Xtate.IoC;
+using Xtate.Logging;
+using Xtate.Logging.DependencyInjection;
+using Xtate.Logging.Provider;
+using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Test;
 
 [TestClass]
 public class DataModelTest
 {
-    private Mock<IEventQueueReader> _eventQueueReader = default!;
+    private Mock<IEventReader> _eventQueueReader = null!;
 
-    private Mock<ILogMethods> _logMethods = default!;
+    private Mock<ILogMethods> _logMethods = null!;
 
-    private Mock<ILogWriter<IStateMachineInterpreter>> _logWriterI = default!;
+    private Mock<ILogProvider<IStateMachineInterpreter>> _logWriterI = null!;
 
-    private Mock<ILogWriter<ILogController>> _logWriterL = default!;
+    private Mock<ILogProvider<ILogController>> _logWriterL = null!;
 
     private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
     {
         var services = new ServiceCollection();
-        services.AddModule<StateMachineFactoryModule>();
-        services.AddConstant<IScxmlStateMachine>(new ScxmlStringStateMachine(scxml));
-        var provider = services.BuildProvider();
+        //services.AddModule<StateMachineFactoryModule>();
+        //services.AddConstant<IScxmlStateMachine>(new ScxmlStringStateMachine(scxml));
+		var smc = new ScxmlStringStateMachine(scxml);
+		smc.AddServices(services);
+
+		var provider = services.BuildProvider();
 
         return await provider.GetRequiredService<IStateMachine>();
     }
@@ -56,15 +66,15 @@ public class DataModelTest
 
     private static ValueTask<IStateMachine> NoNameOnEntry(string xml) =>
         GetStateMachine(
-            "<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
-            "</onentry></state></scxml>");
+			"<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
+			"</onentry></state></scxml>");
 
     private static ValueTask<IStateMachine> WithNameOnEntry(string xml) =>
         GetStateMachine(
             "<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript' name='MyName'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
-            "</onentry></state></scxml>");
+			"</onentry></state></scxml>");
 
-    private Task RunStateMachine(Func<string, ValueTask<IStateMachine>> getter, string innerXml) => RunStateMachineBase<StateMachineQueueClosedException>(getter, innerXml);
+    private Task RunStateMachine(Func<string, ValueTask<IStateMachine>> getter, string innerXml) => RunStateMachineBase<StateMachineDestroyedException>(getter, innerXml);
 
     private Task RunStateMachineWithError(Func<string, ValueTask<IStateMachine>> getter, string innerXml) => RunStateMachineBase<StateMachineDestroyedException>(getter, innerXml);
 
@@ -74,10 +84,11 @@ public class DataModelTest
 
         await using var container = Container.Create<EcmaScriptDataModelHandlerModule, StateMachineInterpreterModule>(s =>
                                                                                                                       {
+																														  s.AddModule<LoggingModule>();
                                                                                                                           s.AddConstant(stateMachine);
                                                                                                                           s.AddConstant(_logMethods.Object);
                                                                                                                           s.AddConstant(_eventQueueReader.Object);
-                                                                                                                          s.AddImplementation<TestLogWriter>().For<ILogWriter>();
+                                                                                                                          s.AddImplementation<TestLogWriter>().For<ILogProvider>().For<ILogController>();
                                                                                                                       });
 
         var stateMachineInterpreter = await container.GetRequiredService<IStateMachineInterpreter>();
@@ -89,9 +100,9 @@ public class DataModelTest
             Assert.Fail($"{typeof(E).Name} should be raised");
         }
         catch (E)
-        {
-            //ignore
-        }
+		{
+			//ignore
+		}
     }
 
     [TestInitialize]
@@ -99,11 +110,11 @@ public class DataModelTest
     {
         var channel = Channel.CreateUnbounded<IIncomingEvent>();
         channel.Writer.Complete();
-        _logWriterL = new Mock<ILogWriter<ILogController>>();
+        _logWriterL = new Mock<ILogProvider<ILogController>>();
         _logWriterL.Setup(x => x.IsEnabled(It.IsAny<Level>())).Returns(true);
-        _logWriterI = new Mock<ILogWriter<IStateMachineInterpreter>>();
+        _logWriterI = new Mock<ILogProvider<IStateMachineInterpreter>>();
         _logWriterI.Setup(x => x.IsEnabled(It.IsAny<Level>())).Returns(true);
-        _eventQueueReader = new Mock<IEventQueueReader>();
+        _eventQueueReader = new Mock<IEventReader>();
         _logMethods = new Mock<ILogMethods>();
     }
 
@@ -121,7 +132,7 @@ public class DataModelTest
     {
         await RunStateMachine(NoNameOnEntry, innerXml: "<log expr=\"'output'\"/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "output"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "output"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -130,7 +141,7 @@ public class DataModelTest
     {
         await RunStateMachine(NoNameOnEntry, innerXml: "<log expr='_sessionid'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, It.Is<DataModelValue>(v => v.AsString().Length > 0)));
+        _logMethods.Verify(l => l.Info("ILogController", null, It.Is<DataModelValue>(v => v.AsString().Length > 0)));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -139,7 +150,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_name'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "MyName"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "MyName"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -148,7 +159,7 @@ public class DataModelTest
     {
         await RunStateMachine(NoNameOnEntry, innerXml: "<log expr='_name'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, DataModelValue.Null));
+        _logMethods.Verify(l => l.Info("ILogController", null, DataModelValue.Null));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -166,37 +177,17 @@ public class DataModelTest
     {
         await RunStateMachineWithError(WithNameOnEntry, innerXml: "<log expr='_name'/><log expr='_not_existed'/><log expr='_name'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "MyName"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "MyName"));
         _logMethods.Verify(l => l.Error("StateMachineInterpreter", "Execution error in entity [(#-1)].", It.Is<Exception>(e => e.Message == "_not_existed is not defined")));
         _logMethods.VerifyNoOtherCalls();
     }
-
-    [TestMethod]
-    public async Task InterpreterVersionVariableTest()
-    {
-        await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.interpreter.version'/>");
-
-        var version = typeof(StateMachineInterpreter).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-
-        _logMethods.Verify(l => l.Info("ILogController", default, version));
-        _logMethods.VerifyNoOtherCalls();
-    }
-
-    [TestMethod]
-    public async Task InterpreterNameVariableTest()
-    {
-        await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.interpreter.name'/>");
-
-        _logMethods.Verify(l => l.Info("ILogController", default, "Xtate.Core.StateMachineInterpreter"));
-        _logMethods.VerifyNoOtherCalls();
-    }
-
+	
     [TestMethod]
     public async Task DataModelNameVariableTest()
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.name'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "Xtate.DataModel.EcmaScript.EcmaScriptDataModelHandler"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "Xtate.DataModel.EcmaScript.Services.EcmaScriptDataModelHandler"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -205,7 +196,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.assembly'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "Xtate.DataModel.EcmaScript"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "Xtate.DataModel.EcmaScript"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -214,7 +205,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.version'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, It.Is<DataModelValue>(v => v.AsString().Length > 0)));
+        _logMethods.Verify(l => l.Info("ILogController", null, It.Is<DataModelValue>(v => v.AsString().Length > 0)));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -223,7 +214,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.vars.JintVersion'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "2.11.58"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "2.11.58"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -232,7 +223,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<script>my='1'+'a';</script><log expr='my'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "1a"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "1a"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -241,7 +232,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<assign location='x' expr='\"Hello World\"'/><log expr='x'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "Hello World"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "Hello World"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -250,7 +241,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<script>my=[]; my[3]={};</script><assign location='my[3].yy' expr=\"'Hello World'\"/><log expr='my[3].yy'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "Hello World"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "Hello World"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -259,7 +250,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<assign location='_name1' expr=\"'Hello World'\"/><log expr='_name1'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "Hello World"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "Hello World"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -277,7 +268,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='1==1'><log expr=\"'Hello World'\"/></if>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "Hello World"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "Hello World"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -294,7 +285,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='true'><log expr=\"'Hello World'\"/><else/><log expr=\"'Bye World'\"/></if>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "Hello World"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "Hello World"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -303,7 +294,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='false'><log expr=\"'Hello World'\"/><else/><log expr=\"'Bye World'\"/></if>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "Bye World"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "Bye World"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -312,7 +303,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<if cond='false'><log expr=\"'Hello World'\"/><elseif cond='true'/><log expr=\"'Maybe World'\"/><else/><log expr=\"'Bye World'\"/></if>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "Maybe World"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "Maybe World"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -323,9 +314,9 @@ public class DataModelTest
             WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm'>"
                              + "<log expr=\"itm\"/></foreach><log expr='typeof(itm)'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "aaa"));
-        _logMethods.Verify(l => l.Info("ILogController", default, "bbb"));
-        _logMethods.Verify(l => l.Info("ILogController", default, "undefined"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "aaa"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "bbb"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "undefined"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -336,9 +327,9 @@ public class DataModelTest
             WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm' index='idx'>"
                              + "<log expr=\"idx + '-' + itm\"/></foreach><log expr='typeof(itm)'/><log expr='typeof(idx)'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", default, "0-aaa"));
-        _logMethods.Verify(l => l.Info("ILogController", default, "1-bbb"));
-        _logMethods.Verify(l => l.Info("ILogController", default, "undefined"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "0-aaa"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "1-bbb"));
+        _logMethods.Verify(l => l.Info("ILogController", null, "undefined"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -386,7 +377,7 @@ public class DataModelTest
     }
 
     [UsedImplicitly]
-    private class TestLogWriter(ILogMethods logMethods) : ILogWriter
+    private class TestLogWriter(ILogMethods logMethods) : ILogProvider, ILogController
     {
     #region Interface ILogWriter
 
@@ -396,7 +387,7 @@ public class DataModelTest
                                Level level,
                                int eventId,
                                string? message,
-                               IEnumerable<LoggingParameter>? parameters = default)
+                               IEnumerable<LoggingParameter>? parameters = null)
         {
             var prms = new Dictionary<string, LoggingParameter>();
 
@@ -433,5 +424,14 @@ public class DataModelTest
         }
 
     #endregion
-    }
+
+		bool ILogController.IsEnabled => true;
+
+		public ValueTask Log(string? message, DataModelValue arguments)
+		{
+			logMethods.Info("ILogController", message, arguments);
+
+			return default;
+		}
+	}
 }
