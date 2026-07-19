@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2025 Sergii Artemenko
+﻿// Copyright © 2019-2026 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -21,6 +21,7 @@ using Jint.Runtime.Environments;
 using Jint.Runtime.Interop;
 using Xtate.DataModel.EcmaScript.Internal;
 using Xtate.DataTypes;
+using Identifier = Xtate.StateMachine.Identifier;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
@@ -43,7 +44,7 @@ public class EcmaScriptEngine
 
     public required IInStateController InStateController { private get; [SetByIoC] init; }
 
-    private bool InState(string state) => InStateController.InState((Xtate.StateMachine.Identifier)state);
+    private bool InState(string state) => InStateController.InState((Identifier)state);
 
     private void SyncRootVariables(DataModelList dataModel)
     {

@@ -24,21 +24,21 @@ namespace Xtate.DataModel.EcmaScript.DependencyInjection;
 
 public class EcmaScriptDataModelHandlerModule : Module<DataModelHandlerBaseModule>
 {
-	protected override void AddServices()
-	{
-		Services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
-		Services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
-		Services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
-		Services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
-		Services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Program>();
-		Services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
-		Services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
-		Services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
-		Services.AddTypeSync<EcmaScriptInlineContentEvaluator, IInlineContent>();
-		Services.AddTypeSync<EcmaScriptContentBodyEvaluator, IContentBody>();
+    protected override void AddServices()
+    {
+        Services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
+        Services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
+        Services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
+        Services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
+        Services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Program>();
+        Services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
+        Services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
+        Services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
+        Services.AddTypeSync<EcmaScriptInlineContentEvaluator, IInlineContent>();
+        Services.AddTypeSync<EcmaScriptContentBodyEvaluator, IContentBody>();
 
-		Services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
-		Services.AddImplementation<EcmaScriptDataModelHandler.Provider>().For<IDataModelHandlerProvider>();
-		Services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>(Option.IfNotRegistered);
-	}
+        Services.AddSharedType<EcmaScriptEngine>(SharedWithin.Scope);
+        Services.AddImplementation<EcmaScriptDataModelHandler.Provider>().For<IDataModelHandlerProvider>();
+        Services.AddImplementation<EcmaScriptDataModelHandler>().For<EcmaScriptDataModelHandler>().For<IDataModelHandler>(Option.IfNotRegistered);
+    }
 }

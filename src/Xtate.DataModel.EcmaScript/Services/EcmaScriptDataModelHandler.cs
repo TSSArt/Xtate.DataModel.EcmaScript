@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2025 Sergii Artemenko
+﻿// Copyright © 2019-2026 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -29,7 +29,7 @@ namespace Xtate.DataModel.EcmaScript.Services;
 [InstantiatedByIoC]
 public class EcmaScriptDataModelHandler : DataModelHandlerBase
 {
-	[InstantiatedByIoC]
+    [InstantiatedByIoC]
     public class Provider() : DataModelHandlerProviderBase<EcmaScriptDataModelHandler>(@"ecmascript");
 
     public static readonly string JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
