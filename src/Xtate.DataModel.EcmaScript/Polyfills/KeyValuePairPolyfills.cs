@@ -22,14 +22,14 @@ namespace System.Collections.Generic;
 
 internal static class KeyValuePairPolyfills
 {
-    extension<TKey, TValue>(KeyValuePair<TKey, TValue> keyValuePair)
-    {
-        public void Deconstruct(out TKey key, out TValue value)
-        {
-            key = keyValuePair.Key;
-            value = keyValuePair.Value;
-        }
-    }
+	extension<TKey, TValue>(KeyValuePair<TKey, TValue> keyValuePair)
+	{
+		public void Deconstruct(out TKey key, out TValue value)
+		{
+			key = keyValuePair.Key;
+			value = keyValuePair.Value;
+		}
+	}
 }
 
 #endif

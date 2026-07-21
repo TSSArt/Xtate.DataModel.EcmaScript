@@ -21,11 +21,11 @@ namespace Xtate.DataModel.EcmaScript.Internal;
 
 internal class EcmaScriptObject(JsValue jsValue) : IObject
 {
-    public JsValue JsValue { get; } = jsValue;
+	public JsValue JsValue { get; } = jsValue;
 
 #region Interface IObject
 
-    public object? ToObject() => JsValue.ToObject();
+	public object? ToObject() => JsValue.ToObject();
 
 #endregion
 }

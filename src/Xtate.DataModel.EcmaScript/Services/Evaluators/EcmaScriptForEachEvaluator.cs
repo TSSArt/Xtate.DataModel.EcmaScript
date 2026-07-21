@@ -23,43 +23,43 @@ namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 {
-    private readonly EcmaScriptLocationExpressionEvaluator? _indexEvaluator;
+	private readonly EcmaScriptLocationExpressionEvaluator? _indexEvaluator;
 
-    private readonly EcmaScriptLocationExpressionEvaluator _itemEvaluator;
+	private readonly EcmaScriptLocationExpressionEvaluator _itemEvaluator;
 
-    public EcmaScriptForEachEvaluator(IForEach forEach) : base(forEach)
-    {
-        var itemEvaluator = base.Item?.UseAncestor.As<EcmaScriptLocationExpressionEvaluator>();
+	public EcmaScriptForEachEvaluator(IForEach forEach) : base(forEach)
+	{
+		var itemEvaluator = base.Item?.UseAncestor.As<EcmaScriptLocationExpressionEvaluator>();
 
-        Debug.Assert(itemEvaluator is not null);
+		Debug.Assert(itemEvaluator is not null);
 
-        _itemEvaluator = itemEvaluator;
+		_itemEvaluator = itemEvaluator;
 
-        _indexEvaluator = base.Index?.UseAncestor.As<EcmaScriptLocationExpressionEvaluator>();
-    }
+		_indexEvaluator = base.Index?.UseAncestor.As<EcmaScriptLocationExpressionEvaluator>();
+	}
 
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
+	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
-    public override async ValueTask Execute()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
+	public override async ValueTask Execute()
+	{
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        engine.EnterExecutionContext();
+		engine.EnterExecutionContext();
 
-        try
-        {
-            await _itemEvaluator.DeclareLocalVariable().ConfigureAwait(false);
+		try
+		{
+			await _itemEvaluator.DeclareLocalVariable().ConfigureAwait(false);
 
-            if (_indexEvaluator is not null)
-            {
-                await _indexEvaluator.DeclareLocalVariable().ConfigureAwait(false);
-            }
+			if (_indexEvaluator is not null)
+			{
+				await _indexEvaluator.DeclareLocalVariable().ConfigureAwait(false);
+			}
 
-            await base.Execute().ConfigureAwait(false);
-        }
-        finally
-        {
-            engine.LeaveExecutionContext();
-        }
-    }
+			await base.Execute().ConfigureAwait(false);
+		}
+		finally
+		{
+			engine.LeaveExecutionContext();
+		}
+	}
 }

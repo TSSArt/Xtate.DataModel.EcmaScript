@@ -22,28 +22,28 @@ namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Prepared<Script> program) : IScriptExpression, IExecEvaluator, IAncestorProvider
 {
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
+	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
 #region Interface IAncestorProvider
 
-    object IAncestorProvider.Ancestor => scriptExpression;
+	object IAncestorProvider.Ancestor => scriptExpression;
 
 #endregion
 
 #region Interface IExecEvaluator
 
-    public async ValueTask Execute()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
+	public async ValueTask Execute()
+	{
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        engine.Exec(program, startNewScope: true);
-    }
+		engine.Exec(program, startNewScope: true);
+	}
 
 #endregion
 
 #region Interface IScriptExpression
 
-    public string? Expression => scriptExpression.Expression;
+	public string? Expression => scriptExpression.Expression;
 
 #endregion
 }

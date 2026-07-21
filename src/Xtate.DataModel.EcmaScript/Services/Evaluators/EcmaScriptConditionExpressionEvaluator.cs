@@ -22,30 +22,30 @@ namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptConditionExpressionEvaluator(IConditionExpression conditionExpression, Prepared<Script> program) : IConditionExpression, IBooleanEvaluator, IAncestorProvider
 {
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
+	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
 #region Interface IAncestorProvider
 
-    object IAncestorProvider.Ancestor => conditionExpression;
+	object IAncestorProvider.Ancestor => conditionExpression;
 
 #endregion
 
 #region Interface IBooleanEvaluator
 
-    async ValueTask<bool> IBooleanEvaluator.EvaluateBoolean()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
+	async ValueTask<bool> IBooleanEvaluator.EvaluateBoolean()
+	{
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        var obj = engine.Eval(program, startNewScope: true);
+		var obj = engine.Eval(program, startNewScope: true);
 
-        return obj.AsBoolean();
-    }
+		return obj.AsBoolean();
+	}
 
 #endregion
 
 #region Interface IConditionExpression
 
-    public string? Expression => conditionExpression.Expression;
+	public string? Expression => conditionExpression.Expression;
 
 #endregion
 }

@@ -26,105 +26,105 @@ namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 {
-    private readonly Prepared<Script> _assignment;
+	private readonly Prepared<Script> _assignment;
 
-    private readonly string? _localVariableName;
+	private readonly string? _localVariableName;
 
-    private readonly ILocationExpression _locationExpression;
+	private readonly ILocationExpression _locationExpression;
 
-    private readonly string? _name;
+	private readonly string? _name;
 
-    private readonly Prepared<Script> _program;
+	private readonly Prepared<Script> _program;
 
-    public EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, Prepared<Script> program, Expression? leftExpression)
-    {
-        _locationExpression = locationExpression;
-        _program = program;
-        _assignment = Engine.PrepareScript(@$"{locationExpression.Expression} = {EcmaScriptEngine.LocationValueProperty}");
+	public EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, Prepared<Script> program, Expression? leftExpression)
+	{
+		_locationExpression = locationExpression;
+		_program = program;
+		_assignment = Engine.PrepareScript(@$"{locationExpression.Expression} = {EcmaScriptEngine.LocationValueProperty}");
 
-        switch (leftExpression)
-        {
-            case null:
-                break;
+		switch (leftExpression)
+		{
+			case null:
+				break;
 
-            case JintIdentifier identifier:
-                _name = identifier.Name;
-                _localVariableName = identifier.Name;
+			case JintIdentifier identifier:
+				_name = identifier.Name;
+				_localVariableName = identifier.Name;
 
-                break;
+				break;
 
-            case MemberExpression memberExpression:
-                _name = ((JintIdentifier)memberExpression.Property).Name;
+			case MemberExpression memberExpression:
+				_name = ((JintIdentifier)memberExpression.Property).Name;
 
-                break;
+				break;
 
-            default:
-                throw new InvalidOperationException();
-        }
-    }
+			default:
+				throw new InvalidOperationException();
+		}
+	}
 
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
+	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
 #region Interface IAncestorProvider
 
-    object IAncestorProvider.Ancestor => _locationExpression;
+	object IAncestorProvider.Ancestor => _locationExpression;
 
 #endregion
 
 #region Interface ILocationEvaluator
 
-    public async ValueTask<IObject> GetValue()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
+	public async ValueTask<IObject> GetValue()
+	{
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        return new EcmaScriptObject(engine.Eval(_program, startNewScope: true));
-    }
+		return new EcmaScriptObject(engine.Eval(_program, startNewScope: true));
+	}
 
-    public ValueTask<string> GetName() => new(_name ?? throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated));
+	public ValueTask<string> GetName() => new(_name ?? throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated));
 
-    public async ValueTask SetValue(IObject value)
-    {
-        var rightValue = value is EcmaScriptObject ecmaScriptObject ? ecmaScriptObject.JsValue : value.ToObject();
-        var engine = await EngineFactory().ConfigureAwait(false);
-        engine.SetLocationValue(_assignment, _localVariableName, rightValue);
-    }
+	public async ValueTask SetValue(IObject value)
+	{
+		var rightValue = value is EcmaScriptObject ecmaScriptObject ? ecmaScriptObject.JsValue : value.ToObject();
+		var engine = await EngineFactory().ConfigureAwait(false);
+		engine.SetLocationValue(_assignment, _localVariableName, rightValue);
+	}
 
 #endregion
 
 #region Interface ILocationExpression
 
-    public string? Expression => _locationExpression.Expression;
+	public string? Expression => _locationExpression.Expression;
 
 #endregion
 
-    public async ValueTask DeclareLocalVariable()
-    {
-        if (_localVariableName is null)
-        {
-            throw new ExecutionException(Resources.Exception_InvalidLocalVariableName);
-        }
+	public async ValueTask DeclareLocalVariable()
+	{
+		if (_localVariableName is null)
+		{
+			throw new ExecutionException(Resources.Exception_InvalidLocalVariableName);
+		}
 
-        var engine = await EngineFactory().ConfigureAwait(false);
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        engine.DeclareLocalVariable(_localVariableName);
-    }
+		engine.DeclareLocalVariable(_localVariableName);
+	}
 
-    public static Expression? GetLeftExpression(Script program)
-    {
-        Expression? expression = default;
+	public static Expression? GetLeftExpression(Script program)
+	{
+		Expression? expression = default;
 
-        foreach (var statement in program.Body)
-        {
-            expression = (statement as ExpressionStatement)?.Expression;
+		foreach (var statement in program.Body)
+		{
+			expression = (statement as ExpressionStatement)?.Expression;
 
-            break;
-        }
+			break;
+		}
 
-        return expression switch
-               {
-                   JintIdentifier identifier         => identifier,
-                   MemberExpression memberExpression => memberExpression,
-                   _                                 => null
-               };
-    }
+		return expression switch
+			   {
+				   JintIdentifier identifier         => identifier,
+				   MemberExpression memberExpression => memberExpression,
+				   _                                 => null
+			   };
+	}
 }

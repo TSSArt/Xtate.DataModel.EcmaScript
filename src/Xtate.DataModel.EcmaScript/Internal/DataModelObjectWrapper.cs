@@ -24,103 +24,103 @@ namespace Xtate.DataModel.EcmaScript.Internal;
 
 public sealed class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 {
-    private readonly DataModelList _list;
+	private readonly DataModelList _list;
 
-    private readonly List<JsString> _properties;
+	private readonly List<JsString> _properties;
 
-    public DataModelObjectWrapper(Engine engine, DataModelList list) : base(engine)
-    {
-        _list = list;
-        _properties = [with(list.Count)];
+	public DataModelObjectWrapper(Engine engine, DataModelList list) : base(engine)
+	{
+		_list = list;
+		_properties = [with(list.Count)];
 
-        foreach (var key in list.Keys)
-        {
-            TryRegisterProperty((JsString)key, out _);
-        }
+		foreach (var key in list.Keys)
+		{
+			TryRegisterProperty((JsString)key, out _);
+		}
 
-        if (list.Access != DataModelAccess.Writable)
-        {
-            PreventExtensions();
-        }
-    }
+		if (list.Access != DataModelAccess.Writable)
+		{
+			PreventExtensions();
+		}
+	}
 
 #region Interface IObjectWrapper
 
-    public object Target => _list;
+	public object Target => _list;
 
 #endregion
 
-    private bool TryRegisterProperty(JsString property, [MaybeNullWhen(false)] out PropertyDescriptor propertyDescriptor)
-    {
-        if (!_properties.Contains(property))
-        {
-            _properties.Add(property);
+	private bool TryRegisterProperty(JsString property, [MaybeNullWhen(false)] out PropertyDescriptor propertyDescriptor)
+	{
+		if (!_properties.Contains(property))
+		{
+			_properties.Add(property);
 
-            propertyDescriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property.ToString());
+			propertyDescriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property.ToString());
 
-            SetOwnProperty(property, propertyDescriptor);
+			SetOwnProperty(property, propertyDescriptor);
 
-            return true;
-        }
+			return true;
+		}
 
-        propertyDescriptor = null;
+		propertyDescriptor = null;
 
-        return false;
-    }
+		return false;
+	}
 
-    private bool TryUnregisterProperty(JsString property)
-    {
-        if (_properties.Remove(property))
-        {
-            _list.RemoveFirst(property.AsString(), caseInsensitive: false);
+	private bool TryUnregisterProperty(JsString property)
+	{
+		if (_properties.Remove(property))
+		{
+			_list.RemoveFirst(property.AsString(), caseInsensitive: false);
 
-            base.RemoveOwnProperty(property);
+			base.RemoveOwnProperty(property);
 
-            return true;
-        }
+			return true;
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    public override void RemoveOwnProperty(JsValue property)
-    {
-        if (property is JsString jsProperty)
-        {
-            TryUnregisterProperty(jsProperty);
-        }
+	public override void RemoveOwnProperty(JsValue property)
+	{
+		if (property is JsString jsProperty)
+		{
+			TryUnregisterProperty(jsProperty);
+		}
 
-        base.RemoveOwnProperty(property);
-    }
+		base.RemoveOwnProperty(property);
+	}
 
-    public override IEnumerable<KeyValuePair<JsValue, PropertyDescriptor>> GetOwnProperties()
-    {
-        foreach (var property in _properties)
-        {
-            yield return new KeyValuePair<JsValue, PropertyDescriptor>(property, GetOwnProperty(property));
-        }
-    }
+	public override IEnumerable<KeyValuePair<JsValue, PropertyDescriptor>> GetOwnProperties()
+	{
+		foreach (var property in _properties)
+		{
+			yield return new KeyValuePair<JsValue, PropertyDescriptor>(property, GetOwnProperty(property));
+		}
+	}
 
-    public override PropertyDescriptor GetOwnProperty(JsValue property)
-    {
-        var descriptor = base.GetOwnProperty(property);
+	public override PropertyDescriptor GetOwnProperty(JsValue property)
+	{
+		var descriptor = base.GetOwnProperty(property);
 
-        if (descriptor != PropertyDescriptor.Undefined || !property.IsString())
-        {
-            return descriptor;
-        }
+		if (descriptor != PropertyDescriptor.Undefined || !property.IsString())
+		{
+			return descriptor;
+		}
 
-        return TryRegisterProperty((JsString)property, out descriptor) ? descriptor : PropertyDescriptor.Undefined;
-    }
+		return TryRegisterProperty((JsString)property, out descriptor) ? descriptor : PropertyDescriptor.Undefined;
+	}
 
-    public override bool DefineOwnProperty(JsValue property, PropertyDescriptor descriptor)
-    {
-        if (property is JsString jsProperty && descriptor.IsDataDescriptor())
-        {
-            var key = jsProperty.ToString();
-            _list[key, caseInsensitive: false] = EcmaScriptHelper.ConvertFromJsValue(descriptor.Value);
-            descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, key);
-        }
+	public override bool DefineOwnProperty(JsValue property, PropertyDescriptor descriptor)
+	{
+		if (property is JsString jsProperty && descriptor.IsDataDescriptor())
+		{
+			var key = jsProperty.ToString();
+			_list[key, caseInsensitive: false] = EcmaScriptHelper.ConvertFromJsValue(descriptor.Value);
+			descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, key);
+		}
 
-        return base.DefineOwnProperty(property, descriptor);
-    }
+		return base.DefineOwnProperty(property, descriptor);
+	}
 }

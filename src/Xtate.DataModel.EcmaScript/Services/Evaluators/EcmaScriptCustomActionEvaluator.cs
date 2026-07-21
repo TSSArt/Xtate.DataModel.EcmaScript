@@ -22,21 +22,21 @@ namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptCustomActionEvaluator(ICustomAction customAction) : DefaultCustomActionEvaluator(customAction)
 {
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
+	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
-    public override async ValueTask Execute()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
+	public override async ValueTask Execute()
+	{
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        engine.EnterExecutionContext();
+		engine.EnterExecutionContext();
 
-        try
-        {
-            await base.Execute().ConfigureAwait(false);
-        }
-        finally
-        {
-            engine.LeaveExecutionContext();
-        }
-    }
+		try
+		{
+			await base.Execute().ConfigureAwait(false);
+		}
+		finally
+		{
+			engine.LeaveExecutionContext();
+		}
+	}
 }

@@ -24,10 +24,10 @@ namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptExternalDataExpressionEvaluator(IExternalDataExpression externalDataExpression) : DefaultExternalDataExpressionEvaluator(externalDataExpression)
 {
-    protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource)
-    {
-        var content = await resource.GetContent().ConfigureAwait(false);
+	protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource)
+	{
+		var content = await resource.GetContent().ConfigureAwait(false);
 
-        return DataModelConverter.FromJson(content);
-    }
+		return DataModelConverter.FromJson(content);
+	}
 }

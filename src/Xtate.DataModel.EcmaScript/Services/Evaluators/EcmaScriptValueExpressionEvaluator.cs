@@ -23,72 +23,72 @@ using Xtate.StateMachine;
 namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Prepared<Script> program)
-    : IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider
+	: IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider
 {
-    public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
+	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
 #region Interface IAncestorProvider
 
-    object IAncestorProvider.Ancestor => valueExpression;
+	object IAncestorProvider.Ancestor => valueExpression;
 
 #endregion
 
 #region Interface IArrayEvaluator
 
-    public async ValueTask<IObject[]> EvaluateArray()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
+	public async ValueTask<IObject[]> EvaluateArray()
+	{
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        var array = engine.Eval(program, startNewScope: true).AsObject();
+		var array = engine.Eval(program, startNewScope: true).AsObject();
 
-        var result = new IObject[(int)array.Get(@"length").AsNumber()];
+		var result = new IObject[(int)array.Get(@"length").AsNumber()];
 
-        for (var index = 0; index < result.Length; index ++)
-        {
-            result[index] = new EcmaScriptObject(array.Get(index.ToString()));
-        }
+		for (var index = 0; index < result.Length; index ++)
+		{
+			result[index] = new EcmaScriptObject(array.Get(index.ToString()));
+		}
 
-        return result;
-    }
+		return result;
+	}
 
 #endregion
 
 #region Interface IIntegerEvaluator
 
-    async ValueTask<int> IIntegerEvaluator.EvaluateInteger()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
+	async ValueTask<int> IIntegerEvaluator.EvaluateInteger()
+	{
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        return (int)engine.Eval(program, startNewScope: true).AsNumber();
-    }
+		return (int)engine.Eval(program, startNewScope: true).AsNumber();
+	}
 
 #endregion
 
 #region Interface IObjectEvaluator
 
-    async ValueTask<IObject> IObjectEvaluator.EvaluateObject()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
+	async ValueTask<IObject> IObjectEvaluator.EvaluateObject()
+	{
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        return new EcmaScriptObject(engine.Eval(program, startNewScope: true));
-    }
+		return new EcmaScriptObject(engine.Eval(program, startNewScope: true));
+	}
 
 #endregion
 
 #region Interface IStringEvaluator
 
-    async ValueTask<string> IStringEvaluator.EvaluateString()
-    {
-        var engine = await EngineFactory().ConfigureAwait(false);
+	async ValueTask<string> IStringEvaluator.EvaluateString()
+	{
+		var engine = await EngineFactory().ConfigureAwait(false);
 
-        return engine.Eval(program, startNewScope: true).ToString();
-    }
+		return engine.Eval(program, startNewScope: true).ToString();
+	}
 
 #endregion
 
 #region Interface IValueExpression
 
-    public string? Expression => valueExpression.Expression;
+	public string? Expression => valueExpression.Expression;
 
 #endregion
 }
