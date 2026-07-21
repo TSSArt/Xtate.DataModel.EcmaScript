@@ -20,7 +20,7 @@ using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
-public class EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Program program) : IScriptExpression, IExecEvaluator, IAncestorProvider
+public class EcmaScriptScriptExpressionEvaluator(IScriptExpression scriptExpression, Prepared<Script> program) : IScriptExpression, IExecEvaluator, IAncestorProvider
 {
     public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 

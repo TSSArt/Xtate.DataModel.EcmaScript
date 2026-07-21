@@ -20,7 +20,7 @@ using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
-public class EcmaScriptConditionExpressionEvaluator(IConditionExpression conditionExpression, Program program) : IConditionExpression, IBooleanEvaluator, IAncestorProvider
+public class EcmaScriptConditionExpressionEvaluator(IConditionExpression conditionExpression, Prepared<Script> program) : IConditionExpression, IBooleanEvaluator, IAncestorProvider
 {
     public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 

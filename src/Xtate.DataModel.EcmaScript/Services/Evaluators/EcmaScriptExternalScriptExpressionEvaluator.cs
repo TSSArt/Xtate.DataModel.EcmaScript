@@ -15,17 +15,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using Jint.Parser;
 using Xtate.Ancestor;
 using Xtate.DataModel.EcmaScript.Properties;
 using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
-public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression)
-    : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
+public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression) : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
 {
-    private Program? _program;
+    private Prepared<Script>? _program;
 
     public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
@@ -43,14 +41,14 @@ public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpressi
 
         var engine = await EngineFactory().ConfigureAwait(false);
 
-        engine.Exec(_program, startNewScope: true);
+        engine.Exec(_program.Value, startNewScope: true);
     }
 
 #endregion
 
 #region Interface IExternalScriptConsumer
 
-    public void SetContent(string content) => _program = new JavaScriptParser().Parse(content);
+    public void SetContent(string content) => _program = Engine.PrepareScript(content);
 
 #endregion
 

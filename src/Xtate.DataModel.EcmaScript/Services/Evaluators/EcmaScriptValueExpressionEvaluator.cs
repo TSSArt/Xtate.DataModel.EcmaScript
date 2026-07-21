@@ -22,7 +22,7 @@ using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
-public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Program program)
+public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Prepared<Script> program)
     : IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider
 {
     public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
@@ -39,16 +39,13 @@ public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression
     {
         var engine = await EngineFactory().ConfigureAwait(false);
 
-        var array = engine.Eval(program, startNewScope: true).AsArray();
+        var array = engine.Eval(program, startNewScope: true).AsObject();
 
-        var result = new IObject[array.GetLength()];
+        var result = new IObject[(int)array.Get(@"length").AsNumber()];
 
-        foreach (var (key, _) in array.GetOwnProperties())
+        for (var index = 0; index < result.Length; index ++)
         {
-            if (ArrayInstance.IsArrayIndex(key, out var index))
-            {
-                result[index] = new EcmaScriptObject(array.Get(key));
-            }
+            result[index] = new EcmaScriptObject(array.Get(index.ToString()));
         }
 
         return result;

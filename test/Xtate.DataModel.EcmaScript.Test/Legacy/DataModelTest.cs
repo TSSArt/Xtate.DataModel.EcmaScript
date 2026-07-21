@@ -1,4 +1,4 @@
-﻿// Copyright © 2019-2025 Sergii Artemenko
+﻿// Copyright © 2019-2026 Sergii Artemenko
 // 
 // This file is part of the Xtate project. <https://xtate.net/>
 // 
@@ -24,6 +24,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Xtate.Class;
 using Xtate.DataModel.EcmaScript.DependencyInjection;
+using Xtate.DataModel.EcmaScript.Services;
 using Xtate.DataTypes;
 using Xtate.Interpreter;
 using Xtate.Interpreter.DependencyInjection;
@@ -49,12 +50,13 @@ public class DataModelTest
     private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
     {
         var services = new ServiceCollection();
+
         //services.AddModule<StateMachineFactoryModule>();
         //services.AddConstant<IScxmlStateMachine>(new ScxmlStringStateMachine(scxml));
-		var smc = new ScxmlStringStateMachine(scxml);
-		smc.AddServices(services);
+        var smc = new ScxmlStringStateMachine(scxml);
+        smc.AddServices(services);
 
-		var provider = services.BuildProvider();
+        var provider = services.BuildProvider();
 
         return await provider.GetRequiredService<IStateMachine>();
     }
@@ -66,13 +68,13 @@ public class DataModelTest
 
     private static ValueTask<IStateMachine> NoNameOnEntry(string xml) =>
         GetStateMachine(
-			"<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
-			"</onentry></state></scxml>");
+            "<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
+            "</onentry></state></scxml>");
 
     private static ValueTask<IStateMachine> WithNameOnEntry(string xml) =>
         GetStateMachine(
             "<scxml xmlns='http://www.w3.org/2005/07/scxml' version='1.0' datamodel='ecmascript' name='MyName'><datamodel><data id='my'/></datamodel><state><onentry>" + xml +
-			"</onentry></state></scxml>");
+            "</onentry></state></scxml>");
 
     private Task RunStateMachine(Func<string, ValueTask<IStateMachine>> getter, string innerXml) => RunStateMachineBase<StateMachineDestroyedException>(getter, innerXml);
 
@@ -84,7 +86,7 @@ public class DataModelTest
 
         await using var container = Container.Create<EcmaScriptDataModelHandlerModule, StateMachineInterpreterModule>(s =>
                                                                                                                       {
-																														  s.AddModule<LoggingModule>();
+                                                                                                                          s.AddModule<LoggingModule>();
                                                                                                                           s.AddConstant(stateMachine);
                                                                                                                           s.AddConstant(_logMethods.Object);
                                                                                                                           s.AddConstant(_eventQueueReader.Object);
@@ -100,9 +102,9 @@ public class DataModelTest
             Assert.Fail($"{typeof(E).Name} should be raised");
         }
         catch (E)
-		{
-			//ignore
-		}
+        {
+            //ignore
+        }
     }
 
     [TestInitialize]
@@ -181,7 +183,7 @@ public class DataModelTest
         _logMethods.Verify(l => l.Error("StateMachineInterpreter", "Execution error in entity [(#-1)].", It.Is<Exception>(e => e.Message == "_not_existed is not defined")));
         _logMethods.VerifyNoOtherCalls();
     }
-	
+
     [TestMethod]
     public async Task DataModelNameVariableTest()
     {
@@ -214,7 +216,7 @@ public class DataModelTest
     {
         await RunStateMachine(WithNameOnEntry, innerXml: "<log expr='_x.datamodel.vars.JintVersion'/>");
 
-        _logMethods.Verify(l => l.Info("ILogController", null, "2.11.58"));
+        _logMethods.Verify(l => l.Info("ILogController", null, EcmaScriptDataModelHandler.JintVersionValue));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -242,6 +244,19 @@ public class DataModelTest
         await RunStateMachine(WithNameOnEntry, innerXml: "<script>my=[]; my[3]={};</script><assign location='my[3].yy' expr=\"'Hello World'\"/><log expr='my[3].yy'/>");
 
         _logMethods.Verify(l => l.Info("ILogController", null, "Hello World"));
+        _logMethods.VerifyNoOtherCalls();
+    }
+
+    [TestMethod]
+    public async Task ArrayMutationTest()
+    {
+        await RunStateMachine(
+            WithNameOnEntry,
+            "<script>my=[]; my.push('aaa'); my.push('bbb'); my.splice(0, 1);</script>"
+            + "<log expr='my.length'/><log expr='my[0]'/>");
+
+        _logMethods.Verify(l => l.Info("ILogController", null, 1));
+        _logMethods.Verify(l => l.Info("ILogController", null, "bbb"));
         _logMethods.VerifyNoOtherCalls();
     }
 
@@ -379,7 +394,20 @@ public class DataModelTest
     [UsedImplicitly]
     private class TestLogWriter(ILogMethods logMethods) : ILogProvider, ILogController
     {
-    #region Interface ILogWriter
+    #region Interface ILogController
+
+        public ValueTask Log(string? message, DataModelValue arguments)
+        {
+            logMethods.Info(category: "ILogController", message, arguments);
+
+            return default;
+        }
+
+        bool ILogController.IsEnabled => true;
+
+    #endregion
+
+    #region Interface ILogProvider
 
         public bool IsEnabled(Type source, Level level) => level is Level.Info or Level.Warning or Level.Error;
 
@@ -424,14 +452,5 @@ public class DataModelTest
         }
 
     #endregion
-
-		bool ILogController.IsEnabled => true;
-
-		public ValueTask Log(string? message, DataModelValue arguments)
-		{
-			logMethods.Info("ILogController", message, arguments);
-
-			return default;
-		}
-	}
+    }
 }

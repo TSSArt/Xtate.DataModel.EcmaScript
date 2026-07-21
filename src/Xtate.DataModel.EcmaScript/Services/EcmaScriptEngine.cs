@@ -16,9 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using Jint.Runtime;
 using Jint.Runtime.Descriptors;
-using Jint.Runtime.Environments;
-using Jint.Runtime.Interop;
 using Xtate.DataModel.EcmaScript.Internal;
 using Xtate.DataTypes;
 using Identifier = Xtate.StateMachine.Identifier;
@@ -27,7 +26,11 @@ namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptEngine
 {
+    public const string LocationValueProperty = @"__xtate_location_value";
+
     private readonly Engine _jintEngine;
+
+    private readonly Stack<Scope> _scopes = new();
 
     private readonly HashSet<string> _variableSet = [];
 
@@ -37,7 +40,8 @@ public class EcmaScriptEngine
 
         var global = _jintEngine.Global;
 
-        global.FastAddProperty(name: @"In", new DelegateWrapper(_jintEngine, InState), writable: false, enumerable: false, configurable: false);
+        global.DefineOwnProperty(property: @"In", new PropertyDescriptor(JsValue.FromObject(_jintEngine, new Func<string, bool>(InState)), writable: false, enumerable: false, configurable: false));
+        global.DefineOwnProperty(LocationValueProperty, new PropertyDescriptor(JsValue.Undefined, writable: true, enumerable: false, configurable: false));
     }
 
     public required IDataModelController DataModelController { private get; [SetByIoC] init; }
@@ -49,7 +53,7 @@ public class EcmaScriptEngine
     private void SyncRootVariables(DataModelList dataModel)
     {
         var global = _jintEngine.Global;
-        List<string>? toRemove = default;
+        List<string>? toRemove = null;
 
         foreach (var name in _variableSet)
         {
@@ -82,29 +86,100 @@ public class EcmaScriptEngine
 
     public void EnterExecutionContext()
     {
-        var lexicalEnvironment = LexicalEnvironment.NewDeclarativeEnvironment(_jintEngine, _jintEngine.ExecutionContext.LexicalEnvironment);
-        _jintEngine.EnterExecutionContext(lexicalEnvironment, lexicalEnvironment, _jintEngine.ExecutionContext.ThisBinding);
+        var propertyNames = new HashSet<string>();
+
+        foreach (var property in _jintEngine.Global.GetOwnPropertyKeys(Types.String))
+        {
+            propertyNames.Add(property.AsString());
+        }
+
+        _scopes.Push(new Scope(propertyNames));
     }
 
     public void LeaveExecutionContext()
     {
-        _jintEngine.LeaveExecutionContext();
+        var scope = _scopes.Pop();
+        var global = _jintEngine.Global;
+
+        foreach (var property in global.GetOwnPropertyKeys(Types.String).ToArray())
+        {
+            if (!scope.PropertyNames.Contains(property.AsString()))
+            {
+                global.RemoveOwnProperty(property);
+            }
+        }
+
+        foreach (var (property, descriptor) in scope.ShadowedProperties)
+        {
+            global.FastSetProperty(property, descriptor);
+        }
     }
 
-    public JsValue Eval(Program program, bool startNewScope)
+    public void DeclareLocalVariable(string name)
+    {
+        var scope = _scopes.Peek();
+        var global = _jintEngine.Global;
+
+        if (!scope.ShadowedProperties.ContainsKey(name))
+        {
+            var descriptor = global.GetOwnProperty(name);
+
+            if (descriptor != PropertyDescriptor.Undefined)
+            {
+                scope.ShadowedProperties.Add(name, descriptor);
+            }
+        }
+
+        scope.LocalVariables.Add(name);
+        global.FastSetProperty(name, new PropertyDescriptor(JsValue.Undefined, writable: true, enumerable: true, configurable: true));
+    }
+
+    public void SetLocationValue(in Prepared<Script> assignment, string? identifierName, object? value)
+    {
+        var jsValue = value is JsValue nativeValue ? nativeValue : JsValue.FromObject(_jintEngine, value);
+
+        if (identifierName is not null)
+        {
+            var localVariable = false;
+
+            foreach (var scope in _scopes)
+            {
+                if (scope.LocalVariables.Contains(identifierName))
+                {
+                    localVariable = true;
+
+                    break;
+                }
+            }
+
+            if (!localVariable)
+            {
+                DataModelController.DataModel[identifierName, caseInsensitive: false] = EcmaScriptHelper.ConvertFromJsValue(jsValue);
+                SyncRootVariables(DataModelController.DataModel);
+
+                return;
+            }
+        }
+
+        SyncRootVariables(DataModelController.DataModel);
+        _jintEngine.Global.Set(LocationValueProperty, jsValue);
+        _jintEngine.Execute(assignment);
+    }
+
+    public JsValue Eval(in Prepared<Script> program, bool startNewScope)
     {
         SyncRootVariables(DataModelController.DataModel);
 
         if (!startNewScope)
         {
-            return _jintEngine.Execute(program).GetCompletionValue();
+            return _jintEngine.Evaluate(program);
         }
 
         EnterExecutionContext();
 
         try
         {
-            return _jintEngine.Execute(program).GetCompletionValue();
+            return _jintEngine.Evaluate(program);
         }
         finally
         {
@@ -112,28 +187,7 @@ public class EcmaScriptEngine
         }
     }
 
-    public JsValue Eval(Expression expression, bool startNewScope)
-    {
-        SyncRootVariables(DataModelController.DataModel);
-
-        if (!startNewScope)
-        {
-            return JsValue.FromObject(_jintEngine, _jintEngine.EvaluateExpression(expression));
-        }
-
-        EnterExecutionContext();
-
-        try
-        {
-            return JsValue.FromObject(_jintEngine, _jintEngine.EvaluateExpression(expression));
-        }
-        finally
-        {
-            LeaveExecutionContext();
-        }
-    }
-
-    public void Exec(Program program, bool startNewScope)
+    public void Exec(in Prepared<Script> program, bool startNewScope)
     {
         SyncRootVariables(DataModelController.DataModel);
 
@@ -156,26 +210,12 @@ public class EcmaScriptEngine
         }
     }
 
-    public void Exec(Expression expression, bool startNewScope)
+    private sealed class Scope(HashSet<string> propertyNames)
     {
-        SyncRootVariables(DataModelController.DataModel);
+        public HashSet<string> PropertyNames { get; } = propertyNames;
 
-        if (!startNewScope)
-        {
-            _jintEngine.EvaluateExpression(expression);
+        public Dictionary<string, PropertyDescriptor> ShadowedProperties { get; } = new();
 
-            return;
-        }
-
-        EnterExecutionContext();
-
-        try
-        {
-            _jintEngine.EvaluateExpression(expression);
-        }
-        finally
-        {
-            LeaveExecutionContext();
-        }
+        public HashSet<string> LocalVariables { get; } = [];
     }
 }

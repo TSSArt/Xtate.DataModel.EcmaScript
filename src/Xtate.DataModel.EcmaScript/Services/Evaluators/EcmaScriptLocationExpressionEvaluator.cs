@@ -20,27 +20,27 @@ using Xtate.DataModel.EcmaScript.Internal;
 using Xtate.DataModel.EcmaScript.Properties;
 using Xtate.DataTypes;
 using Xtate.StateMachine;
-using JintIdentifier = Jint.Parser.Ast.Identifier;
+using JintIdentifier = Acornima.Ast.Identifier;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
 public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
 {
-    private readonly Program? _declare;
+    private readonly Prepared<Script> _assignment;
 
-    private readonly Expression? _leftExpression;
+    private readonly string? _localVariableName;
 
     private readonly ILocationExpression _locationExpression;
 
     private readonly string? _name;
 
-    private readonly Program _program;
+    private readonly Prepared<Script> _program;
 
-    public EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, Program program, Expression? leftExpression)
+    public EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, Prepared<Script> program, Expression? leftExpression)
     {
         _locationExpression = locationExpression;
         _program = program;
-        _leftExpression = leftExpression;
+        _assignment = Engine.PrepareScript(@$"{locationExpression.Expression} = {EcmaScriptEngine.LocationValueProperty}");
 
         switch (leftExpression)
         {
@@ -49,7 +49,7 @@ public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocati
 
             case JintIdentifier identifier:
                 _name = identifier.Name;
-                _declare = CreateDeclareStatement(identifier);
+                _localVariableName = identifier.Name;
 
                 break;
 
@@ -85,16 +85,8 @@ public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocati
     public async ValueTask SetValue(IObject value)
     {
         var rightValue = value is EcmaScriptObject ecmaScriptObject ? ecmaScriptObject.JsValue : value.ToObject();
-        var assignmentExpression = new AssignmentExpression
-                                   {
-                                       Type = SyntaxNodes.AssignmentExpression,
-                                       Left = _leftExpression,
-                                       Operator = AssignmentOperator.Assign,
-                                       Right = new Literal { Type = SyntaxNodes.Literal, Value = rightValue }
-                                   };
-
         var engine = await EngineFactory().ConfigureAwait(false);
-        engine.Exec(assignmentExpression, startNewScope: false);
+        engine.SetLocationValue(_assignment, _localVariableName, rightValue);
     }
 
 #endregion
@@ -107,25 +99,17 @@ public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocati
 
     public async ValueTask DeclareLocalVariable()
     {
-        if (_declare is null)
+        if (_localVariableName is null)
         {
             throw new ExecutionException(Resources.Exception_InvalidLocalVariableName);
         }
 
         var engine = await EngineFactory().ConfigureAwait(false);
 
-        engine.Exec(_declare, startNewScope: false);
+        engine.DeclareLocalVariable(_localVariableName);
     }
 
-    private static Program CreateDeclareStatement(JintIdentifier identifier)
-    {
-        var declarators = new[] { new VariableDeclarator { Id = identifier, Type = SyntaxNodes.VariableDeclarator } };
-        var declarations = new[] { new VariableDeclaration { Declarations = declarators, Type = SyntaxNodes.VariableDeclaration } };
-
-        return new Program { VariableDeclarations = declarations, Body = Array.Empty<Statement>(), FunctionDeclarations = Array.Empty<FunctionDeclaration>(), Type = SyntaxNodes.Program };
-    }
-
-    public static Expression? GetLeftExpression(Program program)
+    public static Expression? GetLeftExpression(Script program)
     {
         Expression? expression = default;
 

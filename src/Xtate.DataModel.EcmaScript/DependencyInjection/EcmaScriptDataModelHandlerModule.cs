@@ -30,10 +30,10 @@ public class EcmaScriptDataModelHandlerModule : Module<DataModelHandlerBaseModul
         Services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
         Services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
         Services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
-        Services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Program>();
-        Services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Program>();
-        Services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Program>();
-        Services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Program, Expression?)>();
+        Services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Prepared<Script>>();
+        Services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Prepared<Script>>();
+        Services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Prepared<Script>>();
+        Services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Prepared<Script>, Expression?)>();
         Services.AddTypeSync<EcmaScriptInlineContentEvaluator, IInlineContent>();
         Services.AddTypeSync<EcmaScriptContentBodyEvaluator, IContentBody>();
 

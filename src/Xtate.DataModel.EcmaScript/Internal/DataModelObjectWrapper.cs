@@ -15,21 +15,33 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics.CodeAnalysis;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using Xtate.DataTypes;
 
 namespace Xtate.DataModel.EcmaScript.Internal;
 
-public class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
+public sealed class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 {
     private readonly DataModelList _list;
+
+    private readonly List<JsString> _properties;
 
     public DataModelObjectWrapper(Engine engine, DataModelList list) : base(engine)
     {
         _list = list;
+        _properties = [with(list.Count)];
 
-        Extensible = list.Access == DataModelAccess.Writable;
+        foreach (var key in list.Keys)
+        {
+            TryRegisterProperty((JsString)key, out _);
+        }
+
+        if (list.Access != DataModelAccess.Writable)
+        {
+            PreventExtensions();
+        }
     }
 
 #region Interface IObjectWrapper
@@ -38,36 +50,77 @@ public class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 
 #endregion
 
-    public override void RemoveOwnProperty(string property)
+    private bool TryRegisterProperty(JsString property, [MaybeNullWhen(false)] out PropertyDescriptor propertyDescriptor)
     {
-        _list.RemoveAll(property, caseInsensitive: false);
+        if (!_properties.Contains(property))
+        {
+            _properties.Add(property);
+
+            propertyDescriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property.ToString());
+
+            SetOwnProperty(property, propertyDescriptor);
+
+            return true;
+        }
+
+        propertyDescriptor = null;
+
+        return false;
+    }
+
+    private bool TryUnregisterProperty(JsString property)
+    {
+        if (_properties.Remove(property))
+        {
+            _list.RemoveFirst(property.AsString(), caseInsensitive: false);
+
+            base.RemoveOwnProperty(property);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public override void RemoveOwnProperty(JsValue property)
+    {
+        if (property is JsString jsProperty)
+        {
+            TryUnregisterProperty(jsProperty);
+        }
 
         base.RemoveOwnProperty(property);
     }
 
-    public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
+    public override IEnumerable<KeyValuePair<JsValue, PropertyDescriptor>> GetOwnProperties()
     {
-        foreach (var key in _list.Keys)
+        foreach (var property in _properties)
         {
-            yield return new KeyValuePair<string, PropertyDescriptor>(key, GetOwnProperty(key));
+            yield return new KeyValuePair<JsValue, PropertyDescriptor>(property, GetOwnProperty(property));
         }
     }
 
-    public override PropertyDescriptor GetOwnProperty(string property)
+    public override PropertyDescriptor GetOwnProperty(JsValue property)
     {
         var descriptor = base.GetOwnProperty(property);
 
-        if (descriptor != PropertyDescriptor.Undefined)
+        if (descriptor != PropertyDescriptor.Undefined || !property.IsString())
         {
             return descriptor;
         }
 
-        descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property);
-
-        base.SetOwnProperty(property, descriptor);
-
-        return descriptor;
+        return TryRegisterProperty((JsString)property, out descriptor) ? descriptor : PropertyDescriptor.Undefined;
     }
 
-    public override bool HasOwnProperty(string property) => _list.ContainsKey(property, caseInsensitive: false);
+    public override bool DefineOwnProperty(JsValue property, PropertyDescriptor descriptor)
+    {
+        if (property is JsString jsProperty && descriptor.IsDataDescriptor())
+        {
+            var key = jsProperty.ToString();
+            _list[key, caseInsensitive: false] = EcmaScriptHelper.ConvertFromJsValue(descriptor.Value);
+            descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, key);
+        }
+
+        return base.DefineOwnProperty(property, descriptor);
+    }
 }

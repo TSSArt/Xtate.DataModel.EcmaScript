@@ -25,7 +25,7 @@ internal class EcmaScriptObject(JsValue jsValue) : IObject
 
 #region Interface IObject
 
-    public object ToObject() => JsValue.ToObject();
+    public object? ToObject() => JsValue.ToObject();
 
 #endregion
 }

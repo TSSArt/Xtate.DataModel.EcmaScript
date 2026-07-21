@@ -33,49 +33,32 @@ internal static class EcmaScriptHelper
 
     public static PropertyDescriptor CreatePropertyAccessor(Engine engine, DataModelList list, string property)
     {
-        if (list.Access != DataModelAccess.Writable && !list.ContainsKey(property, caseInsensitive: false))
+		if (list.Access != DataModelAccess.Writable && !list.ContainsKey(property, caseInsensitive: false))
         {
             return ReadonlyUndefinedPropertyDescriptor;
         }
 
-        var jsGet = new DelegateWrapper(engine, new Func<JsValue>(Getter));
-        var jsSet = new DelegateWrapper(engine, new Action<JsValue>(Setter));
+        var jsGet = JsValue.FromObject(engine, new Func<JsValue>(Getter));
+        var jsSet = JsValue.FromObject(engine, new Action<JsValue>(Setter));
 
-        return new PropertyDescriptor(jsGet, jsSet, enumerable: true, configurable: false);
+        return new GetSetPropertyDescriptor(jsGet, jsSet, enumerable: true, configurable: false);
 
         JsValue Getter() => ConvertToJsValue(engine, list[property, caseInsensitive: false]);
 
         void Setter(JsValue value) => list[property, caseInsensitive: false] = ConvertFromJsValue(value);
     }
 
-    public static PropertyDescriptor CreateArrayIndexAccessor(Engine engine, DataModelList list, int index)
-    {
-        if (list.Access != DataModelAccess.Writable && index >= list.Count)
-        {
-            return ReadonlyUndefinedPropertyDescriptor;
-        }
-
-        var jsGet = new DelegateWrapper(engine, new Func<JsValue>(Getter));
-        var jsSet = new DelegateWrapper(engine, new Action<JsValue>(Setter));
-
-        return new PropertyDescriptor(jsGet, jsSet, enumerable: true, configurable: false);
-
-        JsValue Getter() => ConvertToJsValue(engine, list[index]);
-
-        void Setter(JsValue value) => list[index] = ConvertFromJsValue(value);
-    }
-
-    private static JsValue ConvertToJsValue(Engine engine, DataModelValue value)
+    public static JsValue ConvertToJsValue(Engine engine, DataModelValue value)
     {
         return value.Type switch
                {
                    DataModelValueType.Undefined => JsValue.Undefined,
                    DataModelValueType.Null      => JsValue.Null,
-                   DataModelValueType.Boolean   => new JsValue(value.AsBoolean()),
-                   DataModelValueType.String    => new JsValue(value.AsString()),
-                   DataModelValueType.Number    => new JsValue(value.AsNumber().ToDouble()),
-                   DataModelValueType.DateTime  => new JsValue(value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo)),
-                   DataModelValueType.List      => new JsValue(GetWrapper(engine, value.AsList())),
+                   DataModelValueType.Boolean   => value.AsBoolean(),
+                   DataModelValueType.String    => value.AsString(),
+                   DataModelValueType.Number    => value.AsNumber().ToDouble(),
+                   DataModelValueType.DateTime  => value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo),
+                   DataModelValueType.List      => GetWrapper(engine, value.AsList()),
                    _                            => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
                };
 
@@ -85,7 +68,7 @@ internal static class EcmaScriptHelper
                 : new DataModelObjectWrapper(engine, list);
     }
 
-    private static DataModelValue ConvertFromJsValue(JsValue value) =>
+    public static DataModelValue ConvertFromJsValue(JsValue value) =>
         value.Type switch
         {
             Types.Undefined                  => default,
@@ -105,6 +88,11 @@ internal static class EcmaScriptHelper
 
     private static DataModelValue CreateDataModelValue(ObjectInstance objectInstance)
     {
+        if (objectInstance is IObjectWrapper { Target: DataModelList wrappedList })
+        {
+            return new DataModelValue(wrappedList);
+        }
+
         switch (objectInstance)
         {
             case ArrayInstance array:
@@ -113,9 +101,9 @@ internal static class EcmaScriptHelper
 
                 foreach (var (key, _) in array.GetOwnProperties())
                 {
-                    if (ArrayInstance.IsArrayIndex(key, out var index))
+                    if (TryGetArrayIndex(key, out var index))
                     {
-                        list[(int)index] = ConvertFromJsValue(array.Get(key));
+                        list[index] = ConvertFromJsValue(array.Get(key));
                     }
                 }
 
@@ -128,11 +116,38 @@ internal static class EcmaScriptHelper
 
                 foreach (var (key, _) in objectInstance.GetOwnProperties())
                 {
-                    list.Add(key, ConvertFromJsValue(objectInstance.Get(key)));
+                    if (key.IsString())
+                    {
+                        list.Add(key.AsString(), ConvertFromJsValue(objectInstance.Get(key)));
+                    }
                 }
 
                 return new DataModelValue(list);
             }
         }
+    }
+
+    public static bool TryGetArrayIndex(JsValue property, out int index)
+    {
+        index = 0;
+
+        if (property is JsNumber jsNumber && jsNumber.AsNumber() is var number)
+        {
+            if (number is >= 0 and <= int.MaxValue && number - Math.Truncate(number) == 0)
+            {
+                index = (int)number;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        if (property is JsString jsString && jsString.ToString() is var value)
+        {
+            return int.TryParse(value, NumberStyles.None, NumberFormatInfo.InvariantInfo, out index) && index >= 0;
+        }
+
+        return false;
     }
 }
