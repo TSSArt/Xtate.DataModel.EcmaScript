@@ -17,7 +17,6 @@
 
 using Xtate.Ancestor;
 using Xtate.DataModel.EcmaScript.Internal;
-using Xtate.DataModel.EcmaScript.Properties;
 using Xtate.DataTypes;
 using Xtate.StateMachine;
 using JintIdentifier = Acornima.Ast.Identifier;

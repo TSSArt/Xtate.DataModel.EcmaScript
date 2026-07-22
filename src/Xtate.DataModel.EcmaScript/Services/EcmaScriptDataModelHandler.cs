@@ -18,7 +18,6 @@
 using System.Collections.Immutable;
 using System.Reflection;
 using Acornima;
-using Xtate.DataModel.EcmaScript.Properties;
 using Xtate.DataModel.Services;
 using Xtate.DataTypes;
 using Xtate.StateMachine;

@@ -16,7 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using Xtate.Ancestor;
-using Xtate.DataModel.EcmaScript.Properties;
 using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
