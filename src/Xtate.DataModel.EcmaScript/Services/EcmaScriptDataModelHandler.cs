@@ -71,9 +71,19 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 	private (Prepared<Script> Program, IReadOnlyList<ParseError> Errors) Parse(string source)
 	{
-		_ = _parser.ParseScript(source);
+		try
+		{
+			_ = _parser.ParseScript(source);
+		}
+		catch (ParseErrorException exception)
+		{
+			_errorHandler.Errors.Add(exception.Error);
+		}
 
-		return (Engine.PrepareScript(source), _errorHandler.Errors.ToArray());
+		var errors = _errorHandler.Errors.ToArray();
+		var program = Engine.PrepareScript(errors.Length == 0 ? source : @"undefined");
+
+		return (program, errors);
 	}
 
 	private static string GetErrorMessage(ParseError error) => @$"{error} ({error.Description}). Ln: {error.LineNumber}. Col: {error.Column + 1}.";
@@ -105,7 +115,10 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 				AddErrorMessage(valueExpression, GetErrorMessage(parserException));
 			}
 
-			valueExpression = EcmaScriptValueExpressionEvaluatorFactory(valueExpression, program);
+			if (errors.Count == 0)
+			{
+				valueExpression = EcmaScriptValueExpressionEvaluatorFactory(valueExpression, program);
+			}
 		}
 		else
 		{
@@ -126,7 +139,10 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 				AddErrorMessage(conditionExpression, GetErrorMessage(parserException));
 			}
 
-			conditionExpression = EcmaScriptConditionExpressionEvaluatorFactory(conditionExpression, program);
+			if (errors.Count == 0)
+			{
+				conditionExpression = EcmaScriptConditionExpressionEvaluatorFactory(conditionExpression, program);
+			}
 		}
 		else
 		{
@@ -147,13 +163,11 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 				AddErrorMessage(locationExpression, GetErrorMessage(parserException));
 			}
 
-			var leftExpression = EcmaScriptLocationExpressionEvaluator.GetLeftExpression(program.Program!);
-
-			if (leftExpression is not null)
+			if (errors.Count == 0 && EcmaScriptLocationExpressionEvaluator.GetLeftExpression(program.Program!) is { } leftExpression)
 			{
 				locationExpression = EcmaScriptLocationExpressionEvaluatorFactory(locationExpression, (program, leftExpression));
 			}
-			else
+			else if (errors.Count == 0)
 			{
 				AddErrorMessage(locationExpression, Resources.ErrorMessage_InvalidLocationExpression);
 			}
@@ -177,7 +191,10 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 				AddErrorMessage(scriptExpression, GetErrorMessage(parserException));
 			}
 
-			scriptExpression = EcmaScriptScriptExpressionEvaluatorFactory(scriptExpression, program);
+			if (errors.Count == 0)
+			{
+				scriptExpression = EcmaScriptScriptExpressionEvaluatorFactory(scriptExpression, program);
+			}
 		}
 		else
 		{
