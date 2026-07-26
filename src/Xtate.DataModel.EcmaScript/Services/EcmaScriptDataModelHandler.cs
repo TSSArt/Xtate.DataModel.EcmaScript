@@ -73,7 +73,7 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 	{
 		try
 		{
-			_ = _parser.ParseScript(source);
+		_ = _parser.ParseScript(source);
 		}
 		catch (ParseErrorException exception)
 		{
@@ -117,8 +117,8 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 			if (errors.Count == 0)
 			{
-				valueExpression = EcmaScriptValueExpressionEvaluatorFactory(valueExpression, program);
-			}
+			valueExpression = EcmaScriptValueExpressionEvaluatorFactory(valueExpression, program);
+		}
 		}
 		else
 		{
@@ -141,8 +141,8 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 			if (errors.Count == 0)
 			{
-				conditionExpression = EcmaScriptConditionExpressionEvaluatorFactory(conditionExpression, program);
-			}
+			conditionExpression = EcmaScriptConditionExpressionEvaluatorFactory(conditionExpression, program);
+		}
 		}
 		else
 		{
@@ -193,8 +193,8 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 			if (errors.Count == 0)
 			{
-				scriptExpression = EcmaScriptScriptExpressionEvaluatorFactory(scriptExpression, program);
-			}
+			scriptExpression = EcmaScriptScriptExpressionEvaluatorFactory(scriptExpression, program);
+		}
 		}
 		else
 		{
