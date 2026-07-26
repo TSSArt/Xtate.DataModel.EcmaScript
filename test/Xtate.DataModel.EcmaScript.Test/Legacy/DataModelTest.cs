@@ -80,7 +80,7 @@ public class DataModelTest
 
 	private Task RunStateMachineWithError(Func<string, ValueTask<IStateMachine>> getter, string innerXml) => RunStateMachineBase<StateMachineDestroyedException>(getter, innerXml);
 
-	private async Task RunStateMachineBase<E>(Func<string, ValueTask<IStateMachine>> getter, string innerXml) where E : Exception
+	private async Task RunStateMachineBase<T>(Func<string, ValueTask<IStateMachine>> getter, string innerXml) where T : Exception
 	{
 		var stateMachine = await getter(innerXml);
 
@@ -101,9 +101,9 @@ public class DataModelTest
 		{
 			await stateMachineInterpreter.Run();
 
-			Assert.Fail($"{typeof(E).Name} should be raised");
+			Assert.Fail($"{typeof(T).Name} should be raised");
 		}
-		catch (E)
+		catch (T)
 		{
 			//ignore
 		}
@@ -325,28 +325,28 @@ public class DataModelTest
 	}
 
 	[TestMethod]
-	public async Task ForeachNoIndexTest()
+	public async Task ForeachCreatedItemRetainsLastValueTest()
 	{
 		await RunStateMachine(
 			WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm'>"
-							 + "<log expr=\"itm\"/></foreach><log expr='typeof(itm)'/>");
+							 + "<log expr=\"itm\"/></foreach><log expr=\"'after-' + itm\"/>");
 
 		_logMethods.Verify(l => l.Info("ILogController", null, "aaa"));
 		_logMethods.Verify(l => l.Info("ILogController", null, "bbb"));
-		_logMethods.Verify(l => l.Info("ILogController", null, "undefined"));
+		_logMethods.Verify(l => l.Info("ILogController", null, "after-bbb"));
 		_logMethods.VerifyNoOtherCalls();
 	}
 
 	[TestMethod]
-	public async Task ForeachWithIndexTest()
+	public async Task ForeachExistingItemAndIndexRetainLastValuesTest()
 	{
 		await RunStateMachine(
-			WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'</script><foreach array='my' item='itm' index='idx'>"
-							 + "<log expr=\"idx + '-' + itm\"/></foreach><log expr='typeof(itm)'/><log expr='typeof(idx)'/>");
+			WithNameOnEntry, "<script>my=[]; my[0]='aaa'; my[1]='bbb'; var itm='original'; var idx=-1</script><foreach array='my' item='itm' index='idx'>"
+							 + "<log expr=\"idx + '-' + itm\"/></foreach><log expr=\"'after-' + idx + '-' + itm\"/>");
 
 		_logMethods.Verify(l => l.Info("ILogController", null, "0-aaa"));
 		_logMethods.Verify(l => l.Info("ILogController", null, "1-bbb"));
-		_logMethods.Verify(l => l.Info("ILogController", null, "undefined"));
+		_logMethods.Verify(l => l.Info("ILogController", null, "after-1-bbb"));
 		_logMethods.VerifyNoOtherCalls();
 	}
 

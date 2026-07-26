@@ -1,14 +1,32 @@
 // Copyright © 2019-2026 Sergii Artemenko
+// 
+// This file is part of the Xtate project. <https://xtate.net/>
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+// 
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using System.Globalization;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Jint;
 using Jint.Native;
-using Jint.Native.Object;
-using Jint.Runtime;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
+using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Xtate.DataModel.EcmaScript.Internal;
 using Xtate.DataModel.Services;
@@ -20,60 +38,38 @@ namespace Xtate.DataModel.EcmaScript.Test.UnitTests;
 public class InternalCoverageTest
 {
 	[TestMethod]
-	public void HelperConvertsEverySupportedDataModelValueToJavaScript()
-	{
-		var engine = new Engine();
-		DataModelDateTime date = new DateTimeOffset(2026, 7, 22, 12, 30, 0, TimeSpan.Zero);
-		var array = DataModelConverter.CreateAsArray();
-		array.Add("item");
-		var obj = DataModelConverter.CreateAsObject();
-		obj["key"] = "value";
-
-		Assert.IsTrue(EcmaScriptHelper.ConvertToJsValue(engine, default).IsUndefined());
-		Assert.IsTrue(EcmaScriptHelper.ConvertToJsValue(engine, DataModelValue.Null).IsNull());
-		Assert.IsTrue(EcmaScriptHelper.ConvertToJsValue(engine, true).AsBoolean());
-		Assert.AreEqual("text", EcmaScriptHelper.ConvertToJsValue(engine, "text").AsString());
-		Assert.AreEqual(12.5, EcmaScriptHelper.ConvertToJsValue(engine, 12.5).AsNumber());
-		Assert.AreEqual(date.ToString("o", DateTimeFormatInfo.InvariantInfo), EcmaScriptHelper.ConvertToJsValue(engine, date).AsString());
-		Assert.IsInstanceOfType<DataModelArrayWrapper>(EcmaScriptHelper.ConvertToJsValue(engine, array).AsObject());
-		Assert.IsInstanceOfType<DataModelObjectWrapper>(EcmaScriptHelper.ConvertToJsValue(engine, obj).AsObject());
-	}
-
-	[TestMethod]
 	public void HelperConvertsEverySupportedJavaScriptValueToDataModel()
 	{
 		var engine = new Engine();
-		var dateText = "2026-07-22T12:30:00.0000000+00:00";
 
-		Assert.IsTrue(EcmaScriptHelper.ConvertFromJsValue(JsValue.Undefined).IsUndefined());
-		Assert.AreEqual(DataModelValueType.Null, EcmaScriptHelper.ConvertFromJsValue(JsValue.Null).Type);
-		Assert.IsTrue(EcmaScriptHelper.ConvertFromJsValue(JsValue.FromObject(engine, true)).AsBoolean());
-		Assert.AreEqual("ordinary text", EcmaScriptHelper.ConvertFromJsValue("ordinary text").AsString());
-		Assert.AreEqual(DataModelValueType.DateTime, EcmaScriptHelper.ConvertFromJsValue(dateText).Type);
-		Assert.AreEqual(42.5, EcmaScriptHelper.ConvertFromJsValue(42.5).AsNumber().ToDouble());
-		Assert.AreEqual(DataModelValueType.DateTime, EcmaScriptHelper.ConvertFromJsValue(engine.Evaluate("new Date('2026-07-22T12:30:00Z')")).Type);
+		Assert.IsTrue(EcmaScriptHelper.JsValueToDataModelValue(JsValue.Undefined).IsUndefined());
+		Assert.AreEqual(DataModelValueType.Null, EcmaScriptHelper.JsValueToDataModelValue(JsValue.Null).Type);
+		Assert.IsTrue(EcmaScriptHelper.JsValueToDataModelValue(JsValue.FromObject(engine, value: true)).AsBoolean());
+		Assert.AreEqual(expected: "ordinary text", EcmaScriptHelper.JsValueToDataModelValue("ordinary text").AsString());
+		Assert.AreEqual(expected: 42.5, EcmaScriptHelper.JsValueToDataModelValue(42.5).AsNumber().ToDouble());
+		Assert.AreEqual(DataModelValueType.DateTime, EcmaScriptHelper.JsValueToDataModelValue(engine.Evaluate("new Date('2026-07-22T12:30:00Z')")).Type);
 
-		var array = EcmaScriptHelper.ConvertFromJsValue(engine.Evaluate("[1,,3]"));
-		Assert.AreEqual(3, array.AsList().Count);
-		Assert.AreEqual(1, array.AsList()[0].AsNumber().ToInt32());
+		var array = EcmaScriptHelper.JsValueToDataModelValue(engine.Evaluate("[1,,3]"));
+		Assert.AreEqual(expected: 3, array.AsList().Count);
+		Assert.AreEqual(expected: 1, array.AsList()[0].AsNumber().ToInt32());
 		Assert.IsTrue(array.AsList()[1].IsUndefined());
-		Assert.AreEqual(3, array.AsList()[2].AsNumber().ToInt32());
+		Assert.AreEqual(expected: 3, array.AsList()[2].AsNumber().ToInt32());
 
-		var obj = EcmaScriptHelper.ConvertFromJsValue(engine.Evaluate("({ visible: 'yes', get computed() { return 7; } })"));
-		Assert.AreEqual("yes", obj.AsList()["visible"].AsString());
-		Assert.AreEqual(7, obj.AsList()["computed"].AsNumber().ToInt32());
+		var obj = EcmaScriptHelper.JsValueToDataModelValue(engine.Evaluate("({ visible: 'yes', get computed() { return 7; } })"));
+		Assert.AreEqual(expected: "yes", obj.AsList()["visible"].AsString());
+		Assert.AreEqual(expected: 7, obj.AsList()["computed"].AsNumber().ToInt32());
 
 		var wrapped = DataModelConverter.CreateAsObject();
 		wrapped["key"] = "value";
-		Assert.AreSame(wrapped, EcmaScriptHelper.ConvertFromJsValue(new DataModelObjectWrapper(engine, wrapped)).AsList());
-		Assert.ThrowsExactly<InvalidOperationException>(() => EcmaScriptHelper.ConvertFromJsValue(engine.Evaluate("Symbol('x')")));
+		Assert.AreSame(wrapped, EcmaScriptHelper.JsValueToDataModelValue(new DataModelObjectWrapper(engine, wrapped)).AsList());
+		Assert.ThrowsExactly<InvalidOperationException>(() => EcmaScriptHelper.JsValueToDataModelValue(engine.Evaluate("Symbol('x')")));
 	}
 
 	[TestMethod]
 	public void HelperRecognizesOnlyCanonicalNonNegativeIntegerIndexes()
 	{
 		AssertIndex(new JsNumber(0), expected: true, expectedIndex: 0);
-		AssertIndex(new JsNumber(int.MaxValue), expected: true, expectedIndex: int.MaxValue);
+		AssertIndex(new JsNumber(int.MaxValue), expected: true, int.MaxValue);
 		AssertIndex(new JsNumber(-1), expected: false, expectedIndex: 0);
 		AssertIndex(new JsNumber(1.5), expected: false, expectedIndex: 0);
 		AssertIndex(new JsNumber((double)int.MaxValue + 1), expected: false, expectedIndex: 0);
@@ -81,162 +77,15 @@ public class InternalCoverageTest
 		AssertIndex(new JsString("-1"), expected: false, expectedIndex: 0);
 		AssertIndex(new JsString("01"), expected: true, expectedIndex: 1);
 		AssertIndex(new JsString("x"), expected: false, expectedIndex: 0);
-		AssertIndex(JsValue.FromObject(new Engine(), true), expected: false, expectedIndex: 0);
+		AssertIndex(JsValue.FromObject(new Engine(), value: true), expected: false, expectedIndex: 0);
 
 		static void AssertIndex(JsValue value, bool expected, int expectedIndex)
 		{
-			Assert.AreEqual(expected, EcmaScriptHelper.TryGetArrayIndex(value, out var index));
-			Assert.AreEqual(expectedIndex, index);
+			var result = EcmaScriptHelper.IsArrayIndex(value, out var index);
+
+			Assert.AreEqual(expected, result);
+			Assert.AreEqual(expectedIndex, (int)index);
 		}
-	}
-
-	[TestMethod]
-	public void PropertyAccessorReadsWritesAndProtectsMissingReadonlyProperties()
-	{
-		var engine = new Engine();
-		var list = new DataModelList { ["key"] = "before" };
-		var descriptor = EcmaScriptHelper.CreatePropertyAccessor(engine, list, "key");
-		engine.Global.DefineOwnProperty("value", descriptor);
-
-		Assert.AreEqual("before", engine.Evaluate("value").AsString());
-		engine.Execute("value = 'after'");
-		Assert.AreEqual("after", list["key"].AsString());
-
-		var readOnly = list.CloneAsReadOnly();
-		var missing = EcmaScriptHelper.CreatePropertyAccessor(engine, readOnly, "missing");
-		Assert.IsTrue(missing.Value.IsUndefined());
-		Assert.IsFalse(missing.Writable);
-		Assert.IsFalse(missing.Enumerable);
-		Assert.IsFalse(missing.Configurable);
-	}
-
-	[TestMethod]
-	public void ArrayWrapperImplementsIndexedLengthAndPrototypeOperations()
-	{
-		var engine = new Engine();
-		var list = DataModelConverter.CreateAsArray();
-		list.Add("first");
-		list.Add("second");
-		var wrapper = new DataModelArrayWrapper(engine, list);
-		engine.Global.Set("items", wrapper);
-
-		Assert.AreSame(list, wrapper.Target);
-		Assert.AreSame(list, wrapper.ToObject());
-		Assert.AreEqual("first", wrapper.Get("0", wrapper).AsString());
-		Assert.IsTrue(wrapper.Get("8", wrapper).IsUndefined());
-		Assert.AreEqual(2, wrapper.Get("length", wrapper).AsNumber());
-		Assert.IsTrue(wrapper.HasProperty("0"));
-		Assert.IsFalse(wrapper.HasProperty("8"));
-		Assert.IsTrue(wrapper.HasProperty("length"));
-		Assert.IsTrue(wrapper.HasProperty("push"));
-		Assert.IsTrue(wrapper.Get("push", wrapper).IsCallable());
-
-		Assert.AreEqual(3, engine.Evaluate("items.push('third')").AsNumber());
-		Assert.AreEqual("third", list[2].AsString());
-		Assert.AreEqual("first,second,third", engine.Evaluate("items.join(',')").AsString());
-		Assert.IsTrue(wrapper.Set("1", "changed", wrapper));
-		Assert.IsTrue(wrapper.Set("custom", "property", wrapper));
-		Assert.AreEqual("property", wrapper.Get("custom", wrapper).AsString());
-		Assert.AreEqual("changed", list[1].AsString());
-		Assert.IsTrue(wrapper.Set("length", 4, wrapper));
-		Assert.AreEqual(4, list.Count);
-		Assert.IsTrue(wrapper.Delete("3"));
-		Assert.IsTrue(list[3].IsUndefined());
-		Assert.IsTrue(wrapper.Delete("99"));
-	}
-
-	[TestMethod]
-	public void ArrayWrapperDescriptorsEnumerationAndKeysReflectTheBackingList()
-	{
-		var engine = new Engine();
-		var list = DataModelConverter.CreateAsArray();
-		list.Add("value");
-		var wrapper = new DataModelArrayWrapper(engine, list);
-		wrapper.CreateDataProperty("extra", 17);
-
-		var item = wrapper.GetOwnProperty("0");
-		Assert.AreEqual("value", item.Value.AsString());
-		Assert.IsTrue(item.Writable);
-		Assert.IsTrue(item.Enumerable);
-		Assert.IsTrue(item.Configurable);
-		Assert.AreSame(PropertyDescriptor.Undefined, wrapper.GetOwnProperty("9"));
-		var length = wrapper.GetOwnProperty("length");
-		Assert.AreEqual(1, length.Value.AsNumber());
-		Assert.IsFalse(length.Enumerable);
-		Assert.IsFalse(length.Configurable);
-		Assert.AreEqual(17, wrapper.GetOwnProperty("extra").Value.AsNumber());
-
-		var properties = wrapper.GetOwnProperties().ToArray();
-		CollectionAssert.AreEqual(new[] { "0", "length", "extra" }, properties.Select(static pair => pair.Key.ToString()).ToArray());
-		var keys = wrapper.GetOwnPropertyKeys(Types.String);
-		CollectionAssert.AreEqual(new[] { "0", "length", "extra" }, keys.Select(static key => key.ToString()).ToArray());
-		Assert.AreEqual(0, wrapper.GetOwnPropertyKeys(Types.Symbol).Count);
-	}
-
-	[TestMethod]
-	public void ArrayWrapperDefineDeleteAndInvalidLengthsCoverMutationRules()
-	{
-		var engine = new Engine();
-		var list = DataModelConverter.CreateAsArray();
-		list.Add("value");
-		var wrapper = new DataModelArrayWrapper(engine, list);
-		var data = new PropertyDescriptor("new", writable: true, enumerable: true, configurable: true);
-		var accessor = new GetSetPropertyDescriptor(JsValue.Undefined, JsValue.Undefined, enumerable: true, configurable: true);
-
-		Assert.IsTrue(wrapper.DefineOwnProperty("1", data));
-		Assert.AreEqual("new", list[1].AsString());
-		Assert.IsFalse(wrapper.DefineOwnProperty("2", accessor));
-		Assert.IsTrue(wrapper.DefineOwnProperty("1", new PropertyDescriptor()));
-		Assert.IsTrue(wrapper.DefineOwnProperty("length", new PropertyDescriptor()));
-		Assert.IsFalse(wrapper.DefineOwnProperty("length", accessor));
-		Assert.IsFalse(wrapper.Set("length", "2", wrapper));
-		Assert.IsFalse(wrapper.Set("length", -1, wrapper));
-		Assert.IsFalse(wrapper.Set("length", 1.5, wrapper));
-		Assert.IsFalse(wrapper.Set("length", (double)int.MaxValue + 1, wrapper));
-		Assert.IsTrue(wrapper.DefineOwnProperty("length", new PropertyDescriptor(1, writable: true, enumerable: false, configurable: false)));
-		Assert.AreEqual(1, list.Count);
-
-		var receiver = engine.Evaluate("({})").AsObject();
-		Assert.IsTrue(wrapper.Set("own", 5, receiver));
-		Assert.AreEqual(5, receiver.Get("own").AsNumber());
-		Assert.IsTrue(wrapper.Delete("own"));
-	}
-
-	[TestMethod]
-	public void ReadonlyArrayWrapperRejectsAllBackingStoreMutations()
-	{
-		var engine = new Engine();
-		var writable = DataModelConverter.CreateAsArray();
-		writable.Add("value");
-		var list = writable.CloneAsReadOnly();
-		var wrapper = new DataModelArrayWrapper(engine, list);
-		var descriptor = new PropertyDescriptor("new", writable: true, enumerable: true, configurable: true);
-
-		Assert.IsFalse(wrapper.Extensible);
-		Assert.IsFalse(wrapper.Set("0", "new", wrapper));
-		Assert.IsFalse(wrapper.Set("length", 0, wrapper));
-		Assert.IsFalse(wrapper.Delete("0"));
-		Assert.IsFalse(wrapper.DefineOwnProperty("0", descriptor));
-		Assert.IsFalse(wrapper.DefineOwnProperty("1", descriptor));
-		Assert.IsFalse(wrapper.GetOwnProperty("0").Writable);
-		Assert.IsFalse(wrapper.GetOwnProperty("length").Writable);
-	}
-
-	[TestMethod]
-	public void NonExtensibleWritableArrayCoversDescriptorRestrictions()
-	{
-		var engine = new Engine();
-		var list = DataModelConverter.CreateAsArray();
-		list.Add("value");
-		var wrapper = new DataModelArrayWrapper(engine, list);
-		wrapper.PreventExtensions();
-
-		Assert.IsFalse(wrapper.Set("0", "new", wrapper));
-		Assert.IsFalse(wrapper.Set("length", 2, wrapper));
-		Assert.IsFalse(wrapper.DefineOwnProperty("1", new PropertyDescriptor("new", true, true, true)));
-		Assert.IsFalse(wrapper.DefineOwnProperty("0", new PropertyDescriptor("new", true, true, true)));
-		Assert.IsTrue(wrapper.DefineOwnProperty("0", new PropertyDescriptor()));
-		Assert.IsTrue(wrapper.Delete("0"));
 	}
 
 	[TestMethod]
@@ -246,46 +95,43 @@ public class InternalCoverageTest
 		var list = DataModelConverter.CreateAsObject();
 		list["existing"] = "before";
 		var wrapper = new DataModelObjectWrapper(engine, list);
-		engine.Global.Set("model", wrapper);
+		engine.Global.Set(property: "model", wrapper);
 
 		Assert.AreSame(list, wrapper.Target);
-		Assert.AreEqual("before", engine.Evaluate("model.existing").AsString());
+		Assert.AreEqual(expected: "before", engine.Evaluate("model.existing").AsString());
 		engine.Execute("model.existing = 'after'; model.created = 42;");
-		Assert.AreEqual("after", list["existing"].AsString());
-		Assert.AreEqual(42, list["created"].AsNumber().ToInt32());
-		Assert.AreEqual(2, wrapper.GetOwnProperties().Count());
+		Assert.AreEqual(expected: "after", list["existing"].AsString());
+		Assert.AreEqual(expected: 42, list["created"].AsNumber().ToInt32());
+		Assert.AreEqual(expected: 2, wrapper.GetOwnProperties().Count());
 		CollectionAssert.AreEquivalent(new[] { "existing", "created" }, wrapper.GetOwnProperties().Select(static p => p.Key.ToString()).ToArray());
 
 		wrapper.RemoveOwnProperty("existing");
-		Assert.IsFalse(list.ContainsKey("existing", caseInsensitive: false));
+		Assert.IsFalse(list.ContainsKey(key: "existing", caseInsensitive: false));
 		wrapper.RemoveOwnProperty(new JsNumber(1));
 		wrapper.RemoveOwnProperty("missing");
-		Assert.AreSame(PropertyDescriptor.Undefined, wrapper.GetOwnProperty(JsValue.FromObject(engine, true)));
-		Assert.IsInstanceOfType<GetSetPropertyDescriptor>(wrapper.GetOwnProperty("missing"));
-		Assert.IsTrue(wrapper.Get("missing", wrapper).IsUndefined());
-		Assert.IsFalse(wrapper.DefineOwnProperty("defined", new PropertyDescriptor("direct", writable: true, enumerable: true, configurable: true)));
-		Assert.AreEqual("direct", list["defined"].AsString());
-		Assert.IsTrue(wrapper.DefineOwnProperty(new JsNumber(1), new PropertyDescriptor("number", writable: true, enumerable: true, configurable: true)));
+		Assert.AreSame(PropertyDescriptor.Undefined, wrapper.GetOwnProperty(JsValue.FromObject(engine, value: true)));
+		Assert.IsTrue(wrapper.Get(property: "missing", wrapper).IsUndefined());
+		Assert.IsTrue(wrapper.DefineOwnProperty(new JsNumber(1), new PropertyDescriptor(value: "number", writable: true, enumerable: true, configurable: true)));
 	}
 
 	[TestMethod]
 	public void ObjectWrapperHandlesDuplicateBackingKeys()
 	{
 		var list = DataModelConverter.CreateAsObject();
-		list.Add("duplicate", "first");
-		list.Add("duplicate", "second");
+		list.Add(key: "duplicate", value: "first");
+		list.Add(key: "duplicate", value: "second");
 
 		var wrapper = new DataModelObjectWrapper(new Engine(), list);
 
-		Assert.HasCount(1, wrapper.GetOwnProperties());
+		Assert.HasCount(expected: 1, wrapper.GetOwnProperties());
 	}
 
 	[TestMethod]
 	public void ResourceFormattingHelpersCoverEveryArity()
 	{
-		Assert.AreEqual("one", Res.Format("{0}", "one"));
-		Assert.AreEqual("one-two", Res.Format("{0}-{1}", "one", "two"));
-		Assert.AreEqual("one-two-three", Res.Format("{0}-{1}-{2}", "one", "two", "three"));
+		Assert.AreEqual(expected: "one", Res.Format(format: "{0}", arg: "one"));
+		Assert.AreEqual(expected: "one-two", Res.Format(format: "{0}-{1}", arg0: "one", arg1: "two"));
+		Assert.AreEqual(expected: "one-two-three", Res.Format(format: "{0}-{1}-{2}", arg0: "one", arg1: "two", arg2: "three"));
 	}
 
 	[TestMethod]
@@ -298,9 +144,227 @@ public class InternalCoverageTest
 		var wrapper = new DataModelObjectWrapper(engine, list);
 
 		Assert.IsFalse(wrapper.Extensible);
-		Assert.AreEqual("value", wrapper.Get("existing", wrapper).AsString());
+		Assert.AreEqual(expected: "value", wrapper.Get(property: "existing", wrapper).AsString());
 		var missing = wrapper.GetOwnProperty("missing");
-		Assert.IsTrue(missing.Value.IsUndefined());
+		Assert.IsExactInstanceOfType<ProxyPropertyDescriptor>(missing);
 		Assert.IsFalse(missing.Writable);
+	}
+
+	[TestMethod]
+	public void ListWrapperImplementsCollectionAndListOperations()
+	{
+		var engine = new Engine();
+		var list = DataModelConverter.CreateAsArray();
+		list.Add("first");
+		list.Add("second");
+		IList<JsValue?> wrapper = new DataModelListWrapper(engine, list);
+
+		Assert.IsTrue(wrapper.Contains("first"));
+		Assert.IsFalse(wrapper.Contains("missing"));
+		Assert.AreEqual(expected: 1, wrapper.IndexOf("second"));
+		Assert.IsFalse(wrapper.IsReadOnly);
+
+		var destination = new JsValue?[4];
+		wrapper.CopyTo(destination, arrayIndex: 1);
+		Assert.AreEqual(expected: "first", destination[1]!.AsString());
+		Assert.AreEqual(expected: "second", destination[2]!.AsString());
+
+		var enumerator = ((IEnumerable)wrapper).GetEnumerator();
+		Assert.IsTrue(enumerator.MoveNext());
+		Assert.AreEqual(expected: "first", ((JsValue)enumerator.Current).AsString());
+		Assert.IsTrue(enumerator.MoveNext());
+		Assert.AreEqual(expected: "second", ((JsValue)enumerator.Current).AsString());
+		Assert.IsFalse(enumerator.MoveNext());
+
+		wrapper.Insert(index: 1, "inserted");
+		Assert.AreEqual(expected: "inserted", list[1].AsString());
+		Assert.IsTrue(wrapper.Remove("inserted"));
+		Assert.IsFalse(wrapper.Remove("missing"));
+		wrapper.RemoveAt(index: 1);
+		Assert.HasCount(expected: 1, list);
+
+		var readOnlyWrapper = new DataModelListWrapper(engine, list.CloneAsReadOnly());
+		Assert.IsTrue(readOnlyWrapper.IsReadOnly);
+
+		wrapper.Clear();
+		Assert.HasCount(expected: 0, list);
+	}
+
+	[TestMethod]
+	public void ObjectWrapperRefreshesStaleAndNonProxyProperties()
+	{
+		var engine = new Engine();
+		var list = DataModelConverter.CreateAsObject();
+		list["stale"] = "value";
+		var wrapper = new TestDataModelObjectWrapper(engine, list);
+
+		Assert.IsExactInstanceOfType<ProxyPropertyDescriptor>(wrapper.GetOwnProperty("stale"));
+		list.RemoveFirst("stale", caseInsensitive: false);
+		Assert.AreSame(PropertyDescriptor.Undefined, wrapper.GetOwnProperty("stale"));
+
+		wrapper.SetOwn(
+			"data",
+			new PropertyDescriptor(value: "stored", writable: true, enumerable: true, configurable: true));
+		Assert.AreEqual(expected: "stored", list["data"].AsString());
+
+		wrapper.SetOwn(
+			"accessor",
+			new GetSetPropertyDescriptor(JsValue.Undefined, JsValue.Undefined, enumerable: true, configurable: true));
+		Assert.IsFalse(list.ContainsKey(key: "accessor", caseInsensitive: false));
+
+		wrapper.SetOwn(
+			engine.Evaluate("Symbol('numeric')"),
+			new PropertyDescriptor(value: "numeric", writable: true, enumerable: true, configurable: true));
+		var properties = wrapper.GetOwnProperties().ToArray();
+		Assert.IsTrue(properties.Any(static property => property.Key.IsSymbol()));
+	}
+
+	[TestMethod]
+	public void HelperCoversDatesForeignWrappersAndWrapperRoundTrips()
+	{
+		var engine = new Engine();
+		DataModelDateTime date = new DateTimeOffset(2026, 7, 26, 12, 30, 0, TimeSpan.Zero);
+
+		Assert.IsTrue(EcmaScriptHelper.DataModelValueToJsValue(engine, date).IsDate());
+
+		var foreignWrapper = JsValue.FromObject(engine, new object());
+		var convertedForeignWrapper = EcmaScriptHelper.JsValueToDataModelValue(foreignWrapper);
+		Assert.IsTrue(DataModelConverter.IsObject(convertedForeignWrapper.AsList()));
+
+		var list = DataModelConverter.CreateAsObject();
+		list["value"] = 42;
+		var jsWrapper = EcmaScriptHelper.DataModelValueToJsValue(engine, list);
+		var wrappedValue = EcmaScriptHelper.JsValueToDataModelValue(jsWrapper);
+		Assert.AreSame(jsWrapper.AsObject(), EcmaScriptHelper.DataModelValueToJsValue(engine, wrappedValue).AsObject());
+	}
+
+	[TestMethod]
+	public void ContractAnnotationsExposeBothConstructorForms()
+	{
+		var concise = new ContractAnnotationAttribute("null => null");
+		var full = new ContractAnnotationAttribute("notnull => notnull", forceFullStates: true);
+
+		Assert.AreEqual(expected: "null => null", concise.Contract);
+		Assert.IsFalse(concise.ForceFullStates);
+		Assert.AreEqual(expected: "notnull => notnull", full.Contract);
+		Assert.IsTrue(full.ForceFullStates);
+	}
+
+	[TestMethod]
+	[DoNotParallelize]
+	public void HelperRejectsAnUnknownDataModelValueType()
+	{
+		if (Environment.OSVersion.Platform != PlatformID.Win32NT || !Environment.Is64BitProcess)
+		{
+			Assert.Inconclusive("The test-only native method patch requires a 64-bit Windows process.");
+		}
+
+		var typeGetter = typeof(DataModelValue).GetProperty(nameof(DataModelValue.Type))!.GetMethod!;
+
+		using (NativeMethodPatch.ReturnInt32(typeGetter, int.MaxValue))
+		{
+			Assert.ThrowsExactly<InvalidOperationException>(() => EcmaScriptHelper.DataModelValueToJsValue(new Engine(), default));
+		}
+
+		Assert.AreEqual(DataModelValueType.Undefined, default(DataModelValue).Type);
+	}
+
+	private sealed class TestDataModelObjectWrapper(Engine engine, DataModelList list) : DataModelObjectWrapper(engine, list)
+	{
+		public void SetOwn(JsValue property, PropertyDescriptor descriptor) => SetOwnProperty(property, descriptor);
+	}
+
+	private sealed class NativeMethodPatch : IDisposable
+	{
+		private const uint PageExecuteReadWrite = 0x40;
+
+		private readonly IntPtr _address;
+
+		private readonly byte[] _originalCode;
+
+		private NativeMethodPatch(MethodInfo method, int returnValue)
+		{
+			RuntimeHelpers.PrepareMethod(method.MethodHandle);
+			_address = FollowJumpStubs(method.MethodHandle.GetFunctionPointer());
+			_originalCode = new byte[6];
+			Marshal.Copy(_address, _originalCode, startIndex: 0, _originalCode.Length);
+
+			var replacementCode = new byte[]
+								  {
+									  0xB8,
+									  (byte)returnValue,
+									  (byte)(returnValue >> 8),
+									  (byte)(returnValue >> 16),
+									  (byte)(returnValue >> 24),
+									  0xC3
+								  };
+
+			WriteCode(replacementCode);
+		}
+
+		public static NativeMethodPatch ReturnInt32(MethodInfo method, int returnValue) => new(method, returnValue);
+
+		public void Dispose()
+		{
+			WriteCode(_originalCode);
+		}
+
+		private void WriteCode(byte[] code)
+		{
+			if (!VirtualProtect(_address, new UIntPtr((uint)code.Length), PageExecuteReadWrite, out var oldProtection))
+			{
+				throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+			}
+
+			try
+			{
+				Marshal.Copy(code, startIndex: 0, _address, code.Length);
+
+				if (!FlushInstructionCache(GetCurrentProcess(), _address, new UIntPtr((uint)code.Length)))
+				{
+					throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+				}
+			}
+			finally
+			{
+				_ = VirtualProtect(_address, new UIntPtr((uint)code.Length), oldProtection, out _);
+			}
+		}
+
+		private static IntPtr FollowJumpStubs(IntPtr address)
+		{
+			for (var i = 0; i < 4; i ++)
+			{
+				if (Marshal.ReadByte(address) == 0xFF && Marshal.ReadByte(address, ofs: 1) == 0x25)
+				{
+					var pointerAddress = IntPtr.Add(address, 6 + Marshal.ReadInt32(address, ofs: 2));
+					address = Marshal.ReadIntPtr(pointerAddress);
+
+					continue;
+				}
+
+				if (Marshal.ReadByte(address) == 0xE9)
+				{
+					address = IntPtr.Add(address, 5 + Marshal.ReadInt32(address, ofs: 1));
+
+					continue;
+				}
+
+				break;
+			}
+
+			return address;
+		}
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static extern bool VirtualProtect(IntPtr address, UIntPtr size, uint newProtection, out uint oldProtection);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static extern bool FlushInstructionCache(IntPtr process, IntPtr address, UIntPtr size);
+
+		[DllImport("kernel32.dll")]
+		private static extern IntPtr GetCurrentProcess();
 	}
 }

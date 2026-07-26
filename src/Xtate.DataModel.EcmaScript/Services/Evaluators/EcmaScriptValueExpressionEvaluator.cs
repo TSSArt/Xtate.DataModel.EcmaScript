@@ -22,7 +22,7 @@ using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
-public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, Prepared<Script> program)
+public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression, EcmaScriptProgram program)
 	: IValueExpression, IObjectEvaluator, IStringEvaluator, IIntegerEvaluator, IArrayEvaluator, IAncestorProvider
 {
 	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
@@ -39,7 +39,9 @@ public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression
 	{
 		var engine = await EngineFactory().ConfigureAwait(false);
 
-		var array = engine.Eval(program, startNewScope: true).AsObject();
+		var value = await engine.Eval(program, startNewScope: true).ConfigureAwait(false);
+
+		var array = value.AsObject();
 
 		var result = new IObject[(int)array.Get(@"length").AsNumber()];
 
@@ -59,7 +61,9 @@ public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression
 	{
 		var engine = await EngineFactory().ConfigureAwait(false);
 
-		return (int)engine.Eval(program, startNewScope: true).AsNumber();
+		var value = await engine.Eval(program, startNewScope: true).ConfigureAwait(false);
+
+		return (int)value.AsNumber();
 	}
 
 #endregion
@@ -70,7 +74,9 @@ public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression
 	{
 		var engine = await EngineFactory().ConfigureAwait(false);
 
-		return new EcmaScriptObject(engine.Eval(program, startNewScope: true));
+		var value = await engine.Eval(program, startNewScope: true).ConfigureAwait(false);
+
+		return new EcmaScriptObject(value);
 	}
 
 #endregion
@@ -81,7 +87,9 @@ public class EcmaScriptValueExpressionEvaluator(IValueExpression valueExpression
 	{
 		var engine = await EngineFactory().ConfigureAwait(false);
 
-		return engine.Eval(program, startNewScope: true).ToString();
+		var value = await engine.Eval(program, startNewScope: true).ConfigureAwait(false);
+
+		return value.ToString();
 	}
 
 #endregion

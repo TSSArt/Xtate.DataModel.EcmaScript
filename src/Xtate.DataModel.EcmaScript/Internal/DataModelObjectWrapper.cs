@@ -15,78 +15,27 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.Diagnostics.CodeAnalysis;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using Xtate.DataTypes;
 
 namespace Xtate.DataModel.EcmaScript.Internal;
 
-public sealed class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
+internal class DataModelObjectWrapper(Engine engine, DataModelList list) : ObjectInstance(engine), IObjectWrapper
 {
-	private readonly DataModelList _list;
-
-	private readonly List<JsString> _properties;
-
-	public DataModelObjectWrapper(Engine engine, DataModelList list) : base(engine)
-	{
-		_list = list;
-		_properties = [with(list.Count)];
-
-		foreach (var key in list.Keys)
-		{
-			TryRegisterProperty((JsString)key, out _);
-		}
-
-		if (list.Access != DataModelAccess.Writable)
-		{
-			PreventExtensions();
-		}
-	}
+	public override bool Extensible => list.Access == DataModelAccess.Writable && base.Extensible;
 
 #region Interface IObjectWrapper
 
-	public object Target => _list;
+	public object Target => list;
 
 #endregion
 
-	private bool TryRegisterProperty(JsString property, [MaybeNullWhen(false)] out PropertyDescriptor propertyDescriptor)
-	{
-		if (!_properties.Contains(property))
-		{
-			_properties.Add(property);
-
-			propertyDescriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, property.ToString());
-
-			SetOwnProperty(property, propertyDescriptor);
-
-			return true;
-		}
-
-		propertyDescriptor = null;
-
-		return false;
-	}
-
-	private bool TryUnregisterProperty(JsString property)
-	{
-		if (_properties.Remove(property))
-		{
-			_list.RemoveFirst(property.AsString(), caseInsensitive: false);
-
-			base.RemoveOwnProperty(property);
-
-			return true;
-		}
-
-		return false;
-	}
-
 	public override void RemoveOwnProperty(JsValue property)
 	{
-		if (property is JsString jsProperty)
+		if (property.IsString())
 		{
-			TryUnregisterProperty(jsProperty);
+			list.RemoveFirst(property.ToString(), caseInsensitive: false);
 		}
 
 		base.RemoveOwnProperty(property);
@@ -94,9 +43,44 @@ public sealed class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 
 	public override IEnumerable<KeyValuePair<JsValue, PropertyDescriptor>> GetOwnProperties()
 	{
-		foreach (var property in _properties)
+		var keys = new HashSet<string>(list.Keys);
+		List<JsValue>? toRemove = null;
+
+		foreach (var (property, descriptor) in base.GetOwnProperties())
 		{
-			yield return new KeyValuePair<JsValue, PropertyDescriptor>(property, GetOwnProperty(property));
+			if (!property.IsString())
+			{
+				yield return new KeyValuePair<JsValue, PropertyDescriptor>(property, descriptor);
+			}
+
+			if (descriptor is ProxyPropertyDescriptor { HasUnderlyingKey: true } propertyDescriptor)
+			{
+				keys.Remove(property.ToString());
+
+				yield return new KeyValuePair<JsValue, PropertyDescriptor>(property, propertyDescriptor);
+			}
+			else
+			{
+				(toRemove ??= []).Add(property);
+			}
+		}
+
+		if (toRemove is not null)
+		{
+			foreach (var property in toRemove)
+			{
+				base.RemoveOwnProperty(property);
+			}
+		}
+
+		foreach (var key in keys)
+		{
+			var property = (JsValue)key;
+			var descriptor = new ProxyPropertyDescriptor(Engine, list, key);
+
+			base.SetOwnProperty(property, descriptor);
+
+			yield return new KeyValuePair<JsValue, PropertyDescriptor>(property, descriptor);
 		}
 	}
 
@@ -104,23 +88,50 @@ public sealed class DataModelObjectWrapper : ObjectInstance, IObjectWrapper
 	{
 		var descriptor = base.GetOwnProperty(property);
 
-		if (descriptor != PropertyDescriptor.Undefined || !property.IsString())
+		if (!property.IsString())
 		{
 			return descriptor;
 		}
 
-		return TryRegisterProperty((JsString)property, out descriptor) ? descriptor : PropertyDescriptor.Undefined;
-	}
-
-	public override bool DefineOwnProperty(JsValue property, PropertyDescriptor descriptor)
-	{
-		if (property is JsString jsProperty && descriptor.IsDataDescriptor())
+		if (descriptor is ProxyPropertyDescriptor propertyDescriptor)
 		{
-			var key = jsProperty.ToString();
-			_list[key, caseInsensitive: false] = EcmaScriptHelper.ConvertFromJsValue(descriptor.Value);
-			descriptor = EcmaScriptHelper.CreatePropertyAccessor(Engine, _list, key);
+			if (propertyDescriptor.HasUnderlyingKey)
+			{
+				return propertyDescriptor;
+			}
+
+			base.RemoveOwnProperty(property);
+
+			return PropertyDescriptor.Undefined;
 		}
 
-		return base.DefineOwnProperty(property, descriptor);
+		var key = property.ToString();
+
+		propertyDescriptor = new ProxyPropertyDescriptor(Engine, list, key);
+
+		base.SetOwnProperty(property, propertyDescriptor);
+
+		return propertyDescriptor;
+	}
+
+	protected override void SetOwnProperty(JsValue property, PropertyDescriptor descriptor)
+	{
+		if (!property.IsString())
+		{
+			base.SetOwnProperty(property, descriptor);
+
+			return;
+		}
+
+		if (descriptor.IsDataDescriptor())
+		{
+			var key = property.ToString();
+
+			list[key, caseInsensitive: false] = EcmaScriptHelper.JsValueToDataModelValue(descriptor.Value);
+
+			base.SetOwnProperty(property, new ProxyPropertyDescriptor(Engine, list, key));
+		}
+
+		base.SetOwnProperty(property, descriptor);
 	}
 }

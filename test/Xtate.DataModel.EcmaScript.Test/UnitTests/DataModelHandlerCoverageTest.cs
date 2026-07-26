@@ -34,6 +34,7 @@ public class DataModelHandlerCoverageTest
 		IValueExpression value = Mock.Of<IValueExpression>(expression => expression.Expression == "1 + 1");
 		IConditionExpression condition = Mock.Of<IConditionExpression>(expression => expression.Expression == "true");
 		ILocationExpression location = Mock.Of<ILocationExpression>(expression => expression.Expression == "target");
+		ILocationExpression location2 = Mock.Of<ILocationExpression>(expression => expression.Expression == "target.nested");
 		IScriptExpression script = Mock.Of<IScriptExpression>(expression => expression.Expression == "var x = 1");
 		IExternalScriptExpression externalScript = Mock.Of<IExternalScriptExpression>();
 		IExternalDataExpression externalData = Mock.Of<IExternalDataExpression>();
@@ -43,6 +44,7 @@ public class DataModelHandlerCoverageTest
 		handler.Process(ref value);
 		handler.Process(ref condition);
 		handler.Process(ref location);
+		handler.Process(ref location2);
 		handler.Process(ref script);
 		handler.Process(ref externalScript);
 		handler.Process(ref externalData);
@@ -52,6 +54,7 @@ public class DataModelHandlerCoverageTest
 		Assert.IsInstanceOfType<EcmaScriptValueExpressionEvaluator>(value);
 		Assert.IsInstanceOfType<EcmaScriptConditionExpressionEvaluator>(condition);
 		Assert.IsInstanceOfType<EcmaScriptLocationExpressionEvaluator>(location);
+		Assert.IsInstanceOfType<EcmaScriptLocationExpressionEvaluator>(location2);
 		Assert.IsInstanceOfType<EcmaScriptScriptExpressionEvaluator>(script);
 		Assert.IsInstanceOfType<EcmaScriptExternalScriptExpressionEvaluator>(externalScript);
 		Assert.IsInstanceOfType<EcmaScriptExternalDataExpressionEvaluator>(externalData);
@@ -60,7 +63,7 @@ public class DataModelHandlerCoverageTest
 	}
 
 	[TestMethod]
-	public void HandlerReportsMissingExpressionsAndInvalidLocations()
+	public void HandlerReportsMissingExpressions()
 	{
 		var errors = new Mock<IErrorProcessorService<EcmaScriptDataModelHandler>>();
 		var handler = CreateHandler(errors.Object);
@@ -75,9 +78,17 @@ public class DataModelHandlerCoverageTest
 		handler.Process(ref script);
 
 		errors.Verify(processor => processor.AddError(It.IsAny<object>(), It.IsAny<string>(), null), Times.Exactly(4));
+	}
 
+	[TestMethod]
+	public void HandlerReportsInvalidLocations()
+	{
+		var errors = new Mock<IErrorProcessorService<EcmaScriptDataModelHandler>>();
+		var handler = CreateHandler(errors.Object);
 		ILocationExpression binary = Mock.Of<ILocationExpression>(expression => expression.Expression == "1 + 2");
+
 		handler.Process(ref binary);
+
 		errors.Verify(processor => processor.AddError(binary, It.IsAny<string>(), null), Times.Once);
 	}
 
@@ -105,7 +116,7 @@ public class DataModelHandlerCoverageTest
 
 		handler.Process(ref invalid);
 
-		errors.Verify(processor => processor.AddError(It.IsAny<object>(), It.Is<string>(message => message.Contains("Ln:", StringComparison.Ordinal)), null), Times.AtLeastOnce);
+		errors.Verify(processor => processor.AddError(It.IsAny<object>(), It.Is<string>(message => message.Contains("Line:", StringComparison.Ordinal)), null), Times.AtLeastOnce);
 	}
 
 	[TestMethod]
@@ -126,29 +137,17 @@ public class DataModelHandlerCoverageTest
 		errors.Verify(processor => processor.AddError(It.IsAny<object>(), It.IsAny<string>(), null), Times.Exactly(4));
 	}
 
-	[TestMethod]
-	public void HandlerWrapsCustomActionsAfterTheDefaultContainerAndEvaluator()
-	{
-		var handler = CreateHandler(Mock.Of<IErrorProcessorService<EcmaScriptDataModelHandler>>());
-		ICustomAction customAction = Mock.Of<ICustomAction>();
-
-		handler.Process(ref customAction);
-
-		Assert.IsInstanceOfType<EcmaScriptCustomActionEvaluator>(customAction);
-	}
-
 	private static TestEcmaScriptDataModelHandler CreateHandler(IErrorProcessorService<EcmaScriptDataModelHandler> errorProcessor) =>
 		new()
 		{
 			EcmaScriptErrorProcessorService = errorProcessor,
 			EcmaScriptForEachEvaluatorFactory = entity => new EcmaScriptForEachEvaluator(entity) { EngineFactory = null! },
-			EcmaScriptCustomActionEvaluatorFactory = entity => new EcmaScriptCustomActionEvaluator(entity) { EngineFactory = null! },
 			EcmaScriptExternalScriptExpressionEvaluatorFactory = entity => new EcmaScriptExternalScriptExpressionEvaluator(entity) { EngineFactory = null! },
 			EcmaScriptExternalDataExpressionEvaluatorFactory = entity => new EcmaScriptExternalDataExpressionEvaluator(entity) { DataConverter = null!, ResourceLoader = null! },
 			EcmaScriptValueExpressionEvaluatorFactory = (entity, program) => new EcmaScriptValueExpressionEvaluator(entity, program) { EngineFactory = null! },
 			EcmaScriptConditionExpressionEvaluatorFactory = (entity, program) => new EcmaScriptConditionExpressionEvaluator(entity, program) { EngineFactory = null! },
 			EcmaScriptScriptExpressionEvaluatorFactory = (entity, program) => new EcmaScriptScriptExpressionEvaluator(entity, program) { EngineFactory = null! },
-			EcmaScriptLocationExpressionEvaluatorFactory = (entity, args) => new EcmaScriptLocationExpressionEvaluator(entity, args.Item1, args.Item2) { EngineFactory = null! },
+			EcmaScriptLocationExpressionEvaluatorFactory = (entity, program) => new EcmaScriptLocationExpressionEvaluator(entity, program) { EngineFactory = null! },
 			EcmaScriptInlineContentEvaluatorFactory = entity => new EcmaScriptInlineContentEvaluator(entity) { Logger = null! },
 			EcmaScriptContentBodyEvaluatorFactory = entity => new EcmaScriptContentBodyEvaluator(entity) { Logger = null! },
 			DefaultLogEvaluatorFactory = _ => null!,

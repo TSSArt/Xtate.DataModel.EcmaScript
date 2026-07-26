@@ -20,9 +20,10 @@ using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
+[InstantiatedByIoC]
 public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpression externalScriptExpression) : IExternalScriptExpression, IExecEvaluator, IExternalScriptConsumer, IAncestorProvider
 {
-	private Prepared<Script>? _program;
+	private EcmaScriptProgram? _program;
 
 	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
@@ -40,14 +41,14 @@ public class EcmaScriptExternalScriptExpressionEvaluator(IExternalScriptExpressi
 
 		var engine = await EngineFactory().ConfigureAwait(false);
 
-		engine.Exec(_program.Value, startNewScope: true);
+		await engine.Exec(_program, startNewScope: true).ConfigureAwait(false);
 	}
 
 #endregion
 
 #region Interface IExternalScriptConsumer
 
-	public void SetContent(string content) => _program = Engine.PrepareScript(content);
+	public void SetContent(string content) => _program = new EcmaScriptProgram(Engine.PrepareScript(content));
 
 #endregion
 

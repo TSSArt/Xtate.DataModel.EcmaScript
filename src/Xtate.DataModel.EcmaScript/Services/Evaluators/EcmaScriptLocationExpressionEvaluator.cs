@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Linq;
+using Acornima.Ast;
 using Xtate.Ancestor;
 using Xtate.DataModel.EcmaScript.Internal;
 using Xtate.DataTypes;
@@ -23,50 +25,19 @@ using JintIdentifier = Acornima.Ast.Identifier;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
-public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocationExpression, IAncestorProvider
+public class EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, EcmaScriptProgram program) : ILocationEvaluator, ILocationExpression, IAncestorProvider
 {
-	private readonly Prepared<Script> _assignment;
+	private readonly EcmaScriptProgram? _declare = CreateDeclare(program);
 
-	private readonly string? _localVariableName;
+	private readonly string? _name = CreateName(program);
 
-	private readonly ILocationExpression _locationExpression;
-
-	private readonly string? _name;
-
-	private readonly Prepared<Script> _program;
-
-	public EcmaScriptLocationExpressionEvaluator(ILocationExpression locationExpression, Prepared<Script> program, Expression? leftExpression)
-	{
-		_locationExpression = locationExpression;
-		_program = program;
-		_assignment = Engine.PrepareScript(@$"{locationExpression.Expression} = {EcmaScriptEngine.LocationValueProperty}");
-
-		switch (leftExpression)
-		{
-			case null:
-				break;
-
-			case JintIdentifier identifier:
-				_name = identifier.Name;
-				_localVariableName = identifier.Name;
-
-				break;
-
-			case MemberExpression memberExpression:
-				_name = ((JintIdentifier)memberExpression.Property).Name;
-
-				break;
-
-			default:
-				throw new InvalidOperationException();
-		}
-	}
+	private readonly EcmaScriptProgram _setter = CreateSetter(locationExpression.Expression!);
 
 	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
 
 #region Interface IAncestorProvider
 
-	object IAncestorProvider.Ancestor => _locationExpression;
+	object IAncestorProvider.Ancestor => locationExpression;
 
 #endregion
 
@@ -76,54 +47,74 @@ public class EcmaScriptLocationExpressionEvaluator : ILocationEvaluator, ILocati
 	{
 		var engine = await EngineFactory().ConfigureAwait(false);
 
-		return new EcmaScriptObject(engine.Eval(_program, startNewScope: true));
+		return new EcmaScriptObject(await engine.Eval(program, startNewScope: true).ConfigureAwait(false));
 	}
 
 	public ValueTask<string> GetName() => new(_name ?? throw new ExecutionException(Resources.Exception_NameOfLocationExpressionCantBeEvaluated));
 
 	public async ValueTask SetValue(IObject value)
 	{
-		var rightValue = value is EcmaScriptObject ecmaScriptObject ? ecmaScriptObject.JsValue : value.ToObject();
 		var engine = await EngineFactory().ConfigureAwait(false);
-		engine.SetLocationValue(_assignment, _localVariableName, rightValue);
+		var rightValue = value is EcmaScriptObject ecmaScriptObject ? ecmaScriptObject.JsValue : JsValue.FromObject(engine.JintEngine, value.ToObject());
+		var setter = await engine.Eval(_setter, startNewScope: false).ConfigureAwait(false);
+
+		engine.Call(setter, rightValue);
 	}
 
 #endregion
 
 #region Interface ILocationExpression
 
-	public string? Expression => _locationExpression.Expression;
+	public string? Expression => locationExpression.Expression;
 
 #endregion
 
 	public async ValueTask DeclareLocalVariable()
 	{
-		if (_localVariableName is null)
+		if (_declare is null)
 		{
 			throw new ExecutionException(Resources.Exception_InvalidLocalVariableName);
 		}
 
 		var engine = await EngineFactory().ConfigureAwait(false);
 
-		engine.DeclareLocalVariable(_localVariableName);
+		await engine.Exec(_declare, startNewScope: false).ConfigureAwait(false);
 	}
 
-	public static Expression? GetLeftExpression(Script program)
+	private static EcmaScriptProgram? CreateDeclare(EcmaScriptProgram program)
 	{
-		Expression? expression = default;
+		var expression = ((ExpressionStatement)program.Script.Program!.Body.Single()).Expression;
 
-		foreach (var statement in program.Body)
+		if (expression is not JintIdentifier identifier)
 		{
-			expression = (statement as ExpressionStatement)?.Expression;
-
-			break;
+			return null;
 		}
+
+		return new EcmaScriptProgram(Engine.PrepareScript($@"var {identifier.Name};"));
+	}
+
+	private static string? CreateName(EcmaScriptProgram program)
+	{
+		var expression = ((ExpressionStatement)program.Script.Program!.Body.Single()).Expression;
 
 		return expression switch
 			   {
-				   JintIdentifier identifier         => identifier,
-				   MemberExpression memberExpression => memberExpression,
-				   _                                 => null
+				   null                              => null,
+				   JintIdentifier identifier         => identifier.Name,
+				   MemberExpression memberExpression => ((JintIdentifier)memberExpression.Property).Name,
+				   _                                 => throw Infra.Unmatched(expression)
 			   };
+	}
+
+	private static EcmaScriptProgram CreateSetter(string locationExpression)
+	{
+		var valueParameter = @"__xv";
+
+		while (locationExpression.Contains(valueParameter, StringComparison.Ordinal))
+		{
+			valueParameter = @$"{valueParameter}_{valueParameter.GetHashCode():x8}";
+		}
+
+		return new EcmaScriptProgram(Engine.PrepareScript($@"{valueParameter} => ({locationExpression} = {valueParameter})"));
 	}
 }

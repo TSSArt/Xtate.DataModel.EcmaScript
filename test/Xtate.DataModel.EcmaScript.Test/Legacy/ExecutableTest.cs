@@ -30,34 +30,32 @@ using Xtate.Logging;
 using Xtate.Logging.Provider;
 using Xtate.StateMachine;
 
-//using Xtate.CustomAction;
-
 namespace Xtate.DataModel.EcmaScript.Test;
 
 [TestClass]
 public class ExecutableTest
 {
-	private Mock<IAction> _customAction = default!;
+	private Mock<IAction> _customAction = null!;
 
-	private Mock<IActionActivator> _customActionActivator = default!;
+	private Mock<IActionActivator> _customActionActivator = null!;
 
-	private Mock<IActionProvider> _customActionProvider = default!;
+	private Mock<IActionProvider> _customActionProvider = null!;
 
-	private ChannelReader<IIncomingEvent> _eventChannel = default!;
+	private ChannelReader<IIncomingEvent> _eventChannel = null!;
 
-	private Mock<IEventController> _eventController = default!;
+	private Mock<IEventController> _eventController = null!;
 
-	private Mock<IEventReader> _eventQueueReader = default!;
+	private Mock<IEventReader> _eventQueueReader = null!;
 
-	private Mock<ILogProvider<IEventController>> _logWriterE = default!;
+	private Mock<ILogProvider<IEventController>> _logWriterE = null!;
 
-	private Mock<ILogProvider<IStateMachineInterpreter>> _logWriterI = default!;
+	private Mock<ILogProvider<IStateMachineInterpreter>> _logWriterI = null!;
 
-	private Mock<ILogProvider<ILogController>> _logWriterL = default!;
+	private Mock<ILogProvider<ILogController>> _logWriterL = null!;
 
 	//private Mock<IExternalCommunication> _externalCommunication = default!;
 
-	private Mock<ILogger> _logger = default!;
+	private Mock<ILogger> _logger = null!;
 
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{

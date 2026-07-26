@@ -21,7 +21,6 @@ global using System;
 global using System.Diagnostics;
 global using System.Collections.Generic;
 global using System.Threading.Tasks;
-global using Acornima.Ast;
 global using JetBrains.Annotations;
 global using Jint;
 global using Jint.Native;

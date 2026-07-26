@@ -21,6 +21,7 @@ using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
+[InstantiatedByIoC]
 public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 {
 	private readonly EcmaScriptLocationExpressionEvaluator? _indexEvaluator;
@@ -42,24 +43,13 @@ public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 
 	public override async ValueTask Execute()
 	{
-		var engine = await EngineFactory().ConfigureAwait(false);
+		await _itemEvaluator.DeclareLocalVariable().ConfigureAwait(false);
 
-		engine.EnterExecutionContext();
-
-		try
+		if (_indexEvaluator is not null)
 		{
-			await _itemEvaluator.DeclareLocalVariable().ConfigureAwait(false);
-
-			if (_indexEvaluator is not null)
-			{
-				await _indexEvaluator.DeclareLocalVariable().ConfigureAwait(false);
-			}
-
-			await base.Execute().ConfigureAwait(false);
+			await _indexEvaluator.DeclareLocalVariable().ConfigureAwait(false);
 		}
-		finally
-		{
-			engine.LeaveExecutionContext();
-		}
+
+		await base.Execute().ConfigureAwait(false);
 	}
 }

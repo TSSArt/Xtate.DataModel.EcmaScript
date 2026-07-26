@@ -22,6 +22,7 @@ using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
+[InstantiatedByIoC]
 public class EcmaScriptExternalDataExpressionEvaluator(IExternalDataExpression externalDataExpression) : DefaultExternalDataExpressionEvaluator(externalDataExpression)
 {
 	protected override async ValueTask<DataModelValue> ParseToDataModel(Resource resource)

@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Mime;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Acornima.Ast;
@@ -25,6 +26,8 @@ namespace Xtate.DataModel.EcmaScript.Test.UnitTests;
 [TestClass]
 public class EngineEvaluatorCoverageTest
 {
+	private JsValue EngineEval(EcmaScriptEngine engine, Prepared<Script> program, bool startNewScope) => engine.Eval(new EcmaScriptProgram(program), startNewScope).AsTask().Result;
+
 	[TestMethod]
 	public void EngineSynchronizesGlobalVariablesAndTheInPredicate()
 	{
@@ -33,60 +36,39 @@ public class EngineEvaluatorCoverageTest
 		inState.Setup(controller => controller.InState(It.Is<IIdentifier>(id => id.Value == "active"))).Returns(true);
 		var engine = CreateEngine(dataModel, inState.Object);
 
-		Assert.AreEqual("root", engine.Eval(Compile("existing"), startNewScope: false).AsString());
-		Assert.IsTrue(engine.Eval(Compile("In('active')"), startNewScope: true).AsBoolean());
-		Assert.IsFalse(engine.Eval(Compile("In('inactive')"), startNewScope: true).AsBoolean());
+		Assert.AreEqual("root", EngineEval(engine, Compile("existing").Script, startNewScope: false).AsString());
+		Assert.IsTrue(EngineEval(engine, Compile("In('active')").Script, startNewScope: true).AsBoolean());
+		Assert.IsFalse(EngineEval(engine, Compile("In('inactive')").Script, startNewScope: true).AsBoolean());
 
 		dataModel["added"] = 17;
-		Assert.AreEqual(17, engine.Eval(Compile("added"), startNewScope: false).AsNumber());
+		Assert.AreEqual(17, EngineEval(engine, Compile("added").Script, startNewScope: false).AsNumber());
 		dataModel.RemoveFirst("existing", caseInsensitive: false);
-		Assert.AreEqual("undefined", engine.Eval(Compile("typeof existing"), startNewScope: false).AsString());
+		Assert.AreEqual("undefined", EngineEval(engine, Compile("typeof existing").Script, startNewScope: false).AsString());
 		Assert.AreEqual("not-a-variable", dataModel[string.Empty].AsString());
 	}
 
 	[TestMethod]
-	public void EngineExecutionScopesRemoveCreatedGlobalsAndRestoreShadowedData()
-	{
-		var dataModel = new DataModelList { ["item"] = "root" };
-		var engine = CreateEngine(dataModel);
-
-		engine.Exec(Compile("var persistent = 1"), startNewScope: false);
-		Assert.AreEqual(1, engine.Eval(Compile("persistent"), startNewScope: false).AsNumber());
-		engine.Exec(Compile("var temporary = 2"), startNewScope: true);
-		Assert.AreEqual("undefined", engine.Eval(Compile("typeof temporary"), startNewScope: false).AsString());
-
-		engine.EnterExecutionContext();
-		engine.DeclareLocalVariable("item");
-		engine.DeclareLocalVariable("item");
-		engine.SetLocationValue(Compile($"item = {EcmaScriptEngine.LocationValueProperty}"), "item", "local");
-		Assert.AreEqual("local", engine.Eval(Compile("item"), startNewScope: false).AsString());
-		Assert.AreEqual("root", dataModel["item"].AsString());
-		engine.LeaveExecutionContext();
-		Assert.AreEqual("root", engine.Eval(Compile("item"), startNewScope: false).AsString());
-
-		Assert.ThrowsExactly<JavaScriptException>(() => engine.Eval(Compile("throw new Error('failure')"), startNewScope: true));
-		Assert.ThrowsExactly<JavaScriptException>(() => engine.Exec(Compile("throw new Error('failure')"), startNewScope: true));
-	}
-
-	[TestMethod]
-	public void EngineAssignmentsHandleRootVariablesMembersAndNativeValues()
+	public async Task EngineAssignmentsHandleRootVariablesMembersAndPersistentGlobals()
 	{
 		var nested = DataModelConverter.CreateAsObject();
 		nested["value"] = "before";
-		var dataModel = new DataModelList { ["target"] = "old", ["nested"] = nested };
+		var dataModel = new DataModelList { ["target"] = "old", ["nested"] = nested, ["setterCreations"] = 0 };
 		var engine = CreateEngine(dataModel);
 
-		engine.SetLocationValue(Compile($"target = {EcmaScriptEngine.LocationValueProperty}"), "target", "new");
+		await engine.Exec(Compile("target = 'new'"), startNewScope: false);
 		Assert.AreEqual("new", dataModel["target"].AsString());
-		engine.SetLocationValue(Compile($"nested.value = {EcmaScriptEngine.LocationValueProperty}"), identifierName: null, new JsString("changed"));
+
+		var memberSetter = await engine.Eval(Compile("setterCreations++, (__value => (nested.value = __value))"), startNewScope: false);
+		Assert.AreEqual(1, dataModel["setterCreations"].AsNumber().ToInt32());
+		engine.Call(memberSetter, new JsString("changed"));
 		Assert.AreEqual("changed", nested["value"].AsString());
-		engine.SetLocationValue(Compile($"created = {EcmaScriptEngine.LocationValueProperty}"), "created", 42);
-		Assert.AreEqual(42, dataModel["created"].AsNumber().ToInt32());
-		engine.EnterExecutionContext();
-		engine.DeclareLocalVariable("unrelated");
-		engine.SetLocationValue(Compile($"another = {EcmaScriptEngine.LocationValueProperty}"), "another", 43);
-		engine.LeaveExecutionContext();
-		Assert.AreEqual(43, dataModel["another"].AsNumber().ToInt32());
+
+		await engine.Exec(Compile("var created = 42"), startNewScope: false);
+		Assert.AreEqual(42, (await engine.Eval(Compile("created"), startNewScope: false)).AsNumber());
+
+		await engine.Exec(Compile("var another = 43"), startNewScope: true);
+		Assert.AreEqual(43, (await engine.Eval(Compile("another"), startNewScope: false)).AsNumber());
+		Assert.AreEqual("undefined", EngineEval(engine, Compile("typeof __xtate_location_value").Script, startNewScope: false).AsString());
 	}
 
 	[TestMethod]
@@ -127,7 +109,7 @@ public class EngineEvaluatorCoverageTest
 	}
 
 	[TestMethod]
-	public async Task LocationEvaluatorReadsNamesAssignsRootAndMemberAndHandlesLocalVariables()
+	public async Task LocationEvaluatorReadsNamesAndAssignsGlobalVariablesAndMembers()
 	{
 		var nested = DataModelConverter.CreateAsObject();
 		nested["value"] = "before";
@@ -135,7 +117,7 @@ public class EngineEvaluatorCoverageTest
 		var engine = CreateEngine(dataModel);
 		var source = Mock.Of<ILocationExpression>(expression => expression.Expression == "target");
 		var targetProgram = Compile("target");
-		var target = new EcmaScriptLocationExpressionEvaluator(source, targetProgram, EcmaScriptLocationExpressionEvaluator.GetLeftExpression(targetProgram.Program!))
+		var target = new EcmaScriptLocationExpressionEvaluator(source, targetProgram)
 			{ EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine) };
 
 		Assert.AreSame(source, ((IAncestorProvider)target).Ancestor);
@@ -149,34 +131,144 @@ public class EngineEvaluatorCoverageTest
 
 		var memberSource = Mock.Of<ILocationExpression>(expression => expression.Expression == "nested.value");
 		var memberProgram = Compile("nested.value");
-		var member = new EcmaScriptLocationExpressionEvaluator(memberSource, memberProgram, EcmaScriptLocationExpressionEvaluator.GetLeftExpression(memberProgram.Program!))
+		var member = new EcmaScriptLocationExpressionEvaluator(memberSource, memberProgram)
 			{ EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine) };
 		Assert.AreEqual("value", await member.GetName());
 		await member.SetValue(new TestObject("member"));
 		Assert.AreEqual("member", nested["value"].AsString());
 
-		engine.EnterExecutionContext();
+		var collisionValue = DataModelConverter.CreateAsObject();
+		collisionValue["value"] = "before";
+		dataModel["__xtate_location_value"] = collisionValue;
+		var collisionSource = Mock.Of<ILocationExpression>(expression => expression.Expression == "__xtate_location_value.value");
+		var collisionProgram = Compile("__xtate_location_value.value");
+		var collision = new EcmaScriptLocationExpressionEvaluator(collisionSource, collisionProgram)
+			{ EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine) };
+		await collision.SetValue(new TestObject("collision"));
+		Assert.AreEqual("collision", collisionValue["value"].AsString());
+
 		await target.DeclareLocalVariable();
 		await target.SetValue(new TestObject("local"));
 		Assert.AreEqual("local", (await target.GetValue()).ToObject());
-		engine.LeaveExecutionContext();
-		Assert.AreEqual("again", dataModel["target"].AsString());
+		Assert.AreEqual("local", dataModel["target"].AsString());
 	}
 
 	[TestMethod]
-	public async Task LocationEvaluatorRejectsNamelessAndUnsupportedLocations()
+	public async Task LocationEvaluatorSetValueUpdatesRootAndNestedLocations()
 	{
-		var engine = CreateEngine(new DataModelList());
+		var nested = DataModelConverter.CreateAsObject();
+		nested["value"] = "before";
+		var collisionValue = DataModelConverter.CreateAsObject();
+		collisionValue["value"] = "before";
+		var dataModel = new DataModelList
+						{
+							["target"] = "old",
+							["nested"] = nested,
+							["__xtate_location_value"] = collisionValue
+						};
+		var engine = CreateEngine(dataModel);
+
+		var target = new EcmaScriptLocationExpressionEvaluator(
+			Mock.Of<ILocationExpression>(expression => expression.Expression == "target"),
+			Compile("target"))
+					 {
+						 EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine)
+					 };
+		await target.SetValue(new EcmaScriptObject(new JsString("new")));
+
+		var member = new EcmaScriptLocationExpressionEvaluator(
+			Mock.Of<ILocationExpression>(expression => expression.Expression == "nested.value"),
+			Compile("nested.value"))
+					 {
+						 EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine)
+					 };
+		await member.SetValue(new TestObject("member"));
+
+		var collision = new EcmaScriptLocationExpressionEvaluator(
+			Mock.Of<ILocationExpression>(expression => expression.Expression == "__xtate_location_value.value"),
+			Compile("__xtate_location_value.value"))
+						{
+							EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine)
+						};
+		await collision.SetValue(new TestObject("collision"));
+
+		Assert.AreEqual("new", dataModel["target"].AsString());
+		Assert.AreEqual("member", nested["value"].AsString());
+		Assert.AreEqual("collision", collisionValue["value"].AsString());
+	}
+
+	[TestMethod]
+	public async Task LocationEvaluatorDeclaresOnlyIdentifierLocations()
+	{
+		var dataModel = new DataModelList();
+		var engine = CreateEngine(dataModel);
+		var item = new EcmaScriptLocationExpressionEvaluator(
+			Mock.Of<ILocationExpression>(expression => expression.Expression == "item"),
+			Compile("item"))
+				   {
+					   EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine)
+				   };
+
+		await item.DeclareLocalVariable();
+		await item.SetValue(new TestObject("local"));
+
+		Assert.AreEqual("local", (await item.GetValue()).ToObject());
+		Assert.IsFalse(dataModel.ContainsKey("item", caseInsensitive: false));
+
+		var member = new EcmaScriptLocationExpressionEvaluator(
+			Mock.Of<ILocationExpression>(expression => expression.Expression == "item.value"),
+			Compile("item.value"))
+					 {
+						 EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine)
+					 };
+
+		await Assert.ThrowsExactlyAsync<ExecutionException>(async () => await member.DeclareLocalVariable());
+	}
+
+	[TestMethod]
+	public void LocationEvaluatorRejectsUnsupportedExpressions()
+	{
 		var emptySource = Mock.Of<ILocationExpression>(expression => expression.Expression == "undefined");
-		var evaluator = new EcmaScriptLocationExpressionEvaluator(emptySource, Compile("undefined"), leftExpression: null)
-			{ EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine) };
+		var unsupported = Compile("1 + 2");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => new EcmaScriptLocationExpressionEvaluator(emptySource, unsupported) { EngineFactory = null! });
+	}
+
+	[TestMethod]
+	public async Task LocationEvaluatorAvoidsSetterParameterNameCollisions()
+	{
+		var target = DataModelConverter.CreateAsObject();
+		target["value"] = "before";
+		var dataModel = new DataModelList { ["__xv"] = target };
+		var engine = CreateEngine(dataModel);
+		var evaluator = new EcmaScriptLocationExpressionEvaluator(
+			Mock.Of<ILocationExpression>(expression => expression.Expression == "__xv.value"),
+			Compile("__xv.value"))
+						{
+							EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine)
+						};
+
+		await evaluator.SetValue(new TestObject("after"));
+
+		Assert.AreEqual("after", target["value"].AsString());
+	}
+
+	[TestMethod]
+	public async Task LocationEvaluatorReportsAnUnavailableName()
+	{
+		var program = Compile("undefined");
+		var statement = (ExpressionStatement)program.Script.Program!.Body.Single();
+		var expressionField = typeof(ExpressionStatement).GetField("<Expression>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+		Assert.IsNotNull(expressionField);
+		expressionField.SetValue(statement, null);
+		var evaluator = new EcmaScriptLocationExpressionEvaluator(
+			Mock.Of<ILocationExpression>(expression => expression.Expression == "undefined"),
+			program)
+						{
+							EngineFactory = null!
+						};
 
 		await Assert.ThrowsExactlyAsync<ExecutionException>(async () => await evaluator.GetName());
-		await Assert.ThrowsExactlyAsync<ExecutionException>(async () => await evaluator.DeclareLocalVariable());
-		Assert.IsNull(EcmaScriptLocationExpressionEvaluator.GetLeftExpression(Compile("1 + 2").Program!));
-		Assert.IsNull(EcmaScriptLocationExpressionEvaluator.GetLeftExpression(Compile("if (true) {} ").Program!));
-		var unsupported = Compile("1 + 2");
-		Assert.ThrowsExactly<InvalidOperationException>(() => new EcmaScriptLocationExpressionEvaluator(emptySource, unsupported, ((ExpressionStatement)unsupported.Program!.Body[0]).Expression) { EngineFactory = null! });
 	}
 
 	[TestMethod]
@@ -211,17 +303,6 @@ public class EngineEvaluatorCoverageTest
 		Assert.IsTrue((await external.Parse(resource)).AsList()["loaded"].AsBoolean());
 	}
 
-	[TestMethod]
-	public async Task CustomActionEvaluatorAlwaysLeavesItsExecutionScope()
-	{
-		var engine = CreateEngine(new DataModelList());
-		var evaluator = new EcmaScriptCustomActionEvaluator(Mock.Of<ICustomAction>()) { EngineFactory = () => new ValueTask<EcmaScriptEngine>(engine) };
-
-		await evaluator.Execute();
-		engine.EnterExecutionContext();
-		engine.LeaveExecutionContext();
-	}
-
 	private static EcmaScriptEngine CreateEngine(DataModelList dataModel, IInStateController? inStateController = null) =>
 		new()
 		{
@@ -229,7 +310,9 @@ public class EngineEvaluatorCoverageTest
 			InStateController = inStateController ?? Mock.Of<IInStateController>()
 		};
 
-	private static Prepared<Script> Compile(string source) => Engine.PrepareScript(source);
+	private static EcmaScriptProgram Compile(string source) => EcmaScriptProgram.ParseScript(source);
+
+	private static Prepared<Script> CompileSetter(string location) => Compile($@"__value => ({location} = __value)").Script;
 
 	private sealed class TestObject(object? value) : IObject
 	{

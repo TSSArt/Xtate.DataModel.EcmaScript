@@ -17,7 +17,6 @@
 
 using System.Globalization;
 using Jint.Runtime;
-using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using Xtate.DataModel.Services;
 using Xtate.DataTypes;
@@ -26,29 +25,13 @@ namespace Xtate.DataModel.EcmaScript.Internal;
 
 internal static class EcmaScriptHelper
 {
-	private static readonly string[] ParseFormats = [@"o", @"u", @"s", @"r"];
-
-	private static readonly PropertyDescriptor ReadonlyUndefinedPropertyDescriptor = new(JsValue.Undefined, writable: false, enumerable: false, configurable: false);
-
-	public static PropertyDescriptor CreatePropertyAccessor(Engine engine, DataModelList list, string property)
+	public static JsValue DataModelValueToJsValue(Engine engine, DataModelValue value)
 	{
-		if (list.Access != DataModelAccess.Writable && !list.ContainsKey(property, caseInsensitive: false))
+		if (value.TryGetAs<WrapperContainer>(out var wrapper))
 		{
-			return ReadonlyUndefinedPropertyDescriptor;
+			return wrapper.ObjectInstance;
 		}
 
-		var jsGet = JsValue.FromObject(engine, new Func<JsValue>(Getter));
-		var jsSet = JsValue.FromObject(engine, new Action<JsValue>(Setter));
-
-		return new GetSetPropertyDescriptor(jsGet, jsSet, enumerable: true, configurable: false);
-
-		JsValue Getter() => ConvertToJsValue(engine, list[property, caseInsensitive: false]);
-
-		void Setter(JsValue value) => list[property, caseInsensitive: false] = ConvertFromJsValue(value);
-	}
-
-	public static JsValue ConvertToJsValue(Engine engine, DataModelValue value)
-	{
 		return value.Type switch
 			   {
 				   DataModelValueType.Undefined => JsValue.Undefined,
@@ -56,40 +39,40 @@ internal static class EcmaScriptHelper
 				   DataModelValueType.Boolean   => value.AsBoolean(),
 				   DataModelValueType.String    => value.AsString(),
 				   DataModelValueType.Number    => value.AsNumber().ToDouble(),
-				   DataModelValueType.DateTime  => value.AsDateTime().ToString(format: @"o", DateTimeFormatInfo.InvariantInfo),
+				   DataModelValueType.DateTime  => new JsDate(engine, value.AsDateTime().ToDateTime()),
 				   DataModelValueType.List      => GetWrapper(engine, value.AsList()),
 				   _                            => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
 			   };
 
 		static ObjectInstance GetWrapper(Engine engine, DataModelList list) =>
-			DataModelConverter.IsArray(list)
-				? new DataModelArrayWrapper(engine, list)
-				: new DataModelObjectWrapper(engine, list);
+			DataModelConverter.IsArray(list) ? ObjectWrapper.Create(engine, new DataModelListWrapper(engine, list)) : new DataModelObjectWrapper(engine, list);
 	}
 
-	public static DataModelValue ConvertFromJsValue(JsValue value) =>
-		value.Type switch
+	public static DataModelValue JsValueToDataModelValue(JsValue jsValue) =>
+		jsValue.Type switch
 		{
-			Types.Undefined                  => default,
-			Types.Null                       => DataModelValue.Null,
-			Types.Boolean                    => new DataModelValue(value.AsBoolean()),
-			Types.String                     => CreateDateTimeOrStringValue(value.AsString()),
-			Types.Number                     => new DataModelValue(value.AsNumber()),
-			Types.Object when value.IsDate() => new DataModelValue(value.AsDate().ToDateTime()),
-			Types.Object                     => CreateDataModelValue(value.AsObject()),
-			_                                => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
+			Types.Undefined                    => DataModelValue.Undefined,
+			Types.Null                         => DataModelValue.Null,
+			Types.Boolean                      => jsValue.AsBoolean(),
+			Types.String                       => jsValue.ToString(),
+			Types.Number                       => jsValue.AsNumber(),
+			Types.Object when jsValue.IsDate() => jsValue.AsDate().ToDateTime(),
+			Types.Object                       => ObjectInstanceToDataModelValue(jsValue.AsObject()),
+			_                                  => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
 		};
 
-	private static DataModelValue CreateDateTimeOrStringValue(string value) =>
-		DataModelDateTime.TryParseExact(value, ParseFormats, provider: null, DateTimeStyles.None, out var dateTime)
-			? new DataModelValue(dateTime)
-			: new DataModelValue(value);
-
-	private static DataModelValue CreateDataModelValue(ObjectInstance objectInstance)
+	private static DataModelValue ObjectInstanceToDataModelValue(ObjectInstance objectInstance)
 	{
-		if (objectInstance is IObjectWrapper { Target: DataModelList wrappedList })
+		if (objectInstance is IObjectWrapper { Target: { } target })
 		{
-			return new DataModelValue(wrappedList);
+			switch (target)
+			{
+				case DataModelList list:
+					return new DataModelValue(new WrapperContainer(objectInstance, list));
+
+				case DataModelListWrapper { List: var list }:
+					return new DataModelValue(new WrapperContainer(objectInstance, list));
+			}
 		}
 
 		switch (objectInstance)
@@ -100,53 +83,66 @@ internal static class EcmaScriptHelper
 
 				foreach (var (key, _) in array.GetOwnProperties())
 				{
-					if (TryGetArrayIndex(key, out var index))
+					if (IsArrayIndex(key, out var index))
 					{
-						list[index] = ConvertFromJsValue(array.Get(key));
+						list[index] = JsValueToDataModelValue(array.Get(key));
 					}
 				}
 
-				return new DataModelValue(list);
+				return list;
 			}
-
 			default:
 			{
 				var list = DataModelConverter.CreateAsObject();
 
 				foreach (var (key, _) in objectInstance.GetOwnProperties())
 				{
-					if (key.IsString())
-					{
-						list.Add(key.AsString(), ConvertFromJsValue(objectInstance.Get(key)));
-					}
+					list.Add(key.ToString(), JsValueToDataModelValue(objectInstance.Get(key)));
 				}
 
-				return new DataModelValue(list);
+				return list;
 			}
 		}
 	}
 
-	public static bool TryGetArrayIndex(JsValue property, out int index)
+	public static bool IsArrayIndex(JsValue val, out int index)
 	{
-		index = 0;
-
-		if (property is JsNumber jsNumber && jsNumber.AsNumber() is var number)
+		if (val.IsNumber())
 		{
-			if (number is >= 0 and <= int.MaxValue && number - Math.Truncate(number) == 0)
+			var value = val.AsNumber();
+
+			if (value is >= 0 and <= int.MaxValue && value - Math.Truncate(value) == 0)
 			{
-				index = (int)number;
+				index = (int)value;
 
 				return true;
 			}
 
+			index = 0;
+
 			return false;
 		}
 
-		if (property is JsString jsString && jsString.ToString() is var value)
+		if (!val.IsSymbol() && int.TryParse(val.ToString(), NumberStyles.None, CultureInfo.InvariantCulture, out var parsedIndex) && parsedIndex >= 0)
 		{
-			return int.TryParse(value, NumberStyles.None, NumberFormatInfo.InvariantInfo, out index) && index >= 0;
+			index = parsedIndex;
+
+			return true;
 		}
 
+		index = 0;
+
 		return false;
+	}
+
+	private class WrapperContainer(ObjectInstance objectInstance, DataModelList list) : ILazyValue
+	{
+		public readonly ObjectInstance ObjectInstance = objectInstance;
+
+	#region Interface ILazyValue
+
+		public DataModelValue Value => list;
+
+	#endregion
 	}
 }

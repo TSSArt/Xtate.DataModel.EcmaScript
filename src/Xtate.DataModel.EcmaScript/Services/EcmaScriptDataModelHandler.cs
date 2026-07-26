@@ -33,19 +33,7 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 	public static readonly string JintVersionValue = typeof(Engine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? @"(unknown)";
 
-	private readonly CollectingParseErrorHandler _errorHandler;
-
-	private readonly Parser _parser;
-
-	public EcmaScriptDataModelHandler()
-	{
-		_errorHandler = new CollectingParseErrorHandler();
-		_parser = new Parser(new ParserOptions { Tolerant = true, ErrorHandler = _errorHandler });
-	}
-
 	public required Func<IForEach, EcmaScriptForEachEvaluator> EcmaScriptForEachEvaluatorFactory { private get; [SetByIoC] init; }
-
-	public required Func<ICustomAction, EcmaScriptCustomActionEvaluator> EcmaScriptCustomActionEvaluatorFactory { private get; [SetByIoC] init; }
 
 	public required Func<IExternalScriptExpression, EcmaScriptExternalScriptExpressionEvaluator> EcmaScriptExternalScriptExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
@@ -53,13 +41,13 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 	public required IErrorProcessorService<EcmaScriptDataModelHandler> EcmaScriptErrorProcessorService { private get; [SetByIoC] init; }
 
-	public required Func<IValueExpression, Prepared<Script>, EcmaScriptValueExpressionEvaluator> EcmaScriptValueExpressionEvaluatorFactory { private get; [SetByIoC] init; }
+	public required Func<IValueExpression, EcmaScriptProgram, EcmaScriptValueExpressionEvaluator> EcmaScriptValueExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
-	public required Func<IConditionExpression, Prepared<Script>, EcmaScriptConditionExpressionEvaluator> EcmaScriptConditionExpressionEvaluatorFactory { private get; [SetByIoC] init; }
+	public required Func<IConditionExpression, EcmaScriptProgram, EcmaScriptConditionExpressionEvaluator> EcmaScriptConditionExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
-	public required Func<IScriptExpression, Prepared<Script>, EcmaScriptScriptExpressionEvaluator> EcmaScriptScriptExpressionEvaluatorFactory { private get; [SetByIoC] init; }
+	public required Func<IScriptExpression, EcmaScriptProgram, EcmaScriptScriptExpressionEvaluator> EcmaScriptScriptExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
-	public required Func<ILocationExpression, (Prepared<Script>, Expression?), EcmaScriptLocationExpressionEvaluator> EcmaScriptLocationExpressionEvaluatorFactory { private get; [SetByIoC] init; }
+	public required Func<ILocationExpression, EcmaScriptProgram, EcmaScriptLocationExpressionEvaluator> EcmaScriptLocationExpressionEvaluatorFactory { private get; [SetByIoC] init; }
 
 	public required Func<IInlineContent, EcmaScriptInlineContentEvaluator> EcmaScriptInlineContentEvaluatorFactory { private get; [SetByIoC] init; }
 
@@ -69,24 +57,7 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 	public override string ConvertToText(DataModelValue value) => DataModelConverter.ToJson(value, DataModelConverter.JsonOptions.WriteIndented | DataModelConverter.JsonOptions.UndefinedToSkipOrNull);
 
-	private (Prepared<Script> Program, IReadOnlyList<ParseError> Errors) Parse(string source)
-	{
-		try
-		{
-		_ = _parser.ParseScript(source);
-		}
-		catch (ParseErrorException exception)
-		{
-			_errorHandler.Errors.Add(exception.Error);
-		}
-
-		var errors = _errorHandler.Errors.ToArray();
-		var program = Engine.PrepareScript(errors.Length == 0 ? source : @"undefined");
-
-		return (program, errors);
-	}
-
-	private static string GetErrorMessage(ParseError error) => @$"{error} ({error.Description}). Ln: {error.LineNumber}. Col: {error.Column + 1}.";
+	private static string GetErrorMessage(ParseError error) => @$"{error} ({error.Description}). Line: {error.LineNumber}. Column: {error.Column + 1}.";
 
 	protected override void Visit(ref IForEach forEach)
 	{
@@ -95,30 +66,25 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 		forEach = EcmaScriptForEachEvaluatorFactory(forEach);
 	}
 
-	protected override void Visit(ref ICustomAction customAction)
-	{
-		base.Visit(ref customAction);
-
-		customAction = EcmaScriptCustomActionEvaluatorFactory(customAction);
-	}
-
 	protected override void Visit(ref IValueExpression valueExpression)
 	{
 		base.Visit(ref valueExpression);
 
 		if (valueExpression.Expression is { } expression)
 		{
-			var (program, errors) = Parse(expression);
+			var program = EcmaScriptProgram.ParseScript(expression);
 
-			foreach (var parserException in errors)
+			if (!program.HasErrors)
 			{
-				AddErrorMessage(valueExpression, GetErrorMessage(parserException));
+				valueExpression = EcmaScriptValueExpressionEvaluatorFactory(valueExpression, program);
 			}
-
-			if (errors.Count == 0)
+			else
 			{
-			valueExpression = EcmaScriptValueExpressionEvaluatorFactory(valueExpression, program);
-		}
+				foreach (var parserException in program.Errors)
+				{
+					AddErrorMessage(valueExpression, GetErrorMessage(parserException));
+				}
+			}
 		}
 		else
 		{
@@ -132,17 +98,19 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 		if (conditionExpression.Expression is { } expression)
 		{
-			var (program, errors) = Parse(expression);
+			var program = EcmaScriptProgram.ParseScript(expression);
 
-			foreach (var parserException in errors)
+			if (!program.HasErrors)
 			{
-				AddErrorMessage(conditionExpression, GetErrorMessage(parserException));
+				conditionExpression = EcmaScriptConditionExpressionEvaluatorFactory(conditionExpression, program);
 			}
-
-			if (errors.Count == 0)
+			else
 			{
-			conditionExpression = EcmaScriptConditionExpressionEvaluatorFactory(conditionExpression, program);
-		}
+				foreach (var parserException in program.Errors)
+				{
+					AddErrorMessage(conditionExpression, GetErrorMessage(parserException));
+				}
+			}
 		}
 		else
 		{
@@ -156,20 +124,18 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 		if (locationExpression.Expression is { } expression)
 		{
-			var (program, errors) = Parse(expression);
+			var program = EcmaScriptProgram.ParseLocation(expression);
 
-			foreach (var parserException in errors)
+			if (!program.HasErrors)
 			{
-				AddErrorMessage(locationExpression, GetErrorMessage(parserException));
+				locationExpression = EcmaScriptLocationExpressionEvaluatorFactory(locationExpression, program);
 			}
-
-			if (errors.Count == 0 && EcmaScriptLocationExpressionEvaluator.GetLeftExpression(program.Program!) is { } leftExpression)
+			else
 			{
-				locationExpression = EcmaScriptLocationExpressionEvaluatorFactory(locationExpression, (program, leftExpression));
-			}
-			else if (errors.Count == 0)
-			{
-				AddErrorMessage(locationExpression, Resources.ErrorMessage_InvalidLocationExpression);
+				foreach (var parserException in program.Errors)
+				{
+					AddErrorMessage(locationExpression, GetErrorMessage(parserException));
+				}
 			}
 		}
 		else
@@ -184,17 +150,19 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 
 		if (scriptExpression.Expression is { } expression)
 		{
-			var (program, errors) = Parse(expression);
+			var program = EcmaScriptProgram.ParseScript(expression);
 
-			foreach (var parserException in errors)
+			if (!program.HasErrors)
 			{
-				AddErrorMessage(scriptExpression, GetErrorMessage(parserException));
+				scriptExpression = EcmaScriptScriptExpressionEvaluatorFactory(scriptExpression, program);
 			}
-
-			if (errors.Count == 0)
+			else
 			{
-			scriptExpression = EcmaScriptScriptExpressionEvaluatorFactory(scriptExpression, program);
-		}
+				foreach (var parserException in program.Errors)
+				{
+					AddErrorMessage(scriptExpression, GetErrorMessage(parserException));
+				}
+			}
 		}
 		else
 		{
@@ -230,14 +198,5 @@ public class EcmaScriptDataModelHandler : DataModelHandlerBase
 		externalDataExpression = EcmaScriptExternalDataExpressionEvaluatorFactory(externalDataExpression);
 	}
 
-	private void AddErrorMessage(object entity, string message, Exception? exception = default) => EcmaScriptErrorProcessorService.AddError(entity, message, exception);
-
-	private sealed class CollectingParseErrorHandler : ParseErrorHandler
-	{
-		public List<ParseError> Errors { get; } = [];
-
-		protected override void RecordError(ParseError error) => Errors.Add(error);
-
-		protected override void Reset() => Errors.Clear();
-	}
+	private void AddErrorMessage(object entity, string message, Exception? exception = null) => EcmaScriptErrorProcessorService.AddError(entity, message, exception);
 }

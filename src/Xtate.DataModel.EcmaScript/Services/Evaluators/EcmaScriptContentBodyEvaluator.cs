@@ -21,6 +21,7 @@ using Xtate.StateMachine;
 
 namespace Xtate.DataModel.EcmaScript.Services;
 
+[InstantiatedByIoC]
 public class EcmaScriptContentBodyEvaluator(IContentBody contentBody) : DefaultContentBodyEvaluator(contentBody)
 {
 	protected override DataModelValue ParseToDataModel() => Value is not null ? DataModelConverter.FromJson(Value) : DataModelValue.Null;

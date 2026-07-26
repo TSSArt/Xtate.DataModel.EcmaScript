@@ -7,7 +7,7 @@
 
 	<ItemGroup>
 		<PackageVersion Include="Xtate.Core" Version="0.*" />
-		<PackageVersion Include="Jint" Version="4.13.0" />
+		<PackageVersion Include="Jint" Version="4.14.0" />
 	</ItemGroup>
 
 </Project>

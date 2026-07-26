@@ -27,13 +27,12 @@ public class EcmaScriptDataModelHandlerModule : Module<DataModelHandlerBaseModul
 	protected override void AddServices()
 	{
 		Services.AddTypeSync<EcmaScriptForEachEvaluator, IForEach>();
-		Services.AddTypeSync<EcmaScriptCustomActionEvaluator, ICustomAction>();
 		Services.AddTypeSync<EcmaScriptExternalScriptExpressionEvaluator, IExternalScriptExpression>();
 		Services.AddTypeSync<EcmaScriptExternalDataExpressionEvaluator, IExternalDataExpression>();
-		Services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, Prepared<Script>>();
-		Services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, Prepared<Script>>();
-		Services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, Prepared<Script>>();
-		Services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, (Prepared<Script>, Expression?)>();
+		Services.AddTypeSync<EcmaScriptValueExpressionEvaluator, IValueExpression, EcmaScriptProgram>();
+		Services.AddTypeSync<EcmaScriptConditionExpressionEvaluator, IConditionExpression, EcmaScriptProgram>();
+		Services.AddTypeSync<EcmaScriptScriptExpressionEvaluator, IScriptExpression, EcmaScriptProgram>();
+		Services.AddTypeSync<EcmaScriptLocationExpressionEvaluator, ILocationExpression, EcmaScriptProgram>();
 		Services.AddTypeSync<EcmaScriptInlineContentEvaluator, IInlineContent>();
 		Services.AddTypeSync<EcmaScriptContentBodyEvaluator, IContentBody>();
 
