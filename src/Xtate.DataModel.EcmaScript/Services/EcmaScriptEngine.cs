@@ -98,13 +98,15 @@ public class EcmaScriptEngine
 
 	public ValueTask<JsValue> Eval(EcmaScriptProgram program, bool startNewScope)
 	{
+		_ = startNewScope; // Retained for source and binary API compatibility.
 		SyncRootVariables(DataModelController.DataModel);
 
-	   return new ValueTask<JsValue>(JintEngine.EvaluateAsync(program.Script));
+		return new ValueTask<JsValue>(JintEngine.EvaluateAsync(program.Script));
 	}
 
 	public ValueTask Exec(EcmaScriptProgram program, bool startNewScope)
 	{
+		_ = startNewScope; // Retained for source and binary API compatibility.
 		SyncRootVariables(DataModelController.DataModel);
 
 		return new ValueTask(JintEngine.EvaluateAsync(program.Script));

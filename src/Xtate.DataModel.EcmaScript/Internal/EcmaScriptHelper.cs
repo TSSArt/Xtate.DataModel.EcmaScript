@@ -41,7 +41,7 @@ internal static class EcmaScriptHelper
 				   DataModelValueType.Number    => value.AsNumber().ToDouble(),
 				   DataModelValueType.DateTime  => new JsDate(engine, value.AsDateTime().ToDateTime()),
 				   DataModelValueType.List      => GetWrapper(engine, value.AsList()),
-				   _                            => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
+				   _                            => throw Infra.Unmatched(value.Type)
 			   };
 
 		static ObjectInstance GetWrapper(Engine engine, DataModelList list) =>
@@ -58,7 +58,7 @@ internal static class EcmaScriptHelper
 			Types.Number                       => jsValue.AsNumber(),
 			Types.Object when jsValue.IsDate() => jsValue.AsDate().ToDateTime(),
 			Types.Object                       => ObjectInstanceToDataModelValue(jsValue.AsObject()),
-			_                                  => throw new InvalidOperationException(Resources.Exception_UnsupportedValueType)
+			_                                  => throw Infra.Unmatched(jsValue.Type)
 		};
 
 	private static DataModelValue ObjectInstanceToDataModelValue(ObjectInstance objectInstance)

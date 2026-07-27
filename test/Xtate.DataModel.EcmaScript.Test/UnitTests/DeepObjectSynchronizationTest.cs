@@ -34,10 +34,10 @@ public class DeepObjectSynchronizationTest
 	{
 		var engine = CreateEngine();
 		var tree = CreateDeepTree();
-		Expose(engine, "model", tree.Root);
+		Expose(engine, name: "model", tree.Root);
 
-		Assert.AreEqual("root", engine.JintEngine.Evaluate("model.profile.name").AsString());
-		Assert.AreEqual("first", engine.JintEngine.Evaluate("model.profile.items[0].title").AsString());
+		Assert.AreEqual(expected: "root", engine.JintEngine.Evaluate("model.profile.name").AsString());
+		Assert.AreEqual(expected: "first", engine.JintEngine.Evaluate("model.profile.items[0].title").AsString());
 		Assert.IsTrue(engine.JintEngine.Evaluate("model.profile.items[0].details.active").AsBoolean());
 	}
 
@@ -46,15 +46,15 @@ public class DeepObjectSynchronizationTest
 	{
 		var engine = CreateEngine();
 		var tree = CreateDeepTree();
-		Expose(engine, "model", tree.Root);
+		Expose(engine, name: "model", tree.Root);
 
 		engine.JintEngine.Execute(
 			"model.profile.name = 'changed';"
 			+ "model.profile.items[0].title = 'updated';"
 			+ "model.profile.items[0].details.active = false");
 
-		Assert.AreEqual("changed", tree.Profile["name"].AsString());
-		Assert.AreEqual("updated", tree.FirstItem["title"].AsString());
+		Assert.AreEqual(expected: "changed", tree.Profile["name"].AsString());
+		Assert.AreEqual(expected: "updated", tree.FirstItem["title"].AsString());
 		Assert.IsFalse(tree.Details["active"].AsBoolean());
 	}
 
@@ -63,17 +63,17 @@ public class DeepObjectSynchronizationTest
 	{
 		var engine = CreateEngine();
 		var tree = CreateDeepTree();
-		Expose(engine, "model", tree.Root);
+		Expose(engine, name: "model", tree.Root);
 
 		tree.Profile["name"] = "from-data-model";
 		tree.Details["active"] = false;
 		tree.Details["late"] = 17;
 		tree.Items.Add("tail");
 
-		Assert.AreEqual("from-data-model", engine.JintEngine.Evaluate("model.profile.name").AsString());
+		Assert.AreEqual(expected: "from-data-model", engine.JintEngine.Evaluate("model.profile.name").AsString());
 		Assert.IsFalse(engine.JintEngine.Evaluate("model.profile.items[0].details.active").AsBoolean());
-		Assert.AreEqual(17, engine.JintEngine.Evaluate("model.profile.items[0].details.late").AsNumber());
-		Assert.AreEqual("tail", engine.JintEngine.Evaluate("model.profile.items[1]").AsString());
+		Assert.AreEqual(expected: 17, engine.JintEngine.Evaluate("model.profile.items[0].details.late").AsNumber());
+		Assert.AreEqual(expected: "tail", engine.JintEngine.Evaluate("model.profile.items[1]").AsString());
 	}
 
 	[TestMethod]
@@ -81,7 +81,7 @@ public class DeepObjectSynchronizationTest
 	{
 		var engine = CreateEngine();
 		var tree = CreateDeepTree();
-		Expose(engine, "model", tree.Root);
+		Expose(engine, name: "model", tree.Root);
 
 		engine.JintEngine.Execute(
 			"model.profile.items[0].details = {"
@@ -92,7 +92,7 @@ public class DeepObjectSynchronizationTest
 		var details = tree.FirstItem["details"].AsList();
 
 		Assert.IsFalse(details["active"].AsBoolean());
-		Assert.AreEqual(3, details["nested"].AsList()["count"].AsNumber().ToInt32());
+		Assert.AreEqual(expected: 3, details["nested"].AsList()["count"].AsNumber().ToInt32());
 	}
 
 	[TestMethod]
@@ -100,7 +100,7 @@ public class DeepObjectSynchronizationTest
 	{
 		var engine = CreateEngine();
 		var tree = CreateDeepTree();
-		Expose(engine, "model", tree.Root);
+		Expose(engine, name: "model", tree.Root);
 
 		engine.JintEngine.Execute(
 			"model.profile.items[0] = {"
@@ -110,7 +110,7 @@ public class DeepObjectSynchronizationTest
 
 		var replacement = tree.Items[0].AsList();
 
-		Assert.AreEqual("replacement", replacement["title"].AsString());
+		Assert.AreEqual(expected: "replacement", replacement["title"].AsString());
 		Assert.IsFalse(replacement["details"].AsList()["active"].AsBoolean());
 	}
 
@@ -119,7 +119,7 @@ public class DeepObjectSynchronizationTest
 	{
 		var engine = CreateEngine();
 		var tree = CreateDeepTree();
-		var jsValue = Expose(engine, "model", tree.Root);
+		var jsValue = Expose(engine, name: "model", tree.Root);
 
 		var dataModelValue = EcmaScriptHelper.JsValueToDataModelValue(jsValue);
 		var roundTrip = EcmaScriptHelper.DataModelValueToJsValue(engine.JintEngine, dataModelValue);
@@ -139,12 +139,12 @@ public class DeepObjectSynchronizationTest
 		var root = DataModelConverter.CreateAsObject();
 		root["left"] = shared;
 		root["right"] = shared;
-		Expose(engine, "model", root);
+		Expose(engine, name: "model", root);
 
 		engine.JintEngine.Execute("model.left.value = 2");
 
-		Assert.AreEqual(2, shared["value"].AsNumber().ToInt32());
-		Assert.AreEqual(2, engine.JintEngine.Evaluate("model.right.value").AsNumber());
+		Assert.AreEqual(expected: 2, shared["value"].AsNumber().ToInt32());
+		Assert.AreEqual(expected: 2, engine.JintEngine.Evaluate("model.right.value").AsNumber());
 	}
 
 	[TestMethod]
@@ -154,14 +154,14 @@ public class DeepObjectSynchronizationTest
 		var jsValue = engine.JintEngine.Evaluate("({ branch: { items: [{ value: 1 }] } })");
 		var dataModelValue = EcmaScriptHelper.JsValueToDataModelValue(jsValue);
 		var roundTrip = EcmaScriptHelper.DataModelValueToJsValue(engine.JintEngine, dataModelValue);
-		engine.JintEngine.SetValue("roundTrip", roundTrip);
+		engine.JintEngine.SetValue(name: "roundTrip", roundTrip);
 
 		engine.JintEngine.Execute("roundTrip.branch.items[0].value = 9");
 
 		var item = dataModelValue.AsList()["branch"].AsList()["items"].AsList()[0].AsList();
 
-		Assert.AreEqual(9, item["value"].AsNumber().ToInt32());
-		Assert.AreEqual(9, engine.JintEngine.Evaluate("roundTrip.branch.items[0].value").AsNumber());
+		Assert.AreEqual(expected: 9, item["value"].AsNumber().ToInt32());
+		Assert.AreEqual(expected: 9, engine.JintEngine.Evaluate("roundTrip.branch.items[0].value").AsNumber());
 	}
 
 	[TestMethod]
@@ -173,7 +173,7 @@ public class DeepObjectSynchronizationTest
 		values.Add(DataModelValue.Null);
 		var root = DataModelConverter.CreateAsObject();
 		root["values"] = values;
-		Expose(engine, "model", root);
+		Expose(engine, name: "model", root);
 
 		Assert.IsTrue(engine.JintEngine.Evaluate("model.values[0]").IsUndefined());
 		Assert.IsTrue(engine.JintEngine.Evaluate("model.values[1]").IsNull());
@@ -189,13 +189,13 @@ public class DeepObjectSynchronizationTest
 	{
 		var engine = CreateEngine();
 		var tree = CreateDeepTree();
-		Expose(engine, "model", tree.Root);
+		Expose(engine, name: "model", tree.Root);
 		Assert.IsTrue(engine.JintEngine.Evaluate("model.profile.items[0].details.active").AsBoolean());
 
-		tree.Details.RemoveFirst("active", caseInsensitive: false);
+		tree.Details.RemoveFirst(key: "active", caseInsensitive: false);
 
 		Assert.AreEqual(
-			"undefined",
+			expected: "undefined",
 			engine.JintEngine.Evaluate("typeof model.profile.items[0].details.active").AsString());
 	}
 
@@ -204,10 +204,10 @@ public class DeepObjectSynchronizationTest
 		var dataModel = new DataModelList();
 
 		return new EcmaScriptEngine
-		{
-			DataModelController = Mock.Of<IDataModelController>(controller => controller.DataModel == dataModel),
-			InStateController = Mock.Of<IInStateController>()
-		};
+			   {
+				   DataModelController = Mock.Of<IDataModelController>(controller => controller.DataModel == dataModel),
+				   InStateController = Mock.Of<IInStateController>()
+			   };
 	}
 
 	private static JsValue Expose(EcmaScriptEngine engine, string name, DataModelList root)

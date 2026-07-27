@@ -167,14 +167,5 @@ namespace Xtate.DataModel.EcmaScript {
                 return ResourceManager.GetString("Exception_UnmatchedValue", resourceCulture);
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unsupported value of value.Type parameter..
-        /// </summary>
-        internal static string Exception_UnsupportedValueType {
-            get {
-                return ResourceManager.GetString("Exception_UnsupportedValueType", resourceCulture);
-            }
-        }
     }
 }

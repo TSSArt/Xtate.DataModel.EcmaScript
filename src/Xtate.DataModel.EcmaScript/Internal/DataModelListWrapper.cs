@@ -24,11 +24,7 @@ internal class DataModelListWrapper(Engine engine, DataModelList list) : IList<J
 {
 	public DataModelList List => list;
 
-	private static DataModelValue ToDataModelValue(JsValue? value) => value is not null ? EcmaScriptHelper.JsValueToDataModelValue(value) : DataModelValue.Undefined;
-
-	private JsValue ToJsValue(DataModelValue value) => EcmaScriptHelper.DataModelValueToJsValue(engine, value);
-
-	#region Interface ICollection<JsValue>
+#region Interface ICollection<JsValue?>
 
 	public void Add(JsValue? item) => list.Add(ToDataModelValue(item));
 
@@ -58,7 +54,7 @@ internal class DataModelListWrapper(Engine engine, DataModelList list) : IList<J
 
 #endregion
 
-#region Interface IEnumerable<JsValue>
+#region Interface IEnumerable<JsValue?>
 
 	public IEnumerator<JsValue?> GetEnumerator()
 	{
@@ -70,7 +66,7 @@ internal class DataModelListWrapper(Engine engine, DataModelList list) : IList<J
 
 #endregion
 
-#region Interface IList<JsValue>
+#region Interface IList<JsValue?>
 
 	public JsValue? this[int index]
 	{
@@ -85,4 +81,8 @@ internal class DataModelListWrapper(Engine engine, DataModelList list) : IList<J
 	public void RemoveAt(int index) => list.RemoveAt(index);
 
 #endregion
+
+	private static DataModelValue ToDataModelValue(JsValue? value) => value is not null ? EcmaScriptHelper.JsValueToDataModelValue(value) : DataModelValue.Undefined;
+
+	private JsValue ToJsValue(DataModelValue value) => EcmaScriptHelper.DataModelValueToJsValue(engine, value);
 }

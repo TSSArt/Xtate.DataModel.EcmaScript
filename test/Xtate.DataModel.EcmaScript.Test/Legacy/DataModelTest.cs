@@ -34,7 +34,7 @@ using Xtate.Logging.DependencyInjection;
 using Xtate.Logging.Provider;
 using Xtate.StateMachine;
 
-namespace Xtate.DataModel.EcmaScript.Test;
+namespace Xtate.DataModel.EcmaScript.Test.Legacy;
 
 [TestClass]
 public class DataModelTest
@@ -384,6 +384,8 @@ public class DataModelTest
 		_logMethods.VerifyNoOtherCalls();
 	}
 
+	// Moq must be able to proxy this nested interface at runtime.
+	// ReSharper disable once MemberCanBePrivate.Global
 	public interface ILogMethods
 	{
 		void Info(string category, string? message, DataModelValue arg);

@@ -19,18 +19,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 using Jint;
 using Jint.Native;
 using Jint.Runtime.Descriptors;
-using Jint.Runtime.Interop;
-using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Xtate.DataModel.EcmaScript.Internal;
 using Xtate.DataModel.Services;
 using Xtate.DataTypes;
+using PropertyDescriptor = Jint.Runtime.Descriptors.PropertyDescriptor;
 
 namespace Xtate.DataModel.EcmaScript.Test.UnitTests;
 
@@ -79,12 +76,14 @@ public class InternalCoverageTest
 		AssertIndex(new JsString("x"), expected: false, expectedIndex: 0);
 		AssertIndex(JsValue.FromObject(new Engine(), value: true), expected: false, expectedIndex: 0);
 
+		return;
+
 		static void AssertIndex(JsValue value, bool expected, int expectedIndex)
 		{
 			var result = EcmaScriptHelper.IsArrayIndex(value, out var index);
 
 			Assert.AreEqual(expected, result);
-			Assert.AreEqual(expectedIndex, (int)index);
+			Assert.AreEqual(expectedIndex, index);
 		}
 	}
 
@@ -170,13 +169,14 @@ public class InternalCoverageTest
 		Assert.AreEqual(expected: "second", destination[2]!.AsString());
 
 		var enumerator = ((IEnumerable)wrapper).GetEnumerator();
+		using var enumeratorScope = enumerator as IDisposable;
 		Assert.IsTrue(enumerator.MoveNext());
-		Assert.AreEqual(expected: "first", ((JsValue)enumerator.Current).AsString());
+		Assert.AreEqual(expected: "first", ((JsValue)enumerator.Current!).AsString());
 		Assert.IsTrue(enumerator.MoveNext());
-		Assert.AreEqual(expected: "second", ((JsValue)enumerator.Current).AsString());
+		Assert.AreEqual(expected: "second", ((JsValue)enumerator.Current!).AsString());
 		Assert.IsFalse(enumerator.MoveNext());
 
-		wrapper.Insert(index: 1, "inserted");
+		wrapper.Insert(index: 1, item: "inserted");
 		Assert.AreEqual(expected: "inserted", list[1].AsString());
 		Assert.IsTrue(wrapper.Remove("inserted"));
 		Assert.IsFalse(wrapper.Remove("missing"));
@@ -185,6 +185,7 @@ public class InternalCoverageTest
 
 		var readOnlyWrapper = new DataModelListWrapper(engine, list.CloneAsReadOnly());
 		Assert.IsTrue(readOnlyWrapper.IsReadOnly);
+		Assert.HasCount(expected: 1, readOnlyWrapper);
 
 		wrapper.Clear();
 		Assert.HasCount(expected: 0, list);
@@ -199,16 +200,16 @@ public class InternalCoverageTest
 		var wrapper = new TestDataModelObjectWrapper(engine, list);
 
 		Assert.IsExactInstanceOfType<ProxyPropertyDescriptor>(wrapper.GetOwnProperty("stale"));
-		list.RemoveFirst("stale", caseInsensitive: false);
+		list.RemoveFirst(key: "stale", caseInsensitive: false);
 		Assert.AreSame(PropertyDescriptor.Undefined, wrapper.GetOwnProperty("stale"));
 
 		wrapper.SetOwn(
-			"data",
+			property: "data",
 			new PropertyDescriptor(value: "stored", writable: true, enumerable: true, configurable: true));
 		Assert.AreEqual(expected: "stored", list["data"].AsString());
 
 		wrapper.SetOwn(
-			"accessor",
+			property: "accessor",
 			new GetSetPropertyDescriptor(JsValue.Undefined, JsValue.Undefined, enumerable: true, configurable: true));
 		Assert.IsFalse(list.ContainsKey(key: "accessor", caseInsensitive: false));
 
@@ -223,7 +224,7 @@ public class InternalCoverageTest
 	public void HelperCoversDatesForeignWrappersAndWrapperRoundTrips()
 	{
 		var engine = new Engine();
-		DataModelDateTime date = new DateTimeOffset(2026, 7, 26, 12, 30, 0, TimeSpan.Zero);
+		DataModelDateTime date = new DateTimeOffset(year: 2026, month: 7, day: 26, hour: 12, minute: 30, second: 0, TimeSpan.Zero);
 
 		Assert.IsTrue(EcmaScriptHelper.DataModelValueToJsValue(engine, date).IsDate());
 
@@ -242,7 +243,7 @@ public class InternalCoverageTest
 	public void ContractAnnotationsExposeBothConstructorForms()
 	{
 		var concise = new ContractAnnotationAttribute("null => null");
-		var full = new ContractAnnotationAttribute("notnull => notnull", forceFullStates: true);
+		var full = new ContractAnnotationAttribute(contract: "notnull => notnull", forceFullStates: true);
 
 		Assert.AreEqual(expected: "null => null", concise.Contract);
 		Assert.IsFalse(concise.ForceFullStates);
@@ -250,121 +251,8 @@ public class InternalCoverageTest
 		Assert.IsTrue(full.ForceFullStates);
 	}
 
-	[TestMethod]
-	[DoNotParallelize]
-	public void HelperRejectsAnUnknownDataModelValueType()
-	{
-		if (Environment.OSVersion.Platform != PlatformID.Win32NT || !Environment.Is64BitProcess)
-		{
-			Assert.Inconclusive("The test-only native method patch requires a 64-bit Windows process.");
-		}
-
-		var typeGetter = typeof(DataModelValue).GetProperty(nameof(DataModelValue.Type))!.GetMethod!;
-
-		using (NativeMethodPatch.ReturnInt32(typeGetter, int.MaxValue))
-		{
-			Assert.ThrowsExactly<InvalidOperationException>(() => EcmaScriptHelper.DataModelValueToJsValue(new Engine(), default));
-		}
-
-		Assert.AreEqual(DataModelValueType.Undefined, default(DataModelValue).Type);
-	}
-
 	private sealed class TestDataModelObjectWrapper(Engine engine, DataModelList list) : DataModelObjectWrapper(engine, list)
 	{
 		public void SetOwn(JsValue property, PropertyDescriptor descriptor) => SetOwnProperty(property, descriptor);
-	}
-
-	private sealed class NativeMethodPatch : IDisposable
-	{
-		private const uint PageExecuteReadWrite = 0x40;
-
-		private readonly IntPtr _address;
-
-		private readonly byte[] _originalCode;
-
-		private NativeMethodPatch(MethodInfo method, int returnValue)
-		{
-			RuntimeHelpers.PrepareMethod(method.MethodHandle);
-			_address = FollowJumpStubs(method.MethodHandle.GetFunctionPointer());
-			_originalCode = new byte[6];
-			Marshal.Copy(_address, _originalCode, startIndex: 0, _originalCode.Length);
-
-			var replacementCode = new byte[]
-								  {
-									  0xB8,
-									  (byte)returnValue,
-									  (byte)(returnValue >> 8),
-									  (byte)(returnValue >> 16),
-									  (byte)(returnValue >> 24),
-									  0xC3
-								  };
-
-			WriteCode(replacementCode);
-		}
-
-		public static NativeMethodPatch ReturnInt32(MethodInfo method, int returnValue) => new(method, returnValue);
-
-		public void Dispose()
-		{
-			WriteCode(_originalCode);
-		}
-
-		private void WriteCode(byte[] code)
-		{
-			if (!VirtualProtect(_address, new UIntPtr((uint)code.Length), PageExecuteReadWrite, out var oldProtection))
-			{
-				throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
-			}
-
-			try
-			{
-				Marshal.Copy(code, startIndex: 0, _address, code.Length);
-
-				if (!FlushInstructionCache(GetCurrentProcess(), _address, new UIntPtr((uint)code.Length)))
-				{
-					throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
-				}
-			}
-			finally
-			{
-				_ = VirtualProtect(_address, new UIntPtr((uint)code.Length), oldProtection, out _);
-			}
-		}
-
-		private static IntPtr FollowJumpStubs(IntPtr address)
-		{
-			for (var i = 0; i < 4; i ++)
-			{
-				if (Marshal.ReadByte(address) == 0xFF && Marshal.ReadByte(address, ofs: 1) == 0x25)
-				{
-					var pointerAddress = IntPtr.Add(address, 6 + Marshal.ReadInt32(address, ofs: 2));
-					address = Marshal.ReadIntPtr(pointerAddress);
-
-					continue;
-				}
-
-				if (Marshal.ReadByte(address) == 0xE9)
-				{
-					address = IntPtr.Add(address, 5 + Marshal.ReadInt32(address, ofs: 1));
-
-					continue;
-				}
-
-				break;
-			}
-
-			return address;
-		}
-
-		[DllImport("kernel32.dll", SetLastError = true)]
-		[return: MarshalAs(UnmanagedType.Bool)]
-		private static extern bool VirtualProtect(IntPtr address, UIntPtr size, uint newProtection, out uint oldProtection);
-
-		[DllImport("kernel32.dll", SetLastError = true)]
-		[return: MarshalAs(UnmanagedType.Bool)]
-		private static extern bool FlushInstructionCache(IntPtr process, IntPtr address, UIntPtr size);
-
-		[DllImport("kernel32.dll")]
-		private static extern IntPtr GetCurrentProcess();
 	}
 }

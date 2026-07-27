@@ -17,7 +17,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -30,7 +29,7 @@ using Xtate.Logging;
 using Xtate.Logging.Provider;
 using Xtate.StateMachine;
 
-namespace Xtate.DataModel.EcmaScript.Test;
+namespace Xtate.DataModel.EcmaScript.Test.Legacy;
 
 [TestClass]
 public class ExecutableTest
@@ -41,10 +40,6 @@ public class ExecutableTest
 
 	private Mock<IActionProvider> _customActionProvider = null!;
 
-	private ChannelReader<IIncomingEvent> _eventChannel = null!;
-
-	private Mock<IEventController> _eventController = null!;
-
 	private Mock<IEventReader> _eventQueueReader = null!;
 
 	private Mock<ILogProvider<IEventController>> _logWriterE = null!;
@@ -54,8 +49,6 @@ public class ExecutableTest
 	private Mock<ILogProvider<ILogController>> _logWriterL = null!;
 
 	//private Mock<IExternalCommunication> _externalCommunication = default!;
-
-	private Mock<ILogger> _logger = null!;
 
 	private static async ValueTask<IStateMachine> GetStateMachine(string scxml)
 	{
@@ -83,10 +76,6 @@ public class ExecutableTest
 	[TestInitialize]
 	public void Init()
 	{
-		var channel = Channel.CreateUnbounded<IIncomingEvent>();
-		channel.Writer.Complete();
-		_eventChannel = channel.Reader;
-
 		_logWriterL = new Mock<ILogProvider<ILogController>>();
 		_logWriterI = new Mock<ILogProvider<IStateMachineInterpreter>>();
 		_logWriterE = new Mock<ILogProvider<IEventController>>();
@@ -116,8 +105,6 @@ public class ExecutableTest
 			_customActionProvider.Setup(x => x.TryGetActivator(It.IsAny<IFactoryContext>(), It.IsAny<string>(), It.IsAny<string>(), default))
 								 .Returns(new ValueTask<ICustomActionFactoryActivator?>(_customActionProviderActivator.Object));
 		*/
-		_logger = new Mock<ILogger>();
-
 		//_externalCommunication = new Mock<IExternalCommunication>();
 		/*_options = new InterpreterOptions
 				   {
@@ -126,7 +113,6 @@ public class ExecutableTest
 					   Logger = _logger.Object,
 					   ExternalCommunication = _externalCommunication.Object
 				   };*/
-		_eventController = new Mock<IEventController>();
 		_eventQueueReader = new Mock<IEventReader>();
 
 		//IIncomingEvent tmp = null!;

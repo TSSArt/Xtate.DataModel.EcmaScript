@@ -56,7 +56,7 @@ public class EcmaScriptLocationExpressionEvaluator(ILocationExpression locationE
 	{
 		var engine = await EngineFactory().ConfigureAwait(false);
 		var rightValue = value is EcmaScriptObject ecmaScriptObject ? ecmaScriptObject.JsValue : JsValue.FromObject(engine.JintEngine, value.ToObject());
-		var setter = await engine.Eval(_setter, startNewScope: false).ConfigureAwait(false);
+		var setter = await engine.Eval(_setter, startNewScope: true).ConfigureAwait(false);
 
 		engine.Call(setter, rightValue);
 	}
@@ -78,7 +78,7 @@ public class EcmaScriptLocationExpressionEvaluator(ILocationExpression locationE
 
 		var engine = await EngineFactory().ConfigureAwait(false);
 
-		await engine.Exec(_declare, startNewScope: false).ConfigureAwait(false);
+		await engine.Exec(_declare, startNewScope: true).ConfigureAwait(false);
 	}
 
 	private static EcmaScriptProgram? CreateDeclare(EcmaScriptProgram program)

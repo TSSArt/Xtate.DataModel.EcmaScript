@@ -55,7 +55,7 @@ public class EcmaScriptEngineTest
 		var engine = CreateEngine();
 
 		Assert.ThrowsExactly<JavaScriptException>(() => engine.JintEngine.Execute("undeclaredVariable = 1"));
-		Assert.AreEqual("undefined", engine.JintEngine.Evaluate("typeof undeclaredVariable").AsString());
+		Assert.AreEqual(expected: "undefined", engine.JintEngine.Evaluate("typeof undeclaredVariable").AsString());
 	}
 
 	[TestMethod]
@@ -66,13 +66,13 @@ public class EcmaScriptEngineTest
 
 		SyncRootVariables(engine, dataModel);
 
-		Assert.AreEqual(7, engine.JintEngine.Evaluate("value").AsNumber());
-		Assert.AreEqual("undefined", engine.JintEngine.Evaluate("typeof ignored").AsString());
+		Assert.AreEqual(expected: 7, engine.JintEngine.Evaluate("value").AsNumber());
+		Assert.AreEqual(expected: "undefined", engine.JintEngine.Evaluate("typeof ignored").AsString());
 
 		engine.JintEngine.Execute("value = 9");
 
-		Assert.AreEqual(9, dataModel["value"].AsNumber().ToInt32());
-		Assert.AreEqual("ignored", dataModel[string.Empty].AsString());
+		Assert.AreEqual(expected: 9, dataModel["value"].AsNumber().ToInt32());
+		Assert.AreEqual(expected: "ignored", dataModel[string.Empty].AsString());
 	}
 
 	[TestMethod]
@@ -83,11 +83,11 @@ public class EcmaScriptEngineTest
 		SyncRootVariables(engine, dataModel);
 
 		dataModel["second"] = "two";
-		dataModel.RemoveFirst("first", caseInsensitive: false);
+		dataModel.RemoveFirst(key: "first", caseInsensitive: false);
 		SyncRootVariables(engine, dataModel);
 
-		Assert.AreEqual("undefined", engine.JintEngine.Evaluate("typeof first").AsString());
-		Assert.AreEqual("two", engine.JintEngine.Evaluate("second").AsString());
+		Assert.AreEqual(expected: "undefined", engine.JintEngine.Evaluate("typeof first").AsString());
+		Assert.AreEqual(expected: "two", engine.JintEngine.Evaluate("second").AsString());
 	}
 
 	[TestMethod]
@@ -98,48 +98,26 @@ public class EcmaScriptEngineTest
 
 		SyncRootVariables(engine, dataModel);
 
-		Assert.AreEqual(3, engine.JintEngine.Evaluate("Value").AsNumber());
-		Assert.AreEqual("undefined", engine.JintEngine.Evaluate("typeof value").AsString());
+		Assert.AreEqual(expected: 3, engine.JintEngine.Evaluate("Value").AsNumber());
+		Assert.AreEqual(expected: "undefined", engine.JintEngine.Evaluate("typeof value").AsString());
 	}
 
 	private static EcmaScriptEngine CreateEngine(DataModelList? dataModel = null, IInStateController? inStateController = null)
 	{
-		dataModel ??= new DataModelList();
+		dataModel ??= [];
 
 		return new EcmaScriptEngine
-		{
-			DataModelController = Mock.Of<IDataModelController>(controller => controller.DataModel == dataModel),
-			InStateController = inStateController ?? Mock.Of<IInStateController>()
-		};
+			   {
+				   DataModelController = Mock.Of<IDataModelController>(controller => controller.DataModel == dataModel),
+				   InStateController = inStateController ?? Mock.Of<IInStateController>()
+			   };
 	}
 
 	private static void SyncRootVariables(EcmaScriptEngine engine, DataModelList dataModel)
 	{
-		var method = typeof(EcmaScriptEngine).GetMethod("SyncRootVariables", BindingFlags.Instance | BindingFlags.NonPublic);
+		var method = typeof(EcmaScriptEngine).GetMethod(name: "SyncRootVariables", BindingFlags.Instance | BindingFlags.NonPublic);
 
 		Assert.IsNotNull(method);
 		method.Invoke(engine, [dataModel]);
-	}
-
-	private static object GetLexicalEnvironment(Engine engine)
-	{
-		var contextsField = typeof(Engine).GetField("_executionContexts", BindingFlags.Instance | BindingFlags.NonPublic);
-		Assert.IsNotNull(contextsField);
-		var contexts = contextsField.GetValue(engine);
-		Assert.IsNotNull(contexts);
-		var stackField = contexts.GetType().GetField("_stack", BindingFlags.Instance | BindingFlags.NonPublic);
-		Assert.IsNotNull(stackField);
-		var stack = stackField.GetValue(contexts);
-		Assert.IsNotNull(stack);
-		var tryPeek = stack.GetType().GetMethod("TryPeek", BindingFlags.Instance | BindingFlags.Public);
-		Assert.IsNotNull(tryPeek);
-		object?[] arguments = [null];
-		Assert.AreEqual(true, tryPeek.Invoke(stack, arguments));
-		var executionContext = arguments[0];
-		Assert.IsNotNull(executionContext);
-		var field = executionContext.GetType().GetField("LexicalEnvironment", BindingFlags.Instance | BindingFlags.Public);
-		Assert.IsNotNull(field);
-
-		return field.GetValue(executionContext)!;
 	}
 }

@@ -39,8 +39,6 @@ public class EcmaScriptForEachEvaluator : DefaultForEachEvaluator
 		_indexEvaluator = base.Index?.UseAncestor.As<EcmaScriptLocationExpressionEvaluator>();
 	}
 
-	public required Func<ValueTask<EcmaScriptEngine>> EngineFactory { private get; [SetByIoC] init; }
-
 	public override async ValueTask Execute()
 	{
 		await _itemEvaluator.DeclareLocalVariable().ConfigureAwait(false);

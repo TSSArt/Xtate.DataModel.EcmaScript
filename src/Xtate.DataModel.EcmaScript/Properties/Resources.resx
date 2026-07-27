@@ -126,9 +126,6 @@
   <data name="Exception_ExternalScriptMissed" xml:space="preserve">
     <value>External script missed.</value>
   </data>
-  <data name="Exception_UnsupportedValueType" xml:space="preserve">
-    <value>Unsupported value of value.Type parameter.</value>
-  </data>
   <data name="ErrorMessage_ValueExpressionMustBePresent" xml:space="preserve">
     <value>Value Expression must be present.</value>
   </data>

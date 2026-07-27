@@ -1,7 +1,21 @@
 // Copyright © 2019-2026 Sergii Artemenko
+// 
+// This file is part of the Xtate project. <https://xtate.net/>
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+// 
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Xtate.DataModel.EcmaScript.Services;
@@ -23,23 +37,23 @@ public class DataModelHandlerCoverageTest
 
 		Assert.AreEqual(EcmaScriptDataModelHandler.JintVersionValue, handler.DataModelVars["JintVersion"]);
 		var text = handler.ConvertToText(value);
-		StringAssert.Contains(text, "\n");
-		StringAssert.Contains(text, "\"text\": \"value\"");
+		StringAssert.Contains(text, substring: "\n");
+		StringAssert.Contains(text, substring: "\"text\": \"value\"");
 	}
 
 	[TestMethod]
 	public void HandlerWrapsEveryExpressionAndContentKind()
 	{
 		var handler = CreateHandler(Mock.Of<IErrorProcessorService<EcmaScriptDataModelHandler>>());
-		IValueExpression value = Mock.Of<IValueExpression>(expression => expression.Expression == "1 + 1");
-		IConditionExpression condition = Mock.Of<IConditionExpression>(expression => expression.Expression == "true");
-		ILocationExpression location = Mock.Of<ILocationExpression>(expression => expression.Expression == "target");
-		ILocationExpression location2 = Mock.Of<ILocationExpression>(expression => expression.Expression == "target.nested");
-		IScriptExpression script = Mock.Of<IScriptExpression>(expression => expression.Expression == "var x = 1");
-		IExternalScriptExpression externalScript = Mock.Of<IExternalScriptExpression>();
-		IExternalDataExpression externalData = Mock.Of<IExternalDataExpression>();
-		IInlineContent inline = Mock.Of<IInlineContent>();
-		IContentBody body = Mock.Of<IContentBody>();
+		var value = Mock.Of<IValueExpression>(expression => expression.Expression == "1 + 1");
+		var condition = Mock.Of<IConditionExpression>(expression => expression.Expression == "true");
+		var location = Mock.Of<ILocationExpression>(expression => expression.Expression == "target");
+		var location2 = Mock.Of<ILocationExpression>(expression => expression.Expression == "target.nested");
+		var script = Mock.Of<IScriptExpression>(expression => expression.Expression == "var x = 1");
+		var externalScript = Mock.Of<IExternalScriptExpression>();
+		var externalData = Mock.Of<IExternalDataExpression>();
+		var inline = Mock.Of<IInlineContent>();
+		var body = Mock.Of<IContentBody>();
 
 		handler.Process(ref value);
 		handler.Process(ref condition);
@@ -67,10 +81,10 @@ public class DataModelHandlerCoverageTest
 	{
 		var errors = new Mock<IErrorProcessorService<EcmaScriptDataModelHandler>>();
 		var handler = CreateHandler(errors.Object);
-		IValueExpression value = Mock.Of<IValueExpression>();
-		IConditionExpression condition = Mock.Of<IConditionExpression>();
-		ILocationExpression location = Mock.Of<ILocationExpression>();
-		IScriptExpression script = Mock.Of<IScriptExpression>();
+		var value = Mock.Of<IValueExpression>();
+		var condition = Mock.Of<IConditionExpression>();
+		var location = Mock.Of<ILocationExpression>();
+		var script = Mock.Of<IScriptExpression>();
 
 		handler.Process(ref value);
 		handler.Process(ref condition);
@@ -85,7 +99,7 @@ public class DataModelHandlerCoverageTest
 	{
 		var errors = new Mock<IErrorProcessorService<EcmaScriptDataModelHandler>>();
 		var handler = CreateHandler(errors.Object);
-		ILocationExpression binary = Mock.Of<ILocationExpression>(expression => expression.Expression == "1 + 2");
+		var binary = Mock.Of<ILocationExpression>(expression => expression.Expression == "1 + 2");
 
 		handler.Process(ref binary);
 
@@ -97,12 +111,12 @@ public class DataModelHandlerCoverageTest
 	{
 		var errors = new Mock<IErrorProcessorService<EcmaScriptDataModelHandler>>();
 		var handler = CreateHandler(errors.Object);
-		IValueExpression invalid = Mock.Of<IValueExpression>(expression => expression.Expression == "let = ;");
-		IValueExpression valid = Mock.Of<IValueExpression>(expression => expression.Expression == "1");
+		var invalid = Mock.Of<IValueExpression>(expression => expression.Expression == "let = ;");
+		var valid = Mock.Of<IValueExpression>(expression => expression.Expression == "1");
 
 		handler.Process(ref invalid);
 		var countAfterInvalid = errors.Invocations.Count;
-		Assert.IsGreaterThan(0, countAfterInvalid);
+		Assert.IsGreaterThan(lowerBound: 0, countAfterInvalid);
 		handler.Process(ref valid);
 		Assert.AreEqual(countAfterInvalid, errors.Invocations.Count);
 	}
@@ -112,7 +126,7 @@ public class DataModelHandlerCoverageTest
 	{
 		var errors = new Mock<IErrorProcessorService<EcmaScriptDataModelHandler>>();
 		var handler = CreateHandler(errors.Object);
-		IValueExpression invalid = Mock.Of<IValueExpression>(expression => expression.Expression == "true ?? false || true");
+		var invalid = Mock.Of<IValueExpression>(expression => expression.Expression == "true ?? false || true");
 
 		handler.Process(ref invalid);
 
@@ -124,10 +138,10 @@ public class DataModelHandlerCoverageTest
 	{
 		var errors = new Mock<IErrorProcessorService<EcmaScriptDataModelHandler>>();
 		var handler = CreateHandler(errors.Object);
-		IValueExpression value = Mock.Of<IValueExpression>(expression => expression.Expression == "true ?? false || true");
-		IConditionExpression condition = Mock.Of<IConditionExpression>(expression => expression.Expression == "true ?? false || true");
-		ILocationExpression location = Mock.Of<ILocationExpression>(expression => expression.Expression == "true ?? false || true");
-		IScriptExpression script = Mock.Of<IScriptExpression>(expression => expression.Expression == "true ?? false || true");
+		var value = Mock.Of<IValueExpression>(expression => expression.Expression == "true ?? false || true");
+		var condition = Mock.Of<IConditionExpression>(expression => expression.Expression == "true ?? false || true");
+		var location = Mock.Of<ILocationExpression>(expression => expression.Expression == "true ?? false || true");
+		var script = Mock.Of<IScriptExpression>(expression => expression.Expression == "true ?? false || true");
 
 		handler.Process(ref value);
 		handler.Process(ref condition);
@@ -141,7 +155,7 @@ public class DataModelHandlerCoverageTest
 		new()
 		{
 			EcmaScriptErrorProcessorService = errorProcessor,
-			EcmaScriptForEachEvaluatorFactory = entity => new EcmaScriptForEachEvaluator(entity) { EngineFactory = null! },
+			EcmaScriptForEachEvaluatorFactory = entity => new EcmaScriptForEachEvaluator(entity),
 			EcmaScriptExternalScriptExpressionEvaluatorFactory = entity => new EcmaScriptExternalScriptExpressionEvaluator(entity) { EngineFactory = null! },
 			EcmaScriptExternalDataExpressionEvaluatorFactory = entity => new EcmaScriptExternalDataExpressionEvaluator(entity) { DataConverter = null!, ResourceLoader = null! },
 			EcmaScriptValueExpressionEvaluatorFactory = (entity, program) => new EcmaScriptValueExpressionEvaluator(entity, program) { EngineFactory = null! },
@@ -168,8 +182,8 @@ public class DataModelHandlerCoverageTest
 	private static IAction CreateAction()
 	{
 		var action = new Mock<IAction>();
-		action.Setup(static item => item.GetValues()).Returns(Array.Empty<IActionValue>());
-		action.Setup(static item => item.GetLocations()).Returns(Array.Empty<IActionLocation>());
+		action.Setup(static item => item.GetValues()).Returns([]);
+		action.Setup(static item => item.GetLocations()).Returns([]);
 
 		return action.Object;
 	}
@@ -191,7 +205,5 @@ public class DataModelHandlerCoverageTest
 		public void Process(ref IInlineContent content) => Visit(ref content);
 
 		public void Process(ref IContentBody content) => Visit(ref content);
-
-		public void Process(ref ICustomAction customAction) => Visit(ref customAction);
 	}
 }
